@@ -1,0 +1,14 @@
+
+Configuración a la base de datos
+
+DBhost = 'localhost';
+DBname = 'adm_fultra';
+DBuser = 'adm_fultra';
+DBpass = '!1GfTlyk94f7eOdel';
+
+--**--**--**--**--**--**--**--**--**--**--**--**
+
+Datos de acceso al portal
+
+User: administracion@fultra.mx
+Password: SecretPass01@

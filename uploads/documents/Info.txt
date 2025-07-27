@@ -1,0 +1,14 @@
+# Proyecto de Administración FULTRA
+
+```Plazo de desarrollo:
+Inicio: - 11/03/2024
+Fin:    - 27/05/2024
+
+```Fecha de implementación:
+- 29/05/2024 
+
+### Desarrollo y Despliegue por:
+SysOp / Ing. Mario Alberto Alonso Alvarado
+
+# mario.blazter99@gmail.com
+# https://www.linkedin.com/in/mario-alberto-alonso-alvarado-672632210/
