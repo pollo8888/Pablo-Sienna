@@ -23,6 +23,8 @@
    
     // Llama a la función getUserTypes() en el controlador para obtener los tipos de usuarios disponibles.
     $userTypes = $controller->getUserTypes();
+    $companies = $controller->getActiveCompanies();
+
    
     function uploadFilePhoto($folio, $filename = null) {
         global $files;
@@ -30,23 +32,26 @@
         return $filename;
     }
    
+
+
     if(!empty($_POST['action'])){
         if($_POST['action'] == 'create'){
-            //CONSULTAMOS LA BASE DE DATOS ENVIANDO EL CORREO ELECTRÓNICO
+            // Validaciones existentes...
             $emailUser = $controller->getEmailUser($_POST['user']['email_user']);
-            //CONSULTAMOS LA BASE DE DATOS ENVIANDO EL TELÉFONO
             $phoneUser = $controller->getPhoneUser($_POST['user']['phone_user']);
-            //CONSULTAMOS LA BASE DE DATOS ENVIANDO EL RFC
             $rfcUser = $controller->getRFCUser($_POST['user']['rfc_user']);
-            //COMPROBAMOS SI EL CORREO ELECTRÓNICO EXISTE
-            if(!empty($emailUser)){
+            
+            // NUEVA VALIDACIÓN: Si es cliente empresa, debe tener empresa asignada
+            if($_POST['user']['id_type_user'] == 3 && empty($_POST['user']['id_company'])) {
+                $mssg = "¡LOS USUARIOS DE TIPO CLIENTE EMPRESA DEBEN TENER UNA EMPRESA ASIGNADA!";
+            }
+            // Validaciones existentes de email, teléfono, RFC...
+            else if(!empty($emailUser)){
                 $mssg = "¡EL CORREO ELECTRÓNICO YA ESTÁ EN USO POR UN USUARIO ACTIVO. INTENTA CON OTRO!";
             }
-            //COMPROBAMOS SI EL NÚMERO DE TELÉFONO EXISTE
             else if (!empty($phoneUser)){
                 $mssg = "¡EL NÚMERO DE TELÉFONO ESTÁ EN USO POR UN USUARIO ACTIVO, INTENTA CON OTRO!";
             }
-            //COMPROBAMOS SI EL RFC EXISTE
             else if (!empty($rfcUser)){
                 $mssg = "¡EL RFC YA SE ENCUENTRA REGISTRADO, INTENTA CON OTRO!";
             }
@@ -195,6 +200,43 @@
                                                         </select>
                                                         <!--<small class="error-msg" style="color:red; display: none;">*Campo obligatorio</small>-->
                                                     </div>
+
+
+                                                    <div class="form-group" id="empresa-section" style="display: none;">
+                                                        <label for="id_company">Empresa: <span class="text-danger">*</span></label>
+                                                        <select name="user[id_company]" class="form-control" id="id_company">
+                                                            <option value="">Seleccionar empresa...</option>
+                                                            <?php foreach($companies as $company) { ?>
+                                                                <option value="<?php echo $company['id_company']; ?>" 
+                                                                        <?php echo isset($_POST['user']['id_company']) && $_POST['user']['id_company'] == $company['id_company'] ? 'selected' : ''; ?>>
+                                                                    <?php echo $company['name_company'] . ' (' . $company['rfc_company'] . ')'; ?>
+                                                                </option>
+                                                            <?php } ?>
+                                                        </select>
+                                                        <small class="form-text text-muted">Seleccione la empresa a la que pertenece el usuario</small>
+                                                    </div>
+
+
+                                                     <!-- Rol en la Empresa (solo para clientes empresa) -->
+                                                    <div class="form-group" id="rol-empresa-section" style="display: none;">
+                                                        <label for="company_role">Rol en la Empresa:</label>
+                                                        <select name="user[company_role]" class="form-control" id="company_role">
+                                                            <option value="operador" <?php echo isset($_POST['user']['company_role']) && $_POST['user']['company_role'] == 'operador' ? 'selected' : ''; ?>>
+                                                                Operador
+                                                            </option>
+                                                            <option value="admin_empresa" <?php echo isset($_POST['user']['company_role']) && $_POST['user']['company_role'] == 'admin_empresa' ? 'selected' : ''; ?>>
+                                                                Administrador de Empresa
+                                                            </option>
+                                                            <option value="consultor" <?php echo isset($_POST['user']['company_role']) && $_POST['user']['company_role'] == 'consultor' ? 'selected' : ''; ?>>
+                                                                Consultor
+                                                            </option>
+                                                        </select>
+                                                        <small class="form-text text-muted">
+                                                            <strong>Operador:</strong> Registra operaciones PLD<br>
+                                                            <strong>Admin Empresa:</strong> Gestiona usuarios de la empresa<br>
+                                                            <strong>Consultor:</strong> Solo consulta información
+                                                        </small>
+                                                    </div>
                                                     
                                                     <!-- Campo de Fotografía -->
                                                     <div class="form-group">
@@ -290,147 +332,402 @@
         <script src="../../resources/js/cropper.min.js"></script>
         <!-- Select2 -->
         <script src="../../resources/plugins/select2/js/select2.full.min.js"></script>
-        <script>
-            $(document).ready(function(){
-                $('.selectTypeUser').select2({
-                    theme: 'bootstrap4'
-                });
-            });
-        </script>
-        <script>
-            // Función para convertir el valor del campo a mayúsculas
-            function convertirAMayusculas(inputId) {
-                // Obtener el campo de entrada por su id
-                var inputElement = document.getElementById(inputId);
-                // Agregar un evento que se dispare cuando el usuario escriba en el campo
-                inputElement.addEventListener("input", function() {
-                    // Convertir el valor a mayúsculas y establecerlo nuevamente en el campo
-                    this.value = this.value.toUpperCase();
-                });
-            }
-            // Función para permitir solo números en el campo
-            function permitirSoloNumeros(inputId) {
-                // Obtener el campo de entrada por su id
-                var inputElement = document.getElementById(inputId);
-                // Agregar un controlador de eventos para bloquear la entrada no numérica
-                inputElement.addEventListener("input", function() {
-                    this.value = this.value.replace(/[^0-9]/g, "");
-                });
-            }
-            // Función para permitir solo texto (letras) en el campo
-            function permitirSoloTexto(inputId) {
-                var inputElement = document.getElementById(inputId);
-                inputElement.addEventListener("input", function() {
-                    this.value = this.value.replace(/[^a-zA-ZñÑáÁéÉíÍóÓúÚ ]/g, "");
-                });
-            }
-            // Llamar a las funciones para cada campo de entrada
-            convertirAMayusculas("name_user");
-            //convertirAMayusculas("rfc_user");
-            permitirSoloNumeros("phone_user");
-            permitirSoloTexto("name_user");
-        </script>
-       
-        <script>
-            function togglePassword() {
-                var passwordField = document.getElementById('password_user');
-                var eyeIconOpen = document.getElementById('eyeIconOpen');
-                var eyeIconClosed = document.getElementById('eyeIconClosed');
-                passwordField.type = (passwordField.type === 'password') ? 'text' : 'password';
-                // Alterna la visibilidad de los iconos de ojo abierto y cerrado
-                eyeIconOpen.style.display = (passwordField.type === 'password') ? 'none' : 'inline-block';
-                eyeIconClosed.style.display = (passwordField.type === 'password') ? 'inline-block' : 'none';
-                // Agrega y remueve la clase 'clicked' para la animación de cambio de tamaño
-                eyeIconOpen.classList.add('clicked');
-                eyeIconClosed.classList.add('clicked');
-               
-                setTimeout(function() {
-                    eyeIconOpen.classList.remove('clicked');
-                    eyeIconClosed.classList.remove('clicked');
-                }, 200); // Ajusta el tiempo de la animación según sea necesario
-            }
-        </script>
-        <script>
-            // Selecciona todos los campos de entrada y sus mensajes de error correspondientes
-            const inputs = document.querySelectorAll('.validate');
-            const errorMessages = document.querySelectorAll('.error-msg');
-            // Añade un evento para cada campo de entrada que se ejecute cuando cambie el valor
-            inputs.forEach((input, index) => {
-                input.addEventListener('input', () => {
-                    if (input.checkValidity()) {
-                        errorMessages[index].style.display = 'none';  // Oculta el mensaje de error si el valor es válido
-                    } else {
-                        errorMessages[index].style.display = 'block';  // Muestra el mensaje de error si el valor es inválido
-                    }
-                });
-            });
-        </script>
+      <script>
+    $(document).ready(function(){
+        $('.selectTypeUser').select2({
+            theme: 'bootstrap4'
+        });
+        
+        // NUEVO: Select2 para empresas
+        $('#id_company').select2({
+            theme: 'bootstrap4',
+            placeholder: 'Seleccionar empresa...',
+            allowClear: true
+        });
+    });
+</script>
 
-        <!--SCRIPT PARA RECORTAR LA FOTOGRAFÍA Y VER UNA VISTA PREVIA-->
-        <script>
-            let cropper;
-            document.getElementById('photo_user').addEventListener('change', function(event) {
-                const files = event.target.files;
-                if (files && files.length > 0) {
-                    const file = files[0];
-                    const reader = new FileReader();
-                    
-                    reader.onload = function(event) {
-                        // Mostrar la imagen en el modal
-                        const image = document.getElementById('imagePreview');
-                        image.src = event.target.result;
-                        
-                        // Mostrar el modal
-                        $('#cropperModal').modal('show');
-                        
-                        // Inicializar Cropper.js
-                        if (cropper) {
-                            cropper.destroy(); // Destruir cualquier instancia previa
-                        }
-                        cropper = new Cropper(image, {
-                            aspectRatio: 1, // Relación 1:1 para un recorte circular
-                            viewMode: 2,
-                            preview: '.preview', // Opcional: añade un contenedor para previsualización
-                        });
-                    };
-                    reader.readAsDataURL(file);
+<script>
+    // Función para convertir el valor del campo a mayúsculas
+    function convertirAMayusculas(inputId) {
+        var inputElement = document.getElementById(inputId);
+        inputElement.addEventListener("input", function() {
+            this.value = this.value.toUpperCase();
+        });
+    }
+    
+    // Función para permitir solo números en el campo
+    function permitirSoloNumeros(inputId) {
+        var inputElement = document.getElementById(inputId);
+        inputElement.addEventListener("input", function() {
+            this.value = this.value.replace(/[^0-9]/g, "");
+        });
+    }
+    
+    // Función para permitir solo texto (letras) en el campo
+    function permitirSoloTexto(inputId) {
+        var inputElement = document.getElementById(inputId);
+        inputElement.addEventListener("input", function() {
+            this.value = this.value.replace(/[^a-zA-ZñÑáÁéÉíÍóÓúÚ ]/g, "");
+        });
+    }
+    
+    // Llamar a las funciones para cada campo de entrada
+    convertirAMayusculas("name_user");
+    permitirSoloNumeros("phone_user");
+    permitirSoloTexto("name_user");
+</script>
+
+<script>
+    function togglePassword() {
+        var passwordField = document.getElementById('password_user');
+        var eyeIconOpen = document.getElementById('eyeIconOpen');
+        var eyeIconClosed = document.getElementById('eyeIconClosed');
+        passwordField.type = (passwordField.type === 'password') ? 'text' : 'password';
+        
+        eyeIconOpen.style.display = (passwordField.type === 'password') ? 'none' : 'inline-block';
+        eyeIconClosed.style.display = (passwordField.type === 'password') ? 'inline-block' : 'none';
+        
+        eyeIconOpen.classList.add('clicked');
+        eyeIconClosed.classList.add('clicked');
+       
+        setTimeout(function() {
+            eyeIconOpen.classList.remove('clicked');
+            eyeIconClosed.classList.remove('clicked');
+        }, 200);
+    }
+</script>
+
+<script>
+    // Validación de campos
+    const inputs = document.querySelectorAll('.validate');
+    const errorMessages = document.querySelectorAll('.error-msg');
+    
+    inputs.forEach((input, index) => {
+        input.addEventListener('input', () => {
+            if (input.checkValidity()) {
+                errorMessages[index].style.display = 'none';
+            } else {
+                errorMessages[index].style.display = 'block';
+            }
+        });
+    });
+</script>
+
+<!-- NUEVO SCRIPT: Gestión de campos de empresa -->
+<script>
+$(document).ready(function() {
+    // Función para mostrar/ocultar campos de empresa
+    function toggleEmpresaFields() {
+        var tipoUsuario = $('#id_type_user').val();
+        
+        if (tipoUsuario == '3') { // Cliente Empresa
+            $('#empresa-section').show().addClass('animate-in');
+            $('#rol-empresa-section').show().addClass('animate-in');
+            $('#id_company').attr('required', true);
+            
+            // Mostrar información sobre el tipo seleccionado
+            showNotification('info', 'Usuario tipo Cliente Empresa: debe asignar una empresa');
+        } else { // Admin o Empleado FULTRA
+            $('#empresa-section').hide().removeClass('animate-in');
+            $('#rol-empresa-section').hide().removeClass('animate-in');
+            $('#id_company').removeAttr('required').val('').trigger('change');
+            $('#company_role').val('operador');
+            
+            if (tipoUsuario) {
+                var tipoNombre = $('#id_type_user option:selected').text();
+                showNotification('success', 'Usuario tipo ' + tipoNombre + ': empleado de FULTRA');
+            }
+        }
+    }
+    
+    // Ejecutar al cargar la página
+    toggleEmpresaFields();
+    
+    // Ejecutar cuando cambie el tipo de usuario
+    $('#id_type_user').change(function() {
+        toggleEmpresaFields();
+    });
+    
+    // Validación en tiempo real del RFC de empresa
+    $('#id_company').change(function() {
+        var companyId = $(this).val();
+        if (companyId) {
+            var companyName = $(this).find('option:selected').text();
+            showNotification('success', 'Empresa seleccionada: ' + companyName);
+        }
+    });
+    
+    // Información sobre roles
+    $('#company_role').change(function() {
+        var role = $(this).val();
+        var roleInfo = '';
+        
+        switch(role) {
+            case 'admin_empresa':
+                roleInfo = 'Puede gestionar usuarios de su empresa y registrar operaciones PLD';
+                break;
+            case 'operador':
+                roleInfo = 'Puede registrar operaciones PLD de su empresa';
+                break;
+            case 'consultor':
+                roleInfo = 'Solo puede consultar información de su empresa';
+                break;
+        }
+        
+        if (roleInfo) {
+            showNotification('info', 'Rol seleccionado: ' + roleInfo);
+        }
+    });
+    
+    // Validación antes de enviar el formulario
+    $('form').on('submit', function(e) {
+        var tipoUsuario = $('#id_type_user').val();
+        var empresa = $('#id_company').val();
+        
+        // Validación específica para clientes empresa
+        if (tipoUsuario == '3' && !empresa) {
+            e.preventDefault();
+            showNotification('error', 'Los usuarios de tipo Cliente Empresa deben tener una empresa asignada.');
+            $('#id_company').focus();
+            return false;
+        }
+        
+        // Confirmación final
+        var userName = $('#name_user').val();
+        var userType = $('#id_type_user option:selected').text();
+        var companyName = empresa ? $('#id_company option:selected').text() : 'Ninguna';
+        
+        var confirmMsg = '¿Confirmar creación del usuario?\n\n' +
+                        'Nombre: ' + userName + '\n' +
+                        'Tipo: ' + userType + '\n' +
+                        'Empresa: ' + companyName;
+        
+        if (!confirm(confirmMsg)) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Mostrar loading
+        showLoading();
+    });
+    
+    // Función para mostrar notificaciones
+    function showNotification(type, message) {
+        // Remover notificaciones anteriores
+        $('.custom-notification').remove();
+        
+        var bgClass = '';
+        var icon = '';
+        
+        switch(type) {
+            case 'success':
+                bgClass = 'alert-success';
+                icon = 'fas fa-check-circle';
+                break;
+            case 'error':
+                bgClass = 'alert-danger';
+                icon = 'fas fa-exclamation-triangle';
+                break;
+            case 'info':
+                bgClass = 'alert-info';
+                icon = 'fas fa-info-circle';
+                break;
+        }
+        
+        var notification = $('<div class="alert ' + bgClass + ' custom-notification mt-2">' +
+                           '<i class="' + icon + '"></i> ' + message +
+                           '</div>');
+        
+        // Insertar después del campo tipo de usuario
+        $('#id_type_user').closest('.form-group').after(notification);
+        
+        // Auto-remover después de 3 segundos
+        setTimeout(function() {
+            notification.fadeOut(500, function() {
+                $(this).remove();
+            });
+        }, 3000);
+    }
+    
+    // Función para mostrar loading
+    function showLoading() {
+        $('button[type="submit"]').prop('disabled', true).html(
+            '<i class="fas fa-spinner fa-spin"></i> Creando usuario...'
+        );
+    }
+});
+</script>
+
+<!-- SCRIPT PARA RECORTAR LA FOTOGRAFÍA Y VER UNA VISTA PREVIA -->
+<script>
+    let cropper;
+    document.getElementById('photo_user').addEventListener('change', function(event) {
+        const files = event.target.files;
+        if (files && files.length > 0) {
+            const file = files[0];
+            
+            // Validar tipo de archivo
+            if (!file.type.startsWith('image/')) {
+                alert('Por favor seleccione solo archivos de imagen.');
+                this.value = '';
+                return;
+            }
+            
+            // Validar tamaño (máximo 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('La imagen debe ser menor a 5MB.');
+                this.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(event) {
+                const image = document.getElementById('imagePreview');
+                image.src = event.target.result;
+                
+                $('#cropperModal').modal('show');
+                
+                if (cropper) {
+                    cropper.destroy();
+                }
+                cropper = new Cropper(image, {
+                    aspectRatio: 1,
+                    viewMode: 2,
+                    preview: '.preview',
+                    responsive: true,
+                    restore: false,
+                    guides: false,
+                    center: false,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false,
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    document.getElementById('cropImage').addEventListener('click', function () {
+        const fileInput = document.getElementById('photo_user');
+        const originalFileName = fileInput.files[0]?.name || "cropped-image.png";
+        
+        cropper.getCroppedCanvas({
+            width: 200,
+            height: 200,
+            imageSmoothingQuality: 'high',
+        }).toBlob((blob) => {
+            const file = new File([blob], originalFileName, { type: blob.type });
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+            
+            $('#cropperModal').modal('hide');
+            
+            // Mostrar notificación de éxito
+            $('.custom-notification').remove();
+            $('#photo_user').closest('.form-group').after(
+                '<div class="alert alert-success custom-notification mt-2">' +
+                '<i class="fas fa-check-circle"></i> Imagen procesada correctamente' +
+                '</div>'
+            );
+            
+            setTimeout(function() {
+                $('.custom-notification').fadeOut();
+            }, 2000);
+        });
+    });
+</script>
+
+<script>
+    // Código para resetear el input de foto al cancelar o cerrar el modal
+    document.addEventListener('DOMContentLoaded', function() {
+        // Botón cancelar
+        const cancelBtn = document.querySelector('#cropperModal .btn-secondary');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function() {
+                document.getElementById('photo_user').value = '';
+                if (cropper) {
+                    cropper.destroy();
                 }
             });
-            
-            document.getElementById('cropImage').addEventListener('click', function () {
-                // Obtener el nombre original del archivo
-                const fileInput = document.getElementById('photo_user');
-                const originalFileName = fileInput.files[0]?.name || "cropped-image.png";
-                
-                cropper.getCroppedCanvas({
-                    width: 200,
-                    height: 200,
-                    imageSmoothingQuality: 'high',
-                }).toBlob((blob) => {
-                    // Crear un archivo con el nombre original y el contenido recortado
-                    const file = new File([blob], originalFileName, { type: blob.type });
-                    
-                    // Asignar el archivo al input de tipo file usando DataTransfer
-                    const dataTransfer = new DataTransfer();
-                    dataTransfer.items.add(file);
-                    fileInput.files = dataTransfer.files;
-                    
-                    // Ocultar el modal después de asignar el archivo
-                    $('#cropperModal').modal('hide');
-                });
-            });
-        </script>
+        }
         
-        <script>
-            // Código para resetear el input de foto al cancelar o cerrar el modal
-            document.querySelector('.btn-secondary').addEventListener('click', function() {
+        // Botón cerrar (X)
+        const closeBtn = document.querySelector('#cropperModal .close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
                 document.getElementById('photo_user').value = '';
+                if (cropper) {
+                    cropper.destroy();
+                }
             });
-            // Agregar evento al botón de cerrar (la 'x')
-            document.querySelector('.close').addEventListener('click', function() {
-                document.getElementById('photo_user').value = '';
-            });
-        </script>
+        }
+        
+        // Al cerrar el modal por cualquier medio
+        $('#cropperModal').on('hidden.bs.modal', function () {
+            if (cropper) {
+                cropper.destroy();
+            }
+        });
+    });
+</script>
+
+<!-- ESTILOS ADICIONALES -->
+<style>
+.animate-in {
+    animation: slideIn 0.3s ease-in-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.custom-notification {
+    border-radius: 5px;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.custom-notification i {
+    margin-right: 8px;
+}
+
+#empresa-section, #rol-empresa-section {
+    border-left: 4px solid #007bff;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+#empresa-section label, #rol-empresa-section label {
+    color: #007bff;
+    font-weight: 600;
+}
+
+/* Mejorar apariencia de Select2 */
+.select2-container--bootstrap4 .select2-selection--single {
+    height: calc(1.5em + 0.75rem + 2px) !important;
+    padding: 0.375rem 0.75rem;
+}
+
+.select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
+    padding-left: 0;
+    padding-right: 0;
+    height: auto;
+    margin-top: -2px;
+}
+</style>
         
     </body>
 </html>

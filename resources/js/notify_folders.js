@@ -11,8 +11,8 @@ $(document).ready(function() {
             // linea de código para el despliegue en FULTRA
             // url: "/app/webservice.php",
             
-            // linea de código para el desarrollo en XAMPP LOCAL
-            url: "/fultra_v9/fultra/app/webservice.php",
+            // linea de código para el desarrollo en MAC XAMPP /Sienna/
+            url: "/Sienna/app/webservice.php",
             
             data: {
                 action: "getFolderNotifications"
@@ -44,8 +44,8 @@ $(document).ready(function() {
             // linea de código para el despliegue en FULTRA
             // url: "/app/webservice.php",
             
-            // linea de código para el desarrollo en XAMPP LOCAL
-            url: "/fultra_v9/fultra/app/webservice.php",
+            // linea de código para el desarrollo en MAC XAMPP /Sienna/
+            url: "/Sienna/app/webservice.php",
             
             data: {
                 action: "getNotWatchFolderNotifications"
@@ -88,11 +88,11 @@ $(document).ready(function() {
                     // var folderUrl = "/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
                     // var userUrl = "/backoffice/users/detail-user.php?id=" + encodeURIComponent(item.id_user_customer) + "&key=" + encodeURIComponent(item.key_user_customer);
                     
-                    // ################## PARA DESARROLLO EN XAMPP LOCAL ###############
+                    // ################## PARA DESARROLLO EN MAC XAMPP /Sienna/ ###############
                     // Asignamos la URL correspondiente para ingresar a la carpeta del cliente
-                    var folderUrl = "/fultra_v9/fultra/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
+                    var folderUrl = "/Sienna/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
                     // Asignamos la URL para visualizar los detalles del usuario
-                    var userUrl = "/fultra_v9/fultra/backoffice/users/detail-user.php?id=" + encodeURIComponent(item.id_user_customer) + "&key=" + encodeURIComponent(item.key_user_customer);
+                    var userUrl = "/Sienna/backoffice/users/detail-user.php?id=" + encodeURIComponent(item.id_user_customer) + "&key=" + encodeURIComponent(item.key_user_customer);
                     
                     // Construir la parte condicional para 'asesorada por'
                     let asesoradaPor = '';
@@ -155,8 +155,8 @@ $(document).ready(function() {
             // linea de código para el despliegue en FULTRA
             // url: "/app/webservice.php",
             
-            // linea de código para el desarrollo en XAMPP LOCAL
-            url: "/fultra_v9/fultra/app/webservice.php",
+            // linea de código para el desarrollo en MAC XAMPP /Sienna/
+            url: "/Sienna/app/webservice.php",
             
             data: {
                 action: "deleteFolderNotification",
@@ -210,8 +210,8 @@ $(document).ready(function() {
             // linea de código para el despliegue en FULTRA
             // url: "/app/webservice.php",
             
-            // linea de código para el desarrollo en XAMPP LOCAL
-            url: "/fultra_v9/fultra/app/webservice.php",
+            // linea de código para el desarrollo en MAC XAMPP /Sienna/
+            url: "/Sienna/app/webservice.php",
             
             data: {
                 action: "clearFolderNotifications",

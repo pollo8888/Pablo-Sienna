@@ -37,25 +37,28 @@
     //--------------------ADMINISTRACIÓN DE ADMINISTRADORES / USERS / EMPLEADOS ------------------
     // Función para crear un nuevo usuario en la base de datos.
     // Archivos -> backoffice/users/create-user.php
-    public function createUser($data){
-      // Generar una clave hash segura para la contraseña del usuario.
-      $key = password_hash($data['password_user'], PASSWORD_BCRYPT);
-      // Opción alternativa: usar MD5 para generar la clave (no recomendado).
-      // $key = md5($data['password_user']);
-      // Consulta SQL para insertar un nuevo usuario en la tabla 'users'.
-      $query = "INSERT INTO users(id_type_user, key_user, name_user, rfc_user, phone_user, email_user, password_user, status_user, created_at_user, updated_at_user) VALUES (?,?,?,?,?,?,?,1,NOW(),NOW())";
-      // Parámetros para la consulta preparada.
-      $params = array(
-        $data['id_type_user'],    // ID del tipo de usuario.
-        $data['key_user'],        // Clave del usuario.
-        $data['name_user'],       // Nombre del usuario.
-        $data['rfc_user'],        // RFC del usuario.
-        $data['phone_user'],      // Teléfono del usuario.
-        $data['email_user'],      // Correo electrónico del usuario.
-        $key,                     // Contraseña hash del usuario.
-      );
-      // Ejecutar la consulta preparada con los parámetros proporcionados.
-      return $this->execute($query, $params);
+    /**
+     * Crear usuario con empresa (MODIFICADO)
+     */
+    public function createUser($data) {
+        $key = password_hash($data['password_user'], PASSWORD_BCRYPT);
+        $query = "INSERT INTO users(
+            id_type_user, id_company, company_role, key_user, name_user, rfc_user, 
+            phone_user, email_user, password_user, status_user, created_at_user, updated_at_user
+        ) VALUES (?,?,?,?,?,?,?,?,?,1,NOW(),NOW())";
+        
+        $params = array(
+            $data['id_type_user'],
+            !empty($data['id_company']) ? $data['id_company'] : null,
+            !empty($data['company_role']) ? $data['company_role'] : 'operador',
+            $data['key_user'],
+            $data['name_user'],
+            $data['rfc_user'],
+            $data['phone_user'],
+            $data['email_user'],
+            $key
+        );
+        return $this->execute($query, $params);
     }
     
     // Función para actualizar la foto de un usuario en la base de datos.
@@ -110,69 +113,85 @@
     
     // Función para obtener los usuarios según su estatus.
     // Archivos -> index.php , app/webservice.php
+    /**
+     * Obtener usuarios con información de empresa (MODIFICADO)
+     */
     public function getUsers($status) {
-      // Consulta SQL para seleccionar todos los datos de la tabla 'users' y 'types' donde el estatus del usuario sea igual al proporcionado.
-      // Se realiza un JOIN entre las tablas 'users' y 'types' utilizando la clave foránea 'id_type_user' de 'users' y la clave primaria 'id_type' de 'types'.
-      // Los resultados se ordenan por la fecha de creación del usuario de forma descendente.
-      $query = "SELECT * FROM users JOIN types ON users.id_type_user = types.id_type WHERE users.status_user = ? ORDER BY users.created_at_user DESC";
-      // Parámetros a ser utilizados en la consulta preparada, con el estatus de los usuarios.
-      $params = array($status);
-      // Llamada a la función consult() para ejecutar la consulta SQL con los parámetros proporcionados y obtener el resultado.
-      return $this->consult($query, $params);
+        $query = "SELECT u.*, t.name_type, c.name_company, c.rfc_company 
+                  FROM users u 
+                  JOIN types t ON u.id_type_user = t.id_type 
+                  LEFT JOIN companies c ON u.id_company = c.id_company 
+                  WHERE u.status_user = ? 
+                  ORDER BY u.created_at_user DESC";
+        $params = array($status);
+        return $this->consult($query, $params);
     }
     
     // Función para obtener los detalles de un usuario por su ID y clave.
     // Archivos -> index.php , my-profile.php , navbar.php , backoffice/templates/navbar.php , backoffice/users/detail-user.php , backoffice/users/update-user.php
+    /**
+     * Obtener detalle de usuario con empresa (CORREGIDO)
+     * Archivos -> index.php , my-profile.php , navbar.php , backoffice/templates/navbar.php , backoffice/users/detail-user.php , backoffice/users/update-user.php
+     */
     public function getDetailUser($idUser, $keyUser) {
-      // Consulta SQL para seleccionar todos los datos de la tabla 'users' y 'types' donde el ID del usuario y la clave del usuario coincidan con los proporcionados.
-      // Se realiza un JOIN entre las tablas 'users' y 'types' utilizando la clave foránea 'id_type_user' de 'users' y la clave primaria 'id_type' de 'types'.
-      $query = "SELECT * FROM users JOIN types ON users.id_type_user = types.id_type WHERE users.id_user = ? AND users.key_user = ?";
-      // Parámetros a ser utilizados en la consulta preparada, con el ID del usuario y la clave del usuario.
-      $params = array($idUser, $keyUser);
-      // Llamada a la función consult() para ejecutar la consulta SQL con los parámetros proporcionados y obtener el resultado.
-      // Se espera un solo resultado, por eso se establece el tercer parámetro como 'true'.
-      return $this->consult($query, $params, true);
+        $query = "SELECT u.*, t.name_type, c.name_company, c.rfc_company 
+                  FROM users u 
+                  JOIN types t ON u.id_type_user = t.id_type 
+                  LEFT JOIN companies c ON u.id_company = c.id_company 
+                  WHERE u.id_user = ? AND u.key_user = ?";
+        $params = array($idUser, $keyUser);
+        return $this->consult($query, $params, true);
     }
-    
+        
     // Función para actualizar los datos de un usuario.
     // Archivos -> my-profile.php , backoffice/users/update-user.php
+    /**
+     * Actualizar usuario con empresa (CORREGIDO)
+     * Archivos -> my-profile.php , backoffice/users/update-user.php
+     */
     public function updateUser($data, $userId) {
-      // Se verifica si se proporciona una nueva contraseña o si es nula/vacía.
-      if(empty($data['password_user'])) {
-        // Si no se proporciona una nueva contraseña, se construye la consulta SQL sin incluir la actualización de la contraseña.
-        $query = "UPDATE users SET name_user = ?, rfc_user = ?, phone_user = ?, email_user = ?, id_type_user = ?, status_user = ?, updated_at_user = NOW() WHERE id_user = ?";
-        // Parámetros para la consulta SQL que excluyen la contraseña.
-        $params = array(
-          $data['name_user'],
-          $data['rfc_user'],
-          $data['phone_user'],
-          $data['email_user'],
-          $data['id_type_user'],
-          $data['status_user'],
-          $userId
-        );
-      } else {
-        // Si se proporciona una nueva contraseña, se genera un hash para la misma.
-        $key = password_hash($data['password_user'], PASSWORD_BCRYPT);
-        // $key = md5($data['password_user']);
-        // Se construye la consulta SQL incluyendo la actualización de la contraseña.
-        $query = "UPDATE users SET name_user = ?, rfc_user = ?, phone_user = ?, email_user = ?, id_type_user = ?, password_user = ?, status_user = ?, updated_at_user = NOW() WHERE id_user = ?";
-        // Parámetros para la consulta SQL que incluyen la contraseña hasheada.
-        $params = array(
-          $data['name_user'],
-          $data['rfc_user'],
-          $data['phone_user'],
-          $data['email_user'],
-          $data['id_type_user'],
-          $key,
-          $data['status_user'],
-          $userId
-        );
-      }
-      // Se ejecuta la consulta SQL con los parámetros correspondientes y se retorna el resultado. - bool Retorna true si la actualización fue exitosa, false si falló.
-      return $this->execute($query, $params);
+        if(empty($data['password_user'])) {
+            // Sin actualizar contraseña
+            $query = "UPDATE users SET 
+                name_user = ?, rfc_user = ?, phone_user = ?, email_user = ?, id_type_user = ?, 
+                id_company = ?, company_role = ?, status_user = ?, updated_at_user = NOW() 
+                WHERE id_user = ?";
+            
+            $params = array(
+                $data['name_user'], 
+                $data['rfc_user'], 
+                $data['phone_user'], 
+                $data['email_user'],
+                $data['id_type_user'], 
+                !empty($data['id_company']) ? $data['id_company'] : null,
+                !empty($data['company_role']) ? $data['company_role'] : 'operador',
+                $data['status_user'], 
+                $userId
+            );
+        } else {
+            // Con actualizar contraseña
+            $key = password_hash($data['password_user'], PASSWORD_BCRYPT);
+            
+            $query = "UPDATE users SET 
+                name_user = ?, rfc_user = ?, phone_user = ?, email_user = ?, id_type_user = ?, 
+                id_company = ?, company_role = ?, password_user = ?, status_user = ?, updated_at_user = NOW() 
+                WHERE id_user = ?";
+            
+            $params = array(
+                $data['name_user'], 
+                $data['rfc_user'], 
+                $data['phone_user'], 
+                $data['email_user'],
+                $data['id_type_user'],
+                !empty($data['id_company']) ? $data['id_company'] : null,
+                !empty($data['company_role']) ? $data['company_role'] : 'operador',
+                $key, 
+                $data['status_user'], 
+                $userId
+            );
+        }
+        return $this->execute($query, $params);
     }
-    
     // Función para ACTUALIZAR UN USUARIO A ESTATUS DE ELIMINADO (status_user -> 3)
     // Archivos -> backoffice/users/users.php
     public function deleteUser($data) {
@@ -1417,6 +1436,121 @@
         $data['id_folder_notify_assigned']
       );
       return $this->execute($query, $params);
+    }
+
+
+
+
+    // ============================================================================
+    // NUEVOS MÉTODOS PARA WEBCONTROLLER.PHP - SISTEMA EMPRESAS
+    // ============================================================================
+
+    // === MÉTODOS PARA EMPRESAS ===
+
+    /**
+     * Obtener todas las empresas activas
+     */
+    public function getActiveCompanies() {
+        $query = "SELECT * FROM companies WHERE status_company = 1 ORDER BY name_company ASC";
+        return $this->consult($query);
+    }
+
+    /**
+     * Obtener empresa por ID
+     */
+    public function getCompanyById($idCompany) {
+        $query = "SELECT * FROM companies WHERE id_company = ? AND status_company = 1";
+        $params = array($idCompany);
+        return $this->consult($query, $params, true);
+    }
+
+    /**
+     * Crear nueva empresa
+     */
+    public function createCompany($data) {
+        $query = "INSERT INTO companies (
+            key_company, name_company, rfc_company, razon_social, tipo_persona, fecha_constitucion,
+            estado, ciudad, colonia, calle, num_exterior, num_interior, codigo_postal, telefono, email,
+            apoderado_nombre, apoderado_apellido_paterno, apoderado_apellido_materno, apoderado_rfc, apoderado_curp,
+            status_company, created_at_company, updated_at_company
+        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,NOW(),NOW())";
+        
+        $params = array(
+            $data['key_company'], $data['name_company'], $data['rfc_company'], $data['razon_social'],
+            $data['tipo_persona'], $data['fecha_constitucion'], $data['estado'], $data['ciudad'],
+            $data['colonia'], $data['calle'], $data['num_exterior'], $data['num_interior'],
+            $data['codigo_postal'], $data['telefono'], $data['email'], $data['apoderado_nombre'],
+            $data['apoderado_apellido_paterno'], $data['apoderado_apellido_materno'], 
+            $data['apoderado_rfc'], $data['apoderado_curp']
+        );
+        return $this->execute($query, $params);
+    }
+
+    /**
+     * Actualizar empresa
+     */
+    public function updateCompany($data, $idCompany) {
+        $query = "UPDATE companies SET 
+            name_company = ?, rfc_company = ?, razon_social = ?, tipo_persona = ?, fecha_constitucion = ?,
+            estado = ?, ciudad = ?, colonia = ?, calle = ?, num_exterior = ?, num_interior = ?, 
+            codigo_postal = ?, telefono = ?, email = ?, apoderado_nombre = ?, apoderado_apellido_paterno = ?,
+            apoderado_apellido_materno = ?, apoderado_rfc = ?, apoderado_curp = ?, updated_at_company = NOW()
+            WHERE id_company = ?";
+        
+        $params = array(
+            $data['name_company'], $data['rfc_company'], $data['razon_social'], $data['tipo_persona'],
+            $data['fecha_constitucion'], $data['estado'], $data['ciudad'], $data['colonia'],
+            $data['calle'], $data['num_exterior'], $data['num_interior'], $data['codigo_postal'],
+            $data['telefono'], $data['email'], $data['apoderado_nombre'], $data['apoderado_apellido_paterno'],
+            $data['apoderado_apellido_materno'], $data['apoderado_rfc'], $data['apoderado_curp'], $idCompany
+        );
+        return $this->execute($query, $params);
+    }
+
+    /**
+     * Eliminar empresa (cambiar status)
+     */
+    public function deleteCompany($data) {
+        $query = "UPDATE companies SET status_company = 3, eliminated_at_company = NOW() 
+                  WHERE id_company = ? AND key_company = ?";
+        $params = array($data['idCompany'], $data['keyCompany']);
+        return $this->execute($query, $params);
+    }
+
+    /**
+     * Verificar si RFC de empresa ya existe
+     */
+    public function getRFCCompany($rfcCompany) {
+        $query = "SELECT * FROM companies WHERE rfc_company = ? AND status_company = 1";
+        $params = array($rfcCompany);
+        return $this->consult($query, $params, true);
+    }
+
+
+
+    /**
+     * Obtener datos de empresa para pre-rellenar operaciones PLD
+     */
+    public function getUserCompanyData($userId) {
+        $query = "SELECT u.*, c.* 
+                  FROM users u 
+                  LEFT JOIN companies c ON u.id_company = c.id_company 
+                  WHERE u.id_user = ? AND u.status_user = 1";
+        $params = array($userId);
+        return $this->consult($query, $params, true);
+    }
+
+    /**
+     * Obtener lista de usuarios por empresa (para administradores de empresa)
+     */
+    public function getUsersByCompany($idCompany) {
+        $query = "SELECT u.*, t.name_type 
+                  FROM users u 
+                  JOIN types t ON u.id_type_user = t.id_type 
+                  WHERE u.id_company = ? AND u.status_user = 1 
+                  ORDER BY u.name_user ASC";
+        $params = array($idCompany);
+        return $this->consult($query, $params);
     }
   
   }

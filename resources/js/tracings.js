@@ -5,21 +5,17 @@ $(document).ready(function() {
     function getNoticationsTracings() {
         $.ajax({
             type: "GET",
-            // linea de código para el desarrollo en SysOp
-            // url: "/fultra/app/webservice.php",
-            
-            // linea de código para el despliegue en FULTRA
-            // url: "/app/webservice.php",
-            
-            // linea de código para el desarrollo en XAMPP LOCAL
-            url: "/fultra_v9/fultra/app/webservice.php",
-            
+            url: "/Sienna/app/webservice.php",
             data: {
                 action: "getNoticationsTracings"
             }
         }).done(function(response) {
             var parsedResponse = JSON.parse(response);
+            
+            // Actualizar AMBOS contadores
             $("#numTracings").text(parsedResponse.total);
+            $("#notification-badge").text(parsedResponse.total);
+            
             toggleClearButton(parsedResponse.total);
         });
     }
@@ -44,8 +40,8 @@ $(document).ready(function() {
             // linea de código para el despliegue en FULTRA
             // url: "/app/webservice.php",
             
-            // linea de código para el desarrollo en XAMPP LOCAL
-            url: "/fultra_v9/fultra/app/webservice.php",
+            // linea de código para el desarrollo en MAC XAMPP /Sienna/
+            url: "/Sienna/app/webservice.php",
             
             data: {
                 action: "getNotWachTracings"
@@ -84,8 +80,8 @@ $(document).ready(function() {
                     // ########## Despliegue en FULTRA ##########
                     // var folderUrl = "/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
                     
-                    // ########## Despliegue en XAMPP LOCAL ##########
-                    var folderUrl = "/fultra_v9/fultra/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
+                    // ########## Despliegue en MAC XAMPP /Sienna/ ##########
+                    var folderUrl = "/Sienna/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
                     
                     // Función para truncar texto con puntos suspensivos
                     function truncateText(text, maxLength) {
@@ -139,8 +135,8 @@ $(document).ready(function() {
             // linea de código para el despliegue en FULTRA
             // url: "/app/webservice.php",
             
-            // linea de código para el desarrollo en XAMPP LOCAL
-            url: "/fultra_v9/fultra/app/webservice.php",
+            // linea de código para el desarrollo en MAC XAMPP /Sienna/
+            url: "/Sienna/app/webservice.php",
             
             data: {
                 action: "deleteTracingNotify",
@@ -182,8 +178,8 @@ $(document).ready(function() {
             // linea de código para el despliegue en FULTRA
             // url: "/app/webservice.php",
             
-            // linea de código para el desarrollo en XAMPP LOCAL
-            url: "/fultra_v9/fultra/app/webservice.php",
+            // linea de código para el desarrollo en MAC XAMPP /Sienna/
+            url: "/Sienna/app/webservice.php",
             
             data: {
                 action: "clearTracingsNotify",

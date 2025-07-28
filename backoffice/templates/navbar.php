@@ -348,7 +348,7 @@
 
 <aside class="main-sidebar sidebar-dark-primary elevation-4" style="background-color: #37424A; color: #ffffff; position: fixed;"> 
   <a href="../../index.php" class="brand-link">
-    <img src="../../resources/img/logo_white.png" style="object-fit: cover; width: 100%;">
+    <img src="../../resources/img/logo_white.png" style="object-fit: cover; width: 100%; height: 100px;">
   </a>
 
   <div class="sidebar">

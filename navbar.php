@@ -726,7 +726,7 @@ function isSupervisorOrAbove(): bool
 
 <aside class="main-sidebar sidebar-dark-primary elevation-4" style="background-color: #37424A; color: #ffffff; position: fixed;"> 
   <a href="index.php" class="brand-link">
-    <img src="resources/img/logo_white.png" style="object-fit: cover; width: 100%;">
+    <img src="resources/img/logo_white.png" style="object-fit: cover; width: 100%; height: 100px;">
   </a>
   
   <div class="sidebar">
@@ -758,6 +758,24 @@ function isSupervisorOrAbove(): bool
         <?php } ?>
         
 
+      
+        <li class="nav-item">
+          <a href="backoffice/folders/folders.php" class="nav-link <?php echo (in_array($current_page, $clientes_pages)) ? 'active' : ''; ?>">
+            <i class="fa fa-folder-open nav-icon"></i>
+            <p>Clientes</p>
+          </a>
+        </li>
+
+        
+        
+        <li class="nav-item">
+          <a href="backoffice/folders/all_folders.php" class="nav-link <?php echo (in_array($current_page, $tablero_pages)) ? 'active' : ''; ?>">
+            <i class="fa fa-folder nav-icon"></i>
+            <p>Tablero</p>
+          </a>
+        </li>
+
+        
 
          <!-- NUEVA SECCIÓN: OPERACIONES VULNERABLES (Solo para Administradores) -->
         <?php if($_SESSION['user']['id_type_user'] == 1){ ?>
@@ -768,20 +786,6 @@ function isSupervisorOrAbove(): bool
             </a>
           </li>
         <?php } ?>
-      
-        <li class="nav-item">
-          <a href="backoffice/folders/folders.php" class="nav-link <?php echo (in_array($current_page, $clientes_pages)) ? 'active' : ''; ?>">
-            <i class="fa fa-folder-open nav-icon"></i>
-            <p>Clientes</p>
-          </a>
-        </li>
-        
-        <li class="nav-item">
-          <a href="backoffice/folders/all_folders.php" class="nav-link <?php echo (in_array($current_page, $tablero_pages)) ? 'active' : ''; ?>">
-            <i class="fa fa-folder nav-icon"></i>
-            <p>Tablero</p>
-          </a>
-        </li>
         
         <li class="nav-item">
           <a href="backoffice/support/resources.php" class="nav-link <?php echo (in_array($current_page, $material_pages)) ? 'active' : ''; ?>">

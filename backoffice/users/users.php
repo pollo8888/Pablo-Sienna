@@ -57,6 +57,59 @@
       #tblUsers th:first-child::after {
         content: none !important;
       }
+      
+      /* NUEVOS ESTILOS PARA EMPRESA */
+      .empresa-info {
+        text-align: center !important;
+        line-height: 1.3;
+      }
+      
+      .empresa-info strong {
+        font-size: 0.9em;
+        color: #495057;
+      }
+      
+      .empresa-info .rfc-text {
+        font-size: 0.8em;
+        color: #6c757d;
+        font-style: italic;
+      }
+      
+      .empresa-info .role-badge {
+        margin-top: 3px;
+        display: inline-block;
+      }
+      
+      .badge-sm {
+        font-size: 0.7em;
+        padding: 0.25em 0.5em;
+      }
+      
+      .no-empresa {
+        color: #6c757d;
+        font-style: italic;
+        font-size: 0.85em;
+      }
+      
+      /* Mejorar spacing de badges */
+      .badge {
+        font-weight: 500;
+      }
+      
+      /* Filtros mejorados */
+      .filtros-container {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+      }
+      
+      .filter-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 5px;
+        display: block;
+      }
     </style>
   </head>
   
@@ -74,24 +127,41 @@
                     <h1 class="m-0 text-dark">Lista completa de usuarios</h1>
                   </div>
                   <div class="col-sm-4 text-right">
-                    <a href="create-user.php" class="btn btn-block" style="background-color: #FF5800; color: #ffffff;" role="button" aria-pressed="true"><i class="fas fa-plus pr-2"></i>Agregar nuevo usuario</a>
+                    <a href="create-user.php" class="btn btn-block" style="background-color: #FF5800; color: #ffffff;" role="button" aria-pressed="true">
+                      <i class="fas fa-plus pr-2"></i>Agregar nuevo usuario
+                    </a>
                   </div>
                 </div>
                 <hr>
                 
-                <!--FILTRO DE BUSQUEDA DE ESTATUS DE LOS EMPLEADOS (1->Activo / 2 Inactivo)-->
-                <form class="row mb-2" action="#" method="get">
-                  <div class="col-sm-12">
-                    <div class="row">
-                      <div class="input-group col-sm-6 col-md-4">
-                        <select id="statusDDL" name="status" class="form-control form-control filtrosDDL">
-                          <option value="1">Usuarios Activos</option>
-                          <option value="2">Usuarios Inactivos</option>
-                        </select>
-                      </div>
+                <!-- FILTROS MEJORADOS -->
+                <div class="filtros-container">
+                  <form class="row" action="#" method="get">
+                    <div class="col-lg-4 col-md-6 col-sm-12">
+                      <label class="filter-label">Estado del Usuario</label>
+                      <select id="statusDDL" name="status" class="form-control filtrosDDL">
+                        <option value="1">Usuarios Activos</option>
+                        <option value="2">Usuarios Inactivos</option>
+                      </select>
                     </div>
-                  </div>
-                </form>
+                    <div class="col-lg-4 col-md-6 col-sm-12">
+                      <label class="filter-label">Tipo de Usuario</label>
+                      <select id="typeDDL" name="type" class="form-control filtrosDDL">
+                        <option value="">Todos los tipos</option>
+                        <option value="1">Administrador</option>
+                        <option value="2">Empleado</option>
+                        <option value="3">Cliente Empresa</option>
+                      </select>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12">
+                      <label class="filter-label">Empresa</label>
+                      <select id="companyDDL" name="company" class="form-control filtrosDDL">
+                        <option value="">Todas las empresas</option>
+                        <!-- Se llena dinámicamente con AJAX -->
+                      </select>
+                    </div>
+                  </form>
+                </div>
               
               </div>
             <?php } ?>
@@ -99,7 +169,45 @@
           
           <div class="content">
             <div class="container-fluid">
-              <strong>Total de usuarios: &nbsp;<b id="numTotalsUsers"></b></strong>
+              <!-- INFORMACIÓN DE TOTALES MEJORADA -->
+              <div class="row mb-3">
+                <div class="col-lg-3 col-md-6">
+                  <div class="info-box">
+                    <span class="info-box-icon bg-info"><i class="fas fa-users"></i></span>
+                    <div class="info-box-content">
+                      <span class="info-box-text">Total Usuarios</span>
+                      <span class="info-box-number" id="numTotalsUsers">0</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                  <div class="info-box">
+                    <span class="info-box-icon bg-success"><i class="fas fa-building"></i></span>
+                    <div class="info-box-content">
+                      <span class="info-box-text">Con Empresa</span>
+                      <span class="info-box-number" id="numUsersWithCompany">0</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                  <div class="info-box">
+                    <span class="info-box-icon bg-warning"><i class="fas fa-user-tie"></i></span>
+                    <div class="info-box-content">
+                      <span class="info-box-text">Admins Empresa</span>
+                      <span class="info-box-number" id="numAdminEmpresas">0</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                  <div class="info-box">
+                    <span class="info-box-icon bg-primary"><i class="fas fa-cogs"></i></span>
+                    <div class="info-box-content">
+                      <span class="info-box-text">Operadores</span>
+                      <span class="info-box-number" id="numOperadores">0</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
               
               <div class="row">
                 <div class="col-12">
@@ -110,8 +218,8 @@
                           <thead>
                             <th></th>
                             <th>Fotografía</th>
-                            <!--<th>RFC</th>-->
                             <th>Nombre</th>
+                            <th>Empresa / Rol</th>
                             <th>Correo electrónico</th>
                             <th>Tipo</th>
                             <th>Fecha de registro</th>
@@ -128,13 +236,15 @@
           </div>
         </div>
     </div>
+    
     <script>
       $(document).ready(function(){
         $('[data-toggle="tooltip"]').tooltip({
-          delay: { "show": 0, "hide": 0 } // Hacer que el tooltip aparezca y desaparezca inmediatamente
+          delay: { "show": 0, "hide": 0 }
         });
       });
     </script>
+    
     <script src="../../resources/plugins/jquery/jquery.min.js"></script>
     <script src="../../resources/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="../../resources/plugins/datatables/jquery.dataTables.js"></script>
@@ -143,6 +253,7 @@
     <script src="../../resources/js/notifications.js"></script>
     <script src="../../resources/js/tracings.js"></script>
     <script src="../../resources/js/notify_folders.js"></script>
+    
     <script>
       // Asignar valores de la variable de sesión a variables JavaScript
       var userId = <?php echo json_encode($_SESSION['user']['id_user']); ?>;
@@ -151,14 +262,40 @@
     <script>
       $(function () {
         loadUsers(1);
+        loadCompaniesFilter();
       });
+      
       $(document).ready(function(){
         $('.filtrosDDL').on('change', function() {
           var statusSelect = $("#statusDDL").val();
-          loadUsers(statusSelect);
+          var typeSelect = $("#typeDDL").val();
+          var companySelect = $("#companyDDL").val();
+          loadUsersFiltered(statusSelect, typeSelect, companySelect);
         });
       });
+      
+      // Cargar empresas para el filtro
+      function loadCompaniesFilter() {
+        $.ajax({
+          url: '../../app/webservice.php',
+          data: { action: 'getActiveCompanies' },
+          success: function(response) {
+            var companies = JSON.parse(response);
+            var options = '<option value="">Todas las empresas</option>';
+            companies.forEach(function(company) {
+              options += '<option value="' + company.id_company + '">' + 
+                         company.name_company + ' (' + company.rfc_company + ')</option>';
+            });
+            $('#companyDDL').html(options);
+          }
+        });
+      }
+      
       function loadUsers(statusSelect) {
+        loadUsersFiltered(statusSelect, '', '');
+      }
+      
+      function loadUsersFiltered(statusSelect, typeSelect = '', companySelect = '') {
         var table = $('#tblUsers').DataTable({
           language: {
             "decimal": "",
@@ -181,14 +318,17 @@
             }
           },
           "columnDefs": [
-            { "targets": 0, "orderable": false }, // Deshabilitar orden en la primera columna
-            { "targets": 1, "orderable": false }, // Deshabilitar orden en la segunda columna
-            { "targets": 4, "orderable": false }, // Deshabilitar orden en la quinta columna
-            { "targets": 6, "orderable": false }  // Deshabilitar orden en la septima columna
+            { "targets": 0, "orderable": false }, // Ver detalles
+            { "targets": 1, "orderable": false }, // Fotografía
+            { "targets": 3, "orderable": false }, // Empresa
+            { "targets": 5, "orderable": false }, // Tipo
+            { "targets": 7, "orderable": false }  // Acciones
           ],
-          "destroy": true
+          "destroy": true,
+          "pageLength": 25,
+          "responsive": true
         });
-        //var table = $('#tblUsers').DataTable();
+        
         table.clear().draw();
         
         $.ajax({
@@ -196,57 +336,142 @@
           url: "../../app/webservice.php",
           data: { 
             action: "getUsers",
-            status: statusSelect
+            status: statusSelect,
+            type: typeSelect,
+            company: companySelect
           }
         }).done(function(response) {
           var parsedResponse = JSON.parse(response);
-          $("#numTotalsUsers").html(parsedResponse.length);
+          
+          // Contadores para estadísticas
+          var totalUsers = parsedResponse.length;
+          var usersWithCompany = 0;
+          var adminEmpresas = 0;
+          var operadores = 0;
+          
           $("#dataUsers").empty();
+          
           parsedResponse.forEach(function(item) {
+            // Aplicar filtros en el frontend
+            if (typeSelect && item.id_type_user != typeSelect) return;
+            if (companySelect && item.id_company != companySelect) return;
+            
+            // Contar estadísticas
+            if (item.id_company) usersWithCompany++;
+            if (item.company_role === 'admin_empresa') adminEmpresas++;
+            if (item.company_role === 'operador') operadores++;
+            
             var date = new Date(item.created_at_user);
-            // Obtener componentes de la fecha
-            var day = ("0" + date.getDate()).slice(-2); // Día con dos dígitos
-            var month = ("0" + (date.getMonth() + 1)).slice(-2); // Mes con dos dígitos
+            var day = ("0" + date.getDate()).slice(-2);
+            var month = ("0" + (date.getMonth() + 1)).slice(-2);
             var year = date.getFullYear();
-            var hours = ("0" + date.getHours()).slice(-2); // Horas con dos dígitos
-            var minutes = ("0" + date.getMinutes()).slice(-2); // Minutos con dos dígitos
-            var seconds = ("0" + date.getSeconds()).slice(-2); // Segundos con dos dígitos
-            // Formatear la fecha como "d/m/Y h:i:s"
+            var hours = ("0" + date.getHours()).slice(-2);
+            var minutes = ("0" + date.getMinutes()).slice(-2);
+            var seconds = ("0" + date.getSeconds()).slice(-2);
             var formattedDate = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
             
             var actionsLink = '';
-            //COMPROBAMOS QUE EL TIPO DE USUARIO SEA DIFERENTE PARA QUITAR LOS BOTONES DE EDITAR Y ELIMINAR DE LA VISTA
             if (userId != item.id_user) {
-              actionsLink = "<a href='update-user.php?id=" + item.id_user + "&key=" + item.key_user + "' class='btn btn-sm btn-primary'><i class='fas fa-pen'></i></a>" + 
-              "<form action='users.php' method='POST'>" +
-                "<input name='empl[idUser]' type='text' class='form-control form-control-sm' id='id_user' value='" + item.id_user + "' readonly hidden>" +
-                "<input name='empl[keyUser]' type='text' class='form-control form-control-sm' id='key_user' value='" + item.key_user + "' readonly hidden>" +
-                "<button class='btn btn-raised btn-danger btn-sm' name='action' value='delete' onclick='if(!confirm(\"¿Estas seguro de eliminar el usuario?\")) return false;'><i class='fas fa-trash'></i></button>" +
-              "</form>";
+              actionsLink = `
+                <div class="btn-group" role="group">
+                  <a href='update-user.php?id=${item.id_user}&key=${item.key_user}' 
+                     class='btn btn-sm btn-primary' title='Editar usuario'>
+                    <i class='fas fa-pen'></i>
+                  </a>
+                  <form action='users.php' method='POST' style='display: inline;'>
+                    <input name='empl[idUser]' type='hidden' value='${item.id_user}'>
+                    <input name='empl[keyUser]' type='hidden' value='${item.key_user}'>
+                    <button class='btn btn-danger btn-sm' name='action' value='delete' 
+                            title='Eliminar usuario'
+                            onclick='return confirm("¿Está seguro de eliminar al usuario ${item.name_user}?")'>
+                      <i class='fas fa-trash'></i>
+                    </button>
+                  </form>
+                </div>`;
+            } else {
+              actionsLink = '<span class="badge badge-secondary">Usuario actual</span>';
+            }
+            
+            // Formatear información de empresa mejorada
+            var empresaInfo = '';
+            if (item.name_company) {
+              empresaInfo = `<div class="empresa-info">
+                <strong>${item.name_company}</strong><br>
+                <span class="rfc-text">${item.rfc_company}</span>`;
+              
+              if (item.id_type_user == 3 && item.company_role) {
+                var roleLabel = '';
+                var roleClass = '';
+                
+                switch(item.company_role) {
+                  case 'admin_empresa': 
+                    roleLabel = 'Admin Empresa';
+                    roleClass = 'badge-primary';
+                    break;
+                  case 'operador': 
+                    roleLabel = 'Operador';
+                    roleClass = 'badge-success';
+                    break;
+                  case 'consultor': 
+                    roleLabel = 'Consultor';
+                    roleClass = 'badge-info';
+                    break;
+                }
+                empresaInfo += `<br><span class="badge ${roleClass} badge-sm">${roleLabel}</span>`;
+              }
+              empresaInfo += '</div>';
+            } else {
+              if (item.id_type_user == 3) {
+                empresaInfo = '<div class="no-empresa"><i class="fas fa-exclamation-triangle text-warning"></i> Sin empresa asignada</div>';
+              } else {
+                empresaInfo = '<div class="no-empresa">Empleado Sienna</div>';
+              }
             }
             
             var newRow =
             "<tr>" +
-              "<td style='text-align:center;'><a href='detail-user.php?id=" + item.id_user + "&key=" + item.key_user + "' class='btn btn-sm btn-success'><i class='fas fa-eye'></i></a></td>" +
+              "<td style='text-align:center;'>" +
+                "<a href='detail-user.php?id=" + item.id_user + "&key=" + item.key_user + "' " +
+                "class='btn btn-sm btn-success' title='Ver detalles'>" +
+                "<i class='fas fa-eye'></i></a>" +
+              "</td>" +
               "<td style='text-align:center;'>" +
                 (item.photo_user != null ?
-                  "<img width='70' height='70' style='border-radius: 50%; object-fit: cover;' src='../../uploads/users/" + item.photo_user + "'>" :
-                  //"<img width='70' height='70' style='border-radius: 50%; object-fit: cover; border: 1px solid black;' src='../../uploads/users/sin-foto.jpeg'><p style='color: red; font-weight:bold; font-size:13px;'>Sin foto de perfil</p>"
-                  "<img width='70' height='70' style='border-radius: 50%; object-fit: cover;' src='../../uploads/users/sin-foto.jpeg'>"
+                  "<img width='70' height='70' style='border-radius: 50%; object-fit: cover; border: 2px solid #dee2e6;' src='../../uploads/users/" + item.photo_user + "'>" :
+                  "<img width='70' height='70' style='border-radius: 50%; object-fit: cover; border: 2px solid #dee2e6;' src='../../uploads/users/sin-foto.jpeg'>"
                 ) +
               "</td>" +
-              // "<td style='text-align:center;'>" + item.rfc_user + "</td>" +
-              "<td style='text-align:center;'>" + item.name_user + "</td>" +
-              "<td style='text-align:center;'>" + item.email_user + "</td>" +
-              "<td style='text-align:center;'>" + item.name_type + "</td>" +
-              "<td style='text-align:center;'>" + formattedDate + "</td>" +
-              "<td style='text-align:center;'>" + actionsLink + "</td>" + 
+              "<td style='text-align:center; vertical-align: middle;'>" + 
+                "<strong>" + item.name_user + "</strong><br>" +
+                "<small class='text-muted'>" + (item.rfc_user || 'Sin RFC') + "</small>" +
+              "</td>" +
+              "<td>" + empresaInfo + "</td>" +
+              "<td style='text-align:center; vertical-align: middle;'>" + item.email_user + "</td>" +
+              "<td style='text-align:center; vertical-align: middle;'>" + 
+                "<span class='badge " + 
+                (item.id_type_user == 1 ? 'badge-danger' : 
+                 item.id_type_user == 2 ? 'badge-secondary' : 'badge-primary') + "'>" +
+                item.name_type + "</span>" +
+              "</td>" +
+              "<td style='text-align:center; vertical-align: middle;'>" + 
+                "<small>" + formattedDate + "</small>" +
+              "</td>" +
+              "<td style='text-align:center; vertical-align: middle;'>" + actionsLink + "</td>" + 
             "</tr>";
-            // Agregar la nueva fila al cuerpo de la tabla
+            
             table.row.add($(newRow)[0]);
           });
-          // Redibujar la tabla después de agregar nuevas filas
+          
+          // Actualizar estadísticas
+          $("#numTotalsUsers").html(totalUsers);
+          $("#numUsersWithCompany").html(usersWithCompany);
+          $("#numAdminEmpresas").html(adminEmpresas);
+          $("#numOperadores").html(operadores);
+          
           table.draw();
+        }).fail(function() {
+          console.error('Error al cargar usuarios');
+          $("#numTotalsUsers").html('Error');
         });
       }
     </script>
