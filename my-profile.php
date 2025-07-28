@@ -1,298 +1,438 @@
 <?php
-  session_start();
-  include "app/config.php";
-  //include "app/debug.php";
-  include "app/FileController.php";
-  include "app/WebController.php";
-  $controller = new WebController();
-  $files = new FileController();
-  
-  // Verificar si la sesión del usuario está activa
-  if (!isset($_SESSION['user']) || empty($_SESSION['user'])) {
-    // Si no hay sesión activa, destruir la sesión
-    session_destroy();
-    // Redirigir a la página de inicio de sesión
-    header("Location: login.php");
-    exit(); // Es importante salir después de redirigir para evitar que el código siguiente se ejecute innecesariamente
-  }
-  
-  // FUNCIÓN PARA MOSTRAR LOS DETALLES DE UN USUARIO
-  // Se llama a un método del controlador para obtener los detalles del usuario actualmente autenticado.
-  // Se pasa el id de usuario y la clave de usuario de la sesión como parámetros.
-  $user = $controller->getDetailUser($_SESSION['user']['id_user'], $_SESSION['user']['key_user']);
-  
-  function uploadFilePhoto($folio, $filename = null) {
-    global $files;
-    $filename['imguser'] = $files->upload($folio, $_FILES['file-imguser'],  "ord.imguser");
-    return $filename;
-  }
-  
-  $permitted_chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  $usr_rfc = substr(str_shuffle($permitted_chars), 0, 13);
+declare(strict_types=1);
 
-  if(!empty($_POST['action'])){
-    if($_POST['action'] == 'update'){
-      //COMPROBAMOS SI EL EMAIL, EL TELEFONO Y EL RFC SON EXACTAMENTE IGUALES Y SE QUEDAN IGUAL
-      if($_POST['user']['email_user'] == $user['email_user'] AND $_POST['user']['phone_user'] == $user['phone_user'] AND $_POST['user']['rfc_user'] == $user['rfc_user']) {
-        $idUser = $controller->updateUser($_POST['user'], $_SESSION['user']['id_user']);
-        if($idUser){
-          $files = uploadFilePhoto($user['key_user']);
-          //COMPROBAMOS SI SE SUBIO UNA FOTOGRAFÍA DEL EMPLEADO / USUARIO
-          if($files['imguser']){
-            $files = [
-              'imguser' => $files['imguser']
-            ];
-            $userId = $controller->updatePhotoUser($user['id_user'], $files);
-          }
-          //COMRPOBAMOS SI NO SE SELECCIONO NINGUNA FOTOGRAFÍA DEL EMPLEADO / USUARIO Y SE QUEDA EXACTAMENTE IGUAL
-          else{
-            $files = [
-              'imguser' => $user['photo_user']
-            ];
-            $userId = $controller->updatePhotoUser($user['id_user'], $files);
-          }
-          header('location: index.php');
-        }
-      }
-      
-      //COMPROBAMOS SI EL CORREO ES DIFERENTE PERO EL TELÉFONO Y EL RFC SON LOS MISMOS
-      else if ($_POST['user']['email_user'] != $user['email_user'] AND $_POST['user']['phone_user'] == $user['phone_user'] AND $_POST['user']['rfc_user'] == $user['rfc_user']) {
-        $emailClient = $controller->getEmailUser($_POST['user']['email_user']);
-        //COMPROBAMOS SI EL CORREO ELECTRÓNICO DEL CLIENTE EXISTE
-        if(!empty($emailClient)){
-          $mssg = "¡EL CORREO ELECTRÓNICO YA ESTÁ EN USO POR UN USUARIO ACTIVO. INTENTA CON OTRO!";
-        }
-        else {
-          $idUser = $controller->updateUser($_POST['user'], $_SESSION['user']['id_user']);
-          if($idUser){
-            $files = uploadFilePhoto($user['key_user']);
-            //COMPROBAMOS SI SE SUBIO UNA FOTOGRAFÍA DEL EMPLEADO / USUARIO
-            if($files['imguser']){
-              $files = [
-                'imguser' => $files['imguser']
-              ];
-              $userId = $controller->updatePhotoUser($user['id_user'], $files);
-            }
-            //COMRPOBAMOS SI NO SE SELECCIONO NINGUNA FOTOGRAFÍA DEL EMPLEADO / USUARIO Y SE QUEDA EXACTAMENTE IGUAL
-            else{
-              $files = [
-                'imguser' => $user['photo_user']
-              ];
-              $userId = $controller->updatePhotoUser($user['id_user'], $files);
-            }
-            header('location: index.php');
-          }
-        }
-      }
-      
-      //COMPROBAMOS SI EL CORREO Y EL TELÉFONO SON DIFERENTES Y EL RFC ES EL MISMO
-      else if ($_POST['user']['email_user'] != $user['email_user'] AND $_POST['user']['phone_user'] != $user['phone_user'] AND $_POST['user']['rfc_user'] == $user['rfc_user']) {
-        $emailClient = $controller->getEmailUser($_POST['user']['email_user']);
-        $phoneClient = $controller->getPhoneUser($_POST['user']['phone_user']);
-        //COMPROBAMOS SI EL CORREO ELECTRÓNICO DEL CLIENTE EXISTE
-        if(!empty($emailClient)){
-          $mssg = "¡EL CORREO ELECTRÓNICO YA ESTÁ EN USO POR UN USUARIO ACTIVO. INTENTA CON OTRO!";
-        }
-        //COMPROBAMOS SI EL NÚMERO DE TELÉFONO DEL CLIENTE EXISTE
-        else if (!empty($phoneClient)){
-          $mssg = "¡EL NÚMERO DE TELÉFONO ESTÁ EN USO POR UN USUARIO ACTIVO, INTENTA CON OTRO!";
-        }
-        else {
-          $idUser = $controller->updateUser($_POST['user'], $_SESSION['user']['id_user']);
-          if($idUser){
-            $files = uploadFilePhoto($user['key_user']);
-            //COMPROBAMOS SI SE SUBIO UNA FOTOGRAFÍA DEL EMPLEADO / USUARIO
-            if($files['imguser']){
-              $files = [
-                'imguser' => $files['imguser']
-              ];
-              $userId = $controller->updatePhotoUser($user['id_user'], $files);
-            }
-            //COMRPOBAMOS SI NO SE SELECCIONO NINGUNA FOTOGRAFÍA DEL EMPLEADO / USUARIO Y SE QUEDA EXACTAMENTE IGUAL
-            else{
-              $files = [
-                'imguser' => $user['photo_user']
-              ];
-              $userId = $controller->updatePhotoUser($user['id_user'], $files);
-            }
-            header('location: index.php');
-          }
-        }
-      }
-      
-      //COMPROBAMOS SI EL CORREO Y EL RFC SON DIFERENTES PERO EL NÚMERO DE TELÉFONO ES EL MISMO
-      else if ($_POST['user']['email_user'] != $user['email_user'] AND $_POST['user']['phone_user'] == $user['phone_user'] AND $_POST['user']['rfc_user'] != $user['rfc_user']) {
-        $emailClient = $controller->getEmailUser($_POST['user']['email_user']);
-        $rfcClient = $controller->getRFCUser($_POST['user']['rfc_user']);
-        //COMPROBAMOS SI EL CORREO ELECTRÓNICO DEL CLIENTE EXISTE
-        if(!empty($emailClient)){
-          $mssg = "¡EL CORREO ELECTRÓNICO YA ESTÁ EN USO POR UN USUARIO ACTIVO. INTENTA CON OTRO!";
-        }
-        //COMPROBAMOS SI EL RFC DEL CLIENTE EXISTE
-        else if (!empty($rfcClient)){
-          $mssg = "¡EL RFC YA SE ENCUENTRA REGISTRADO, INTENTA CON OTRO!";
-        }
-        else {
-          $idUser = $controller->updateUser($_POST['user'], $_SESSION['user']['id_user']);
-          if($idUser){
-            $files = uploadFilePhoto($user['key_user']);
-            //COMPROBAMOS SI SE SUBIO UNA FOTOGRAFÍA DEL EMPLEADO / USUARIO
-            if($files['imguser']){
-              $files = [
-                'imguser' => $files['imguser']
-              ];
-              $userId = $controller->updatePhotoUser($user['id_user'], $files);
-            }
-            //COMRPOBAMOS SI NO SE SELECCIONO NINGUNA FOTOGRAFÍA DEL EMPLEADO / USUARIO Y SE QUEDA EXACTAMENTE IGUAL
-            else{
-              $files = [
-                'imguser' => $user['photo_user']
-              ];
-              $userId = $controller->updatePhotoUser($user['id_user'], $files);
-            }
-            header('location: index.php');
-          }
-        }
-      }
-      
-      //COMPROBAMOS SI EL TELEFONO ES DIFERENTE PERO EL CORREO Y EL RFC SON LOS MISMOS
-      else if ($_POST['user']['phone_user'] != $user['phone_user'] AND $_POST['user']['email_user'] == $user['email_user'] AND $_POST['user']['rfc_user'] == $user['rfc_user']) {
-        $phoneClient = $controller->getPhoneUser($_POST['user']['phone_user']);
-        //COMPROBAMOS SI EL NÚMERO DE TELÉFONO DEL CLIENTE EXISTE
-        if(!empty($phoneClient)){
-          $mssg = "¡EL NÚMERO DE TELÉFONO ESTÁ EN USO POR UN USUARIO ACTIVO, INTENTA CON OTRO!";
-        }
-        else {
-          $idUser = $controller->updateUser($_POST['user'], $_SESSION['user']['id_user']);
-          if($idUser){
-            $files = uploadFilePhoto($user['key_user']);
-            //COMPROBAMOS SI SE SUBIO UNA FOTOGRAFÍA DEL EMPLEADO / USUARIO
-            if($files['imguser']){
-              $files = [
-                'imguser' => $files['imguser']
-              ];
-              $userId = $controller->updatePhotoUser($user['id_user'], $files);
-            }
-            //COMRPOBAMOS SI NO SE SELECCIONO NINGUNA FOTOGRAFÍA DEL EMPLEADO / USUARIO Y SE QUEDA EXACTAMENTE IGUAL
-            else{
-              $files = [
-                'imguser' => $user['photo_user']
-              ];
-              $userId = $controller->updatePhotoUser($user['id_user'], $files);
-            }
-            header('location: index.php');
-          }
-        }
-      }
-      
-      //COMPROBAMOS SI EL NÚMERO DE TELÉFONO Y EL RFC SON DIFERENTES PERO EL CORREO ES EL MISMO
-      else if ($_POST['user']['phone_user'] != $user['phone_user'] AND $_POST['user']['rfc_user'] != $user['rfc_user'] AND $_POST['user']['email_user'] == $user['email_user']) {
-        $phoneClient = $controller->getPhoneUser($_POST['user']['phone_user']);
-        $rfcClient = $controller->getRFCUser($_POST['user']['rfc_user']);
-        //COMPROBAMOS SI EL NÚMERO DE TELÉFONO DEL CLIENTE EXISTE
-        if(!empty($phoneClient)){
-          $mssg = "¡EL NÚMERO DE TELÉFONO ESTÁ EN USO POR UN USUARIO ACTIVO, INTENTA CON OTRO!";
-        }
-        //COMPROBAMOS SI EL RFC DEL CLIENTE EXISTE
-        else if (!empty($rfcClient)){
-          $mssg = "¡EL RFC YA SE ENCUENTRA REGISTRADO, INTENTA CON OTRO!";
-        }
-        else {
-          $idUser = $controller->updateUser($_POST['user'], $_SESSION['user']['id_user']);
-          if($idUser){
-            $files = uploadFilePhoto($user['key_user']);
-            //COMPROBAMOS SI SE SUBIO UNA FOTOGRAFÍA DEL EMPLEADO / USUARIO
-            if($files['imguser']){
-              $files = [
-                'imguser' => $files['imguser']
-              ];
-              $userId = $controller->updatePhotoUser($user['id_user'], $files);
-            }
-            //COMRPOBAMOS SI NO SE SELECCIONO NINGUNA FOTOGRAFÍA DEL EMPLEADO / USUARIO Y SE QUEDA EXACTAMENTE IGUAL
-            else{
-              $files = [
-                'imguser' => $user['photo_user']
-              ];
-              $userId = $controller->updatePhotoUser($user['id_user'], $files);
-            }
-            header('location: index.php');
-          }
-        }
-      }
-      
-      //COMRPOBAMOS SI EL RFC ES DIFERENTE PERO EL CORREO Y EL TELEFÓNO SON LOS MISMOS
-      else if ($_POST['user']['rfc_user'] != $user['rfc_user'] AND $_POST['user']['email_user'] == $user['email_user'] AND $_POST['user']['phone_user'] == $user['phone_user']) {
-        $rfcClient = $controller->getRFCUser($_POST['user']['rfc_user']);
-        //COMPROBAMOS SI EL RFC DEL CLIENTE EXISTE
-        if(!empty($rfcClient)){
-          $mssg = "¡EL RFC YA SE ENCUENTRA REGISTRADO, INTENTA CON OTRO!";
-        }
-        else {
-          $idUser = $controller->updateUser($_POST['user'], $_SESSION['user']['id_user']);
-          if($idUser){
-            $files = uploadFilePhoto($user['key_user']);
-            //COMPROBAMOS SI SE SUBIO UNA FOTOGRAFÍA DEL EMPLEADO / USUARIO
-            if($files['imguser']){
-              $files = [
-                'imguser' => $files['imguser']
-              ];
-              $userId = $controller->updatePhotoUser($user['id_user'], $files);
-            }
-            //COMRPOBAMOS SI NO SE SELECCIONO NINGUNA FOTOGRAFÍA DEL EMPLEADO / USUARIO Y SE QUEDA EXACTAMENTE IGUAL
-            else{
-              $files = [
-                'imguser' => $user['photo_user']
-              ];
-              $userId = $controller->updatePhotoUser($user['id_user'], $files);
-            }
-            header('location: index.php');
-          }
-        }
-      }
-      
-      //EN CASO DE CAMBIAR TODOS SE REALIZA UNA TRIPLE COMPROBACIÓN
-      else {
-        //CONSULTAMOS LA BASE DE DATOS ENVIANDO EL CORREO ELECTRÓNICO DEL CLIENTE
-        $emailClient = $controller->getEmailUser($_POST['user']['email_user']);
-        //CONSULTAMOS LA BASE DE DATOS ENVIANDO EL TELÉFONO DEL CLIENTE
-        $phoneClient = $controller->getPhoneUser($_POST['user']['phone_user']);
-        //CONSULTAMOS LA BASE DE DATOS ENVIANDO EL RFC DEL CLIENTE
-        $rfcClient = $controller->getRFCUser($_POST['user']['rfc_user']);
-        //COMPROBAMOS SI EL CORREO ELECTRÓNICO DEL CLIENTE EXISTE
-        if(!empty($emailClient)){
-          $mssg = "¡EL CORREO ELECTRÓNICO YA ESTÁ EN USO POR UN USUARIO ACTIVO. INTENTA CON OTRO!";
-        }
-        //COMPROBAMOS SI EL NÚMERO DE TELÉFONO DEL CLIENTE EXISTE
-        else if (!empty($phoneClient)){
-          $mssg = "¡EL NÚMERO DE TELÉFONO ESTÁ EN USO POR UN USUARIO ACTIVO, INTENTA CON OTRO!";
-        }
-        //COMPROBAMOS SI EL RFC DEL CLIENTE EXISTE
-        else if (!empty($rfcClient)){
-          $mssg = "¡EL RFC YA SE ENCUENTRA REGISTRADO, INTENTA CON OTRO!";
-        } else {
-          $idUser = $controller->updateUser($_POST['user'], $_SESSION['user']['id_user']);
-          if($idUser){
-            $files = uploadFilePhoto($user['key_user']);
-            //COMPROBAMOS SI SE SUBIO UNA FOTOGRAFÍA DEL EMPLEADO / USUARIO
-            if($files['imguser']){
-              $files = [
-                'imguser' => $files['imguser']
-              ];
-              $userId = $controller->updatePhotoUser($user['id_user'], $files);
-            }
-            //COMRPOBAMOS SI NO SE SELECCIONO NINGUNA FOTOGRAFÍA DEL EMPLEADO / USUARIO Y SE QUEDA EXACTAMENTE IGUAL
-            else{
-              $files = [
-                'imguser' => $user['photo_user']
-              ];
-              $userId = $controller->updatePhotoUser($user['id_user'], $files);
-            }
-            header('location: index.php');
-          }
-        }
-      }
+session_start();
+require_once "app/config.php";
+require_once "app/FileController.php";
+require_once "app/WebController.php";
+
+/**
+ * Enumeración para los tipos de validación de usuario
+ */
+enum UserValidationType: string
+{
+    case NO_CHANGES = 'no_changes';
+    case EMAIL_CHANGED = 'email_changed';
+    case PHONE_CHANGED = 'phone_changed';
+    case RFC_CHANGED = 'rfc_changed';
+    case EMAIL_PHONE_CHANGED = 'email_phone_changed';
+    case EMAIL_RFC_CHANGED = 'email_rfc_changed';
+    case PHONE_RFC_CHANGED = 'phone_rfc_changed';
+    case ALL_CHANGED = 'all_changed';
+}
+
+/**
+ * Clase para manejar la actualización de perfil de usuario
+ */
+class UserProfileHandler
+{
+    private WebController $controller;
+    private FileController $files;
+    private string $message;
+    private array $currentUser;
+    
+    public function __construct()
+    {
+        $this->controller = new WebController();
+        $this->files = new FileController();
+        $this->message = '';
     }
-  }
+    
+    /**
+     * Verifica si la sesión del usuario está activa
+     */
+    public function validateSession(): void
+    {
+        if (!isset($_SESSION['user']) || empty($_SESSION['user'])) {
+            session_destroy();
+            header("Location: login.php");
+            exit();
+        }
+    }
+    
+    /**
+     * Obtiene los datos del usuario actual
+     */
+    public function getCurrentUser(): array
+    {
+        $this->currentUser = $this->controller->getDetailUser(
+            $_SESSION['user']['id_user'], 
+            $_SESSION['user']['key_user']
+        );
+        return $this->currentUser;
+    }
+    
+    /**
+     * Sube la foto del usuario
+     */
+    public function uploadUserPhoto(string $userKey): array
+    {
+        $filename = [];
+        if (isset($_FILES['file-imguser']) && $_FILES['file-imguser']['error'] === UPLOAD_ERR_OK) {
+            $filename['imguser'] = $this->files->upload($userKey, $_FILES['file-imguser'], "ord.imguser");
+        }
+        return $filename;
+    }
+    
+    /**
+     * Determina qué tipo de validación se necesita basado en los cambios
+     */
+    public function determineValidationType(array $newUserData): UserValidationType
+    {
+        $emailChanged = $newUserData['email_user'] !== $this->currentUser['email_user'];
+        $phoneChanged = $newUserData['phone_user'] !== $this->currentUser['phone_user'];
+        $rfcChanged = $newUserData['rfc_user'] !== $this->currentUser['rfc_user'];
+        
+        return match(true) {
+            !$emailChanged && !$phoneChanged && !$rfcChanged => UserValidationType::NO_CHANGES,
+            $emailChanged && !$phoneChanged && !$rfcChanged => UserValidationType::EMAIL_CHANGED,
+            !$emailChanged && $phoneChanged && !$rfcChanged => UserValidationType::PHONE_CHANGED,
+            !$emailChanged && !$phoneChanged && $rfcChanged => UserValidationType::RFC_CHANGED,
+            $emailChanged && $phoneChanged && !$rfcChanged => UserValidationType::EMAIL_PHONE_CHANGED,
+            $emailChanged && !$phoneChanged && $rfcChanged => UserValidationType::EMAIL_RFC_CHANGED,
+            !$emailChanged && $phoneChanged && $rfcChanged => UserValidationType::PHONE_RFC_CHANGED,
+            default => UserValidationType::ALL_CHANGED
+        };
+    }
+    
+    /**
+     * Valida la disponibilidad de email, teléfono y RFC
+     */
+    public function validateUserDataAvailability(array $userData, UserValidationType $validationType): ?string
+    {
+        return match($validationType) {
+            UserValidationType::NO_CHANGES => null,
+            UserValidationType::EMAIL_CHANGED => $this->validateEmail($userData['email_user']),
+            UserValidationType::PHONE_CHANGED => $this->validatePhone($userData['phone_user']),
+            UserValidationType::RFC_CHANGED => $this->validateRFC($userData['rfc_user']),
+            UserValidationType::EMAIL_PHONE_CHANGED => $this->validateEmailAndPhone($userData),
+            UserValidationType::EMAIL_RFC_CHANGED => $this->validateEmailAndRFC($userData),
+            UserValidationType::PHONE_RFC_CHANGED => $this->validatePhoneAndRFC($userData),
+            UserValidationType::ALL_CHANGED => $this->validateAllFields($userData)
+        };
+    }
+    
+    /**
+     * Valida solo el email
+     */
+    private function validateEmail(string $email): ?string
+    {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return "El formato del correo electrónico no es válido";
+        }
+        
+        $existingUser = $this->controller->getEmailUser($email);
+        return !empty($existingUser) ? 
+            "¡EL CORREO ELECTRÓNICO YA ESTÁ EN USO POR UN USUARIO ACTIVO. INTENTA CON OTRO!" : null;
+    }
+    
+    /**
+     * Valida solo el teléfono
+     */
+    private function validatePhone(string $phone): ?string
+    {
+        $existingUser = $this->controller->getPhoneUser($phone);
+        return !empty($existingUser) ? 
+            "¡EL NÚMERO DE TELÉFONO ESTÁ EN USO POR UN USUARIO ACTIVO, INTENTA CON OTRO!" : null;
+    }
+    
+    /**
+     * Valida solo el RFC
+     */
+    private function validateRFC(string $rfc): ?string
+    {
+        $existingUser = $this->controller->getRFCUser($rfc);
+        return !empty($existingUser) ? 
+            "¡EL RFC YA SE ENCUENTRA REGISTRADO, INTENTA CON OTRO!" : null;
+    }
+    
+    /**
+     * Valida email y teléfono
+     */
+    private function validateEmailAndPhone(array $userData): ?string
+    {
+        $emailError = $this->validateEmail($userData['email_user']);
+        if ($emailError) return $emailError;
+        
+        return $this->validatePhone($userData['phone_user']);
+    }
+    
+    /**
+     * Valida email y RFC
+     */
+    private function validateEmailAndRFC(array $userData): ?string
+    {
+        $emailError = $this->validateEmail($userData['email_user']);
+        if ($emailError) return $emailError;
+        
+        return $this->validateRFC($userData['rfc_user']);
+    }
+    
+    /**
+     * Valida teléfono y RFC
+     */
+    private function validatePhoneAndRFC(array $userData): ?string
+    {
+        $phoneError = $this->validatePhone($userData['phone_user']);
+        if ($phoneError) return $phoneError;
+        
+        return $this->validateRFC($userData['rfc_user']);
+    }
+    
+    /**
+     * Valida todos los campos
+     */
+    private function validateAllFields(array $userData): ?string
+    {
+        $emailError = $this->validateEmail($userData['email_user']);
+        if ($emailError) return $emailError;
+        
+        $phoneError = $this->validatePhone($userData['phone_user']);
+        if ($phoneError) return $phoneError;
+        
+        return $this->validateRFC($userData['rfc_user']);
+    }
+    
+    /**
+     * Actualiza el usuario y su foto
+     */
+    public function updateUserProfile(array $userData): bool
+    {
+        try {
+            $updateResult = $this->controller->updateUser($userData, $_SESSION['user']['id_user']);
+            
+            if (!$updateResult) {
+                $this->message = "Error al actualizar el perfil del usuario";
+                return false;
+            }
+            
+            $this->updateUserPhoto();
+            return true;
+            
+        } catch (Exception $e) {
+            error_log("Error updating user profile: " . $e->getMessage());
+            $this->message = "Error interno del sistema";
+            return false;
+        }
+    }
+    
+    /**
+     * Actualiza la foto del usuario
+     */
+    private function updateUserPhoto(): void
+    {
+        $uploadedFiles = $this->uploadUserPhoto($this->currentUser['key_user']);
+        
+        $photoData = [
+            'imguser' => $uploadedFiles['imguser'] ?? $this->currentUser['photo_user']
+        ];
+        
+        $this->controller->updatePhotoUser($this->currentUser['id_user'], $photoData);
+    }
+    
+    /**
+     * Procesa la actualización del perfil
+     */
+    public function processProfileUpdate(array $postData): bool
+    {
+        if (empty($postData['action']) || $postData['action'] !== 'update') {
+            return false;
+        }
+        
+        if (empty($postData['user']) || !is_array($postData['user'])) {
+            $this->message = "Datos de usuario inválidos";
+            return false;
+        }
+        
+        $userData = $this->sanitizeUserData($postData['user']);
+        $validationType = $this->determineValidationType($userData);
+        $validationError = $this->validateUserDataAvailability($userData, $validationType);
+        
+        if ($validationError) {
+            $this->message = $validationError;
+            return false;
+        }
+        
+        if ($this->updateUserProfile($userData)) {
+            header('Location: index.php');
+            exit();
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Sanitiza los datos del usuario
+     */
+    private function sanitizeUserData(array $userData): array
+    {
+        return [
+            'name_user' => trim($userData['name_user'] ?? ''),
+            'email_user' => trim(strtolower($userData['email_user'] ?? '')),
+            'phone_user' => trim($userData['phone_user'] ?? ''),
+            'rfc_user' => trim(strtoupper($userData['rfc_user'] ?? '')),
+            'id_type_user' => (int)($userData['id_type_user'] ?? 0),
+            'status_user' => (int)($userData['status_user'] ?? 1),
+            'password_user' => $userData['password_user'] ?? ''
+        ];
+    }
+    
+    /**
+     * Valida los datos básicos del formulario
+     */
+    public function validateFormData(array $userData): array
+    {
+        $errors = [];
+        
+        if (empty($userData['name_user'])) {
+            $errors[] = "El nombre es requerido";
+        }
+        
+        if (empty($userData['email_user'])) {
+            $errors[] = "El correo electrónico es requerido";
+        } elseif (!filter_var($userData['email_user'], FILTER_VALIDATE_EMAIL)) {
+            $errors[] = "El formato del correo electrónico no es válido";
+        }
+        
+        if (empty($userData['phone_user'])) {
+            $errors[] = "El teléfono es requerido";
+        }
+        
+        if (empty($userData['rfc_user'])) {
+            $errors[] = "El RFC es requerido";
+        }
+        
+        return $errors;
+    }
+    
+    /**
+     * Obtiene el mensaje de error
+     */
+    public function getMessage(): string
+    {
+        return $this->message;
+    }
+    
+    /**
+     * Establece un mensaje
+     */
+    public function setMessage(string $message): void
+    {
+        $this->message = $message;
+    }
+    
+    /**
+     * Genera un RFC aleatorio (manteniendo compatibilidad)
+     */
+    public function generateRandomRFC(): string
+    {
+        $permittedChars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        return substr(str_shuffle($permittedChars), 0, 13);
+    }
+}
+
+// Inicialización del sistema
+try {
+    $profileHandler = new UserProfileHandler();
+    
+    // Validar sesión
+    $profileHandler->validateSession();
+    
+    // Obtener datos del usuario actual
+    $user = $profileHandler->getCurrentUser();
+    
+    // Generar RFC aleatorio para compatibilidad
+    $permitted_chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $usr_rfc = substr(str_shuffle($permitted_chars), 0, 13);
+    
+    // Inicializar mensaje
+    $mssg = '';
+    
+    // Procesar formulario si se envió
+    if (!empty($_POST)) {
+        if (!$profileHandler->processProfileUpdate($_POST)) {
+            $mssg = $profileHandler->getMessage();
+        }
+    }
+    
+    // Instanciar controladores para compatibilidad
+    $controller = new WebController();
+    $files = new FileController();
+    
+    // Función de compatibilidad para subir foto
+    function uploadFilePhoto(string $folio, ?array $filename = null): array {
+        global $files;
+        $filename = $filename ?? [];
+        if (isset($_FILES['file-imguser']) && $_FILES['file-imguser']['error'] === UPLOAD_ERR_OK) {
+            $filename['imguser'] = $files->upload($folio, $_FILES['file-imguser'], "ord.imguser");
+        }
+        return $filename;
+    }
+    
+} catch (Exception $e) {
+    error_log("Profile system error: " . $e->getMessage());
+    session_destroy();
+    header("Location: login.php?error=system");
+    exit();
+} catch (TypeError $e) {
+    error_log("Type error in profile: " . $e->getMessage());
+    session_destroy();
+    header("Location: login.php?error=type");
+    exit();
+}
+
+/**
+ * Función helper para mostrar errores de validación
+ */
+function displayValidationErrors(array $errors): string
+{
+    if (empty($errors)) {
+        return '';
+    }
+    
+    $errorList = implode('</li><li>', array_map(
+        fn($error) => htmlspecialchars($error, ENT_QUOTES, 'UTF-8'),
+        $errors
+    ));
+    
+    return sprintf(
+        '<div class="alert alert-danger">
+            <ul class="mb-0">
+                <li>%s</li>
+            </ul>
+        </div>',
+        $errorList
+    );
+}
+
+/**
+ * Función helper para validar archivos de imagen
+ */
+function validateImageFile(array $file): array
+{
+    $errors = [];
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    $maxSize = 5 * 1024 * 1024; // 5MB
+    
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        return match($file['error']) {
+            UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE => ['El archivo es demasiado grande'],
+            UPLOAD_ERR_PARTIAL => ['El archivo se subió parcialmente'],
+            UPLOAD_ERR_NO_FILE => [], // No hay archivo, es válido
+            default => ['Error desconocido al subir el archivo']
+        };
+    }
+    
+    if (!in_array($file['type'], $allowedTypes)) {
+        $errors[] = 'Solo se permiten archivos de imagen (JPEG, PNG, GIF)';
+    }
+    
+    if ($file['size'] > $maxSize) {
+        $errors[] = 'El archivo no puede ser mayor a 5MB';
+    }
+    
+    return $errors;
+}
 ?>
 
 <html lang="es">

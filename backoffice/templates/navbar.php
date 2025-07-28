@@ -409,7 +409,18 @@
             <p>Tablero</p>
           </a>
         </li>
-        
+
+
+                <!-- NUEVA SECCIÓN: OP VULNERABLES (Solo para Administradores) -->
+        <?php if($_SESSION['user']['id_type_user'] == 1){ ?>
+          <li class="nav-item">
+            <a href="../vulnerabilities/vulnerabilities.php" class="nav-link <?php echo ($current_page == 'vulnerabilities.php') ? 'active' : ''; ?>">
+              <i class="fas fa-shield-alt nav-icon"></i>
+              <p>Op Vulnerables</p>
+            </a>
+          </li>
+        <?php } ?>
+                
         <li class="nav-item">
           <a href="../support/resources.php" class="nav-link <?php echo (in_array($current_page, $material_pages)) ? 'active' : ''; ?>">
             <i class="fa fa-copy nav-icon"></i>

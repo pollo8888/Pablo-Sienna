@@ -3,11 +3,16 @@ Options -Indexes
 
 # Denegar acceso directo a los archivos en la carpeta uploads/documents
 RewriteEngine On
-#RewriteCond %{REQUEST_URI} ^/fultra/uploads/documents/ [NC]
-RewriteCond %{REQUEST_URI} ^/uploads/documents/ [NC]
 
+# CONFIGURACIÓN PARA SERVIDOR PRODUCCIÓN (comentado)
+#RewriteCond %{REQUEST_URI} ^/fultra/uploads/documents/ [NC]
+#RewriteCond %{REQUEST_URI} ^/uploads/documents/ [NC]
 #RewriteCond %{REQUEST_URI} ^/fultra/uploads/material/ [NC]
-RewriteCond %{REQUEST_URI} ^/uploads/material/ [NC]
+#RewriteCond %{REQUEST_URI} ^/uploads/material/ [NC]
+
+# CONFIGURACIÓN PARA XAMPP LOCAL
+RewriteCond %{REQUEST_URI} ^/fultra_v9/fultra/uploads/documents/ [NC]
+RewriteCond %{REQUEST_URI} ^/fultra_v9/fultra/uploads/material/ [NC]
 
 RewriteRule .* - [F]
 

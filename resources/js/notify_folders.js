@@ -9,7 +9,10 @@ $(document).ready(function() {
             // url: "/fultra/app/webservice.php",
             
             // linea de código para el despliegue en FULTRA
-            url: "/app/webservice.php",
+            // url: "/app/webservice.php",
+            
+            // linea de código para el desarrollo en XAMPP LOCAL
+            url: "/fultra_v9/fultra/app/webservice.php",
             
             data: {
                 action: "getFolderNotifications"
@@ -39,7 +42,10 @@ $(document).ready(function() {
             // url: "/fultra/app/webservice.php",
             
             // linea de código para el despliegue en FULTRA
-            url: "/app/webservice.php",
+            // url: "/app/webservice.php",
+            
+            // linea de código para el desarrollo en XAMPP LOCAL
+            url: "/fultra_v9/fultra/app/webservice.php",
             
             data: {
                 action: "getNotWatchFolderNotifications"
@@ -75,18 +81,18 @@ $(document).ready(function() {
                     var formattedDate = date.toLocaleString('es-MX', options);
                     
                     // LINEAS DE CÓDIGO PARA SYSOP //
-
-                    // Asignamos la URL correspondiente para ingresar a la carpeta del cliente
                     // var folderUrl = "/fultra/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
-                    // Asignamos la URL para visualizar los detalles del usuario
                     // var userUrl = "/fultra/backoffice/users/detail-user.php?id=" + encodeURIComponent(item.id_user_customer) + "&key=" + encodeURIComponent(item.key_user_customer);
                     
                     // ################## PARA DESPLIEGUE EN FULTRA ###############
-
+                    // var folderUrl = "/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
+                    // var userUrl = "/backoffice/users/detail-user.php?id=" + encodeURIComponent(item.id_user_customer) + "&key=" + encodeURIComponent(item.key_user_customer);
+                    
+                    // ################## PARA DESARROLLO EN XAMPP LOCAL ###############
                     // Asignamos la URL correspondiente para ingresar a la carpeta del cliente
-                    var folderUrl = "/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
+                    var folderUrl = "/fultra_v9/fultra/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
                     // Asignamos la URL para visualizar los detalles del usuario
-                    var userUrl = "/backoffice/users/detail-user.php?id=" + encodeURIComponent(item.id_user_customer) + "&key=" + encodeURIComponent(item.key_user_customer);
+                    var userUrl = "/fultra_v9/fultra/backoffice/users/detail-user.php?id=" + encodeURIComponent(item.id_user_customer) + "&key=" + encodeURIComponent(item.key_user_customer);
                     
                     // Construir la parte condicional para 'asesorada por'
                     let asesoradaPor = '';
@@ -147,7 +153,10 @@ $(document).ready(function() {
             // url: "/fultra/app/webservice.php",
             
             // linea de código para el despliegue en FULTRA
-            url: "/app/webservice.php",
+            // url: "/app/webservice.php",
+            
+            // linea de código para el desarrollo en XAMPP LOCAL
+            url: "/fultra_v9/fultra/app/webservice.php",
             
             data: {
                 action: "deleteFolderNotification",
@@ -199,7 +208,10 @@ $(document).ready(function() {
             // url: "/fultra/app/webservice.php",
             
             // linea de código para el despliegue en FULTRA
-            url: "/app/webservice.php",
+            // url: "/app/webservice.php",
+            
+            // linea de código para el desarrollo en XAMPP LOCAL
+            url: "/fultra_v9/fultra/app/webservice.php",
             
             data: {
                 action: "clearFolderNotifications",

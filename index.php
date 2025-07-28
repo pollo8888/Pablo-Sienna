@@ -1,135 +1,161 @@
 <?php
-  session_start();
-  include "app/config.php";
-  //include "app/debug.php";
-  include "app/WebController.php";
-  include "app/ExcelController.php";
-  require 'vendor/autoload.php';
-  $controller = new WebController();
-  
-  // Verificar si la sesión del usuario está activa
-  if (!isset($_SESSION['user']) || empty($_SESSION['user'])) {
-    // Si no hay sesión activa, destruir la sesión
-    session_destroy();
-    // Redirigir a la página de inicio de sesión
-    header("Location: login.php");
-    exit(); // Es importante salir después de redirigir para evitar que el código siguiente se ejecute innecesariamente
-  }
-  // FUNCIÓN PARA MOSTRAR LOS DETALLES DE UN USUARIO
-  $user = $controller->getDetailUser($_SESSION['user']['id_user'], $_SESSION['user']['key_user']);
-  
-  // FUNCIÓN PARA MOSTRAR EL TOTAL DE USUARIOS ACTIVOS
-  $usuarios = $controller->getUsers(1);
-  $totalUsuarios = count($usuarios);
-  // FUNCIÓN PARA MOSTRAR EL TOTAL DE CLIENTES ACTIVOS EN EL SISTEMA
-  $allFolders = $controller->getAllFolders(1);
-  $totalFolders = count($allFolders);
-  // FUNCIÓN PARA MOSTRAR EL TOTAL DE LOS DOCUMENTOS ACTIVOS EN EL SISTEMA
-  $allDocuments = $controller->showAllDocuments(1);
-  $totalDocuments = count($allDocuments);
-  
-  // Crear un array de meses en español
-  $meses = array("ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE");
-  // Obtener el año actual en formato de cuatro dígitos (YYYY)
-  $anio = date("Y");
-  // Obtener el mes actual en formato de dos dígitos (MM)
-  $mes = date("m");
-  // Crear una fecha de inicio para el primer día del mes actual a medianoche (YYYY-MM-01 00:00:00)
-  $fecha1 = $anio . "-" . $mes . "-01 00:00:00";
-  // Crear una fecha de fin para el último día del mes actual a las 23:59:59 (YYYY-MM-31 23:59:59)
-  $fecha2 = $anio . "-" . $mes . "-31 23:59:59";
-  // Llama a la función idx_getFoldersMonth del controlador para obtener las carpetas del mes dado entre las fechas $fecha1 y $fecha2
-  $get_folders_month = $controller->idx_getFoldersMonth($fecha1, $fecha2);
-  // Cuenta el número total de carpetas obtenidas en el mes
-  $totalFoldersMonth = count($get_folders_month);
-  
-  // Llama a la función idx_getDocumentsMonth del controlador para obtener los documentos del mes dado entre las fechas $fecha1 y $fecha2
-  $get_documents_month = $controller->idx_getDocumentsMonth($fecha1, $fecha2);
-  // Cuenta el número total de documentos obtenidos en el mes
-  $totalDocumentsMonth = count($get_documents_month);
-  
-  // Define la fecha de inicio del mes en el formato 'YYYY-MM-01'
-  $firstFetch = $anio."-".$mes."-01";
-  // Define la fecha de fin del mes en el formato 'YYYY-MM-31'
-  $secondFetch = $anio."-".$mes."-31";
-  // Llama a la función idx_getSelectFolders del controlador para obtener las carpetas vencidas (status '03') en el mes
-  $get_select_folder_vencidos_month = $controller->idx_getSelectFolders("03");
-  // CÓDIGO DE RESPALDO DONDE LA ESTADISTICA DE LOS CLIENTES VENCIDOS ERA POR EL MES ACTUAL
-  // $get_select_folder_vencidos_month = $controller->respaldo_idx_getSelectFolders($firstFetch, $secondFetch, "03");
-  
-  // Cuenta el número total de carpetas vencidas obtenidas en el mes
-  $totalgetFoldersVencidos = count($get_select_folder_vencidos_month);
-  
-  // Llama a la función idx_getSelectFolders del controlador para obtener las carpetas cerca de vencimiento (status '01') en el mes
-  $get_select_folder_cerca_vencimiento_month = $controller->idx_getSelectFolders("01");
-  // CÓDIGO DE RESPALDO DONDE LA ESTADISTICA DE LOS CLIENTES CERCA DE VENCIMIENTO ERA POR EL MES ACTUAL
-  // $get_select_folder_cerca_vencimiento_month = $controller->respaldo_idx_getSelectFolders($firstFetch, $secondFetch, "01");
-  
-  // Cuenta el número total de carpetas cerca de vencimiento obtenidas en el mes
-  $totalgetFoldersCercaVencimiento = count($get_select_folder_cerca_vencimiento_month);
-  
-  // Llama a la función idx_getFoldersAllSelect del controlador para obtener todas las carpetas vigentes (status '02')
-  $get_folder_all_vigentes = $controller->idx_getFoldersAllSelect("02");
-  // Cuenta el número total de carpetas vigentes obtenidas
-  $totalFoldersVigentes = count($get_folder_all_vigentes);
-  
-  // Llama a la función idx_getFoldersAllSelect del controlador para obtener todas las carpetas sin plazo de vencimiento (status 'null')
-  $get_folder_all_sin_plazo = $controller->idx_getFoldersAllSelect("null");
-  // Cuenta el número total de carpetas sin plazo de vencimiento obtenidas
-  $totalFoldersSinPlazo = count($get_folder_all_sin_plazo);
-  
-  // Obtener la lista de los usuarios del departamento de ventas y que esten activos (3 -> Tipo de Usuario Ventas, 1 -> Activos)
-  $customersList = $controller->getCustomersList(3, 1);
-  
-  // Verificar si se ha enviado un formulario y se ha establecido una acción
-  if (!empty($_POST['action'])) {
-    // Verificar si la acción es para generar un reporte de carpetas
-    if ($_POST['action'] == 'reportFolders') {
-      // Crear una instancia del controlador de Excel
-      $excelController = new ExcelController();
-      // Obtener el valor del estado de selección del formulario
-      $statusSelect = $_POST['statusSelect'];
-      $customerSelect = $_POST['customerSelect'];
-      // Verificar si se ha seleccionado el filtro de 'Año y Mes'
-      if (isset($_POST['check']) && $_POST['check'] == 1) {
-        // Obtener los valores del año y mes seleccionados
-        $year_select = $_POST['year_select'];
-        $monthSelect = $_POST['monthSelect'];
-        // Calcular las fechas de inicio y fin según el año y mes seleccionados
-        if ($monthSelect == 'all') {
-          $fecha1 = $year_select . "-01-01 00:00:00";
-          $fecha2 = $year_select . "-12-31 23:59:59";
-        } else {
-          $fecha1 = $year_select . "-" . $monthSelect . "-01 00:00:00";
-          $fecha2 = $year_select . "-" . $monthSelect . "-31 23:59:59";
-        }
-      }
-      // Verificar si se han establecido las fechas de inicio y fin directamente
-      elseif (isset($_POST['startFetch']) && isset($_POST['finishFetch'])) {
-        // Obtener las fechas de inicio y fin directamente del formulario
-        $startFetch = $_POST['startFetch'];
-        $finishFetch = $_POST['finishFetch'];
-        // Establecer las fechas de inicio y fin para la consulta
-        $fecha1 = $startFetch . " 00:00:00";
-        $fecha2 = $finishFetch . " 23:59:59";
+declare(strict_types=1);
+
+session_start();
+require_once "app/config.php";
+//require_once "app/debug.php";
+require_once "app/WebController.php";
+require_once "app/ExcelController.php";
+require_once 'vendor/autoload.php';
+
+$controller = new WebController();
+
+// Verificar si la sesión del usuario está activa
+if (!isset($_SESSION['user']) || empty($_SESSION['user'])) {
+  // Si no hay sesión activa, destruir la sesión
+  session_destroy();
+  // Redirigir a la página de inicio de sesión
+  header("Location: login.php");
+  exit(); // Es importante salir después de redirigir para evitar que el código siguiente se ejecute innecesariamente
+}
+
+// FUNCIÓN PARA MOSTRAR LOS DETALLES DE UN USUARIO
+$user = $controller->getDetailUser($_SESSION['user']['id_user'], $_SESSION['user']['key_user']);
+
+// FUNCIÓN PARA MOSTRAR EL TOTAL DE USUARIOS ACTIVOS
+$usuarios = $controller->getUsers(1);
+$totalUsuarios = count($usuarios);
+
+// FUNCIÓN PARA MOSTRAR EL TOTAL DE CLIENTES ACTIVOS EN EL SISTEMA
+$allFolders = $controller->getAllFolders(1);
+$totalFolders = count($allFolders);
+
+// FUNCIÓN PARA MOSTRAR EL TOTAL DE LOS DOCUMENTOS ACTIVOS EN EL SISTEMA
+$allDocuments = $controller->showAllDocuments(1);
+$totalDocuments = count($allDocuments);
+
+// Crear un array de meses en español
+$meses = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+
+// Obtener el año actual en formato de cuatro dígitos (YYYY)
+$anio = date("Y");
+
+// Obtener el mes actual en formato de dos dígitos (MM)
+$mes = date("m");
+
+// Crear una fecha de inicio para el primer día del mes actual a medianoche (YYYY-MM-01 00:00:00)
+$fecha1 = $anio . "-" . $mes . "-01 00:00:00";
+
+// Crear una fecha de fin para el último día del mes actual a las 23:59:59 (YYYY-MM-31 23:59:59)
+$fecha2 = $anio . "-" . $mes . "-31 23:59:59";
+
+// Llama a la función idx_getFoldersMonth del controlador para obtener las carpetas del mes dado entre las fechas $fecha1 y $fecha2
+$get_folders_month = $controller->idx_getFoldersMonth($fecha1, $fecha2);
+
+// Cuenta el número total de carpetas obtenidas en el mes
+$totalFoldersMonth = count($get_folders_month);
+
+// Llama a la función idx_getDocumentsMonth del controlador para obtener los documentos del mes dado entre las fechas $fecha1 y $fecha2
+$get_documents_month = $controller->idx_getDocumentsMonth($fecha1, $fecha2);
+
+// Cuenta el número total de documentos obtenidos en el mes
+$totalDocumentsMonth = count($get_documents_month);
+
+// Define la fecha de inicio del mes en el formato 'YYYY-MM-01'
+$firstFetch = $anio . "-" . $mes . "-01";
+
+// Define la fecha de fin del mes en el formato 'YYYY-MM-31'
+$secondFetch = $anio . "-" . $mes . "-31";
+
+// Llama a la función idx_getSelectFolders del controlador para obtener las carpetas vencidas (status '03') en el mes
+$get_select_folder_vencidos_month = $controller->idx_getSelectFolders("03");
+// CÓDIGO DE RESPALDO DONDE LA ESTADISTICA DE LOS CLIENTES VENCIDOS ERA POR EL MES ACTUAL
+// $get_select_folder_vencidos_month = $controller->respaldo_idx_getSelectFolders($firstFetch, $secondFetch, "03");
+
+// Cuenta el número total de carpetas vencidas obtenidas en el mes
+$totalgetFoldersVencidos = count($get_select_folder_vencidos_month);
+
+// Llama a la función idx_getSelectFolders del controlador para obtener las carpetas cerca de vencimiento (status '01') en el mes
+$get_select_folder_cerca_vencimiento_month = $controller->idx_getSelectFolders("01");
+// CÓDIGO DE RESPALDO DONDE LA ESTADISTICA DE LOS CLIENTES CERCA DE VENCIMIENTO ERA POR EL MES ACTUAL
+// $get_select_folder_cerca_vencimiento_month = $controller->respaldo_idx_getSelectFolders($firstFetch, $secondFetch, "01");
+
+// Cuenta el número total de carpetas cerca de vencimiento obtenidas en el mes
+$totalgetFoldersCercaVencimiento = count($get_select_folder_cerca_vencimiento_month);
+
+// Llama a la función idx_getFoldersAllSelect del controlador para obtener todas las carpetas vigentes (status '02')
+$get_folder_all_vigentes = $controller->idx_getFoldersAllSelect("02");
+
+// Cuenta el número total de carpetas vigentes obtenidas
+$totalFoldersVigentes = count($get_folder_all_vigentes);
+
+// Llama a la función idx_getFoldersAllSelect del controlador para obtener todas las carpetas sin plazo de vencimiento (status 'null')
+$get_folder_all_sin_plazo = $controller->idx_getFoldersAllSelect("null");
+
+// Cuenta el número total de carpetas sin plazo de vencimiento obtenidas
+$totalFoldersSinPlazo = count($get_folder_all_sin_plazo);
+
+// Obtener la lista de los usuarios del departamento de ventas y que esten activos (3 -> Tipo de Usuario Ventas, 1 -> Activos)
+$customersList = $controller->getCustomersList(3, 1);
+
+// Inicializar variable de mensaje
+$mssg = null;
+
+// Verificar si se ha enviado un formulario y se ha establecido una acción
+if (!empty($_POST['action'])) {
+  // Verificar si la acción es para generar un reporte de carpetas
+  if ($_POST['action'] === 'reportFolders') {
+    // Crear una instancia del controlador de Excel
+    $excelController = new ExcelController();
+    
+    // Obtener el valor del estado de selección del formulario
+    $statusSelect = $_POST['statusSelect'] ?? '';
+    $customerSelect = $_POST['customerSelect'] ?? '';
+    
+    // Verificar si se ha seleccionado el filtro de 'Año y Mes'
+    if (isset($_POST['check']) && $_POST['check'] == 1) {
+      // Obtener los valores del año y mes seleccionados
+      $year_select = $_POST['year_select'] ?? '';
+      $monthSelect = $_POST['monthSelect'] ?? '';
+      
+      // Calcular las fechas de inicio y fin según el año y mes seleccionados
+      if ($monthSelect === 'all') {
+        $fecha1 = $year_select . "-01-01 00:00:00";
+        $fecha2 = $year_select . "-12-31 23:59:59";
       } else {
-        // Establecer las fechas como null (es cuando se deshabilitan los selects tanto por intervalo como por año y mes)
-        $fecha1 = null;
-        $fecha2 = null;
-      }
-      // Obtener las carpetas filtradas según las fechas, el estatus y vendedor seleccionados
-      $filterFolders = $controller->ws_idxGetFolders($fecha1, $fecha2, $statusSelect, $customerSelect);
-      // Verificar si hay carpetas filtradas para generar el reporte
-      if (!empty($filterFolders)) {
-        $mssg = null;
-        // Generar el reporte de carpetas en formato Excel
-        $excelController->reportFolders($filterFolders);
-      } else {
-        // Establecer un mensaje si no hay información de carpetas para generar el reporte
-        $mssg = "¡NO HAY INFORMACIÓN DE CLIENTES PARA GENERAR EL REPORTE!";
+        $fecha1 = $year_select . "-" . $monthSelect . "-01 00:00:00";
+        $fecha2 = $year_select . "-" . $monthSelect . "-31 23:59:59";
       }
     }
+    // Verificar si se han establecido las fechas de inicio y fin directamente
+    elseif (isset($_POST['startFetch']) && isset($_POST['finishFetch'])) {
+      // Obtener las fechas de inicio y fin directamente del formulario
+      $startFetch = $_POST['startFetch'];
+      $finishFetch = $_POST['finishFetch'];
+      
+      // Establecer las fechas de inicio y fin para la consulta
+      $fecha1 = $startFetch . " 00:00:00";
+      $fecha2 = $finishFetch . " 23:59:59";
+    } else {
+      // Establecer las fechas como null (es cuando se deshabilitan los selects tanto por intervalo como por año y mes)
+      $fecha1 = null;
+      $fecha2 = null;
+    }
+    
+    // Obtener las carpetas filtradas según las fechas, el estatus y vendedor seleccionados
+    $filterFolders = $controller->ws_idxGetFolders($fecha1, $fecha2, $statusSelect, $customerSelect);
+    
+    // Verificar si hay carpetas filtradas para generar el reporte
+    if (!empty($filterFolders)) {
+      $mssg = null;
+      // Generar el reporte de carpetas en formato Excel
+      $excelController->reportFolders($filterFolders);
+    } else {
+      // Establecer un mensaje si no hay información de carpetas para generar el reporte
+      $mssg = "¡NO HAY INFORMACIÓN DE CLIENTES PARA GENERAR EL REPORTE!";
+    }
   }
+}
 ?>
 
 <!doctype html>

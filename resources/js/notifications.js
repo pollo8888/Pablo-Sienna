@@ -9,7 +9,10 @@ $(document).ready(function() {
             // url: "/fultra/app/webservice.php",
             
             // linea de código para el despliegue en FULTRA
-            url: "/app/webservice.php",
+            // url: "/app/webservice.php",
+            
+            // linea de código para el desarrollo en XAMPP LOCAL
+            url: "/fultra_v9/fultra/app/webservice.php",
             
             data: {
                 action: "getNotifications"
@@ -39,7 +42,10 @@ $(document).ready(function() {
             // url: "/fultra/app/webservice.php",
             
             // linea de código para el despliegue en FULTRA
-            url: "/app/webservice.php",
+            // url: "/app/webservice.php",
+            
+            // linea de código para el desarrollo en XAMPP LOCAL
+            url: "/fultra_v9/fultra/app/webservice.php",
             
             data: {
                 action: "getNotWachDocuments"
@@ -88,13 +94,20 @@ $(document).ready(function() {
                     // lineas de código para el despliegue en FULTRA
                     
                     // NUEVO - - - Lineas de código para abrir el archivo en un almacenamiento nuevo con la dirección URL de FULTRA - CÓDIGO NUEVO
-                    var documentUrl = "/backoffice/folders/extensions/open_pdf.php?folder=" + encodeURIComponent(item.key_folder) + "&file=" + encodeURIComponent(item.file_name_document);
+                    // var documentUrl = "/backoffice/folders/extensions/open_pdf.php?folder=" + encodeURIComponent(item.key_folder) + "&file=" + encodeURIComponent(item.file_name_document);
                     
                     // ANTIGUIO - - - CÓDIGO ANTIGUO
                     // var documentUrl = "/uploads/documents/" + encodeURIComponent(item.key_folder) + "/" + encodeURIComponent(item.file_name_document);
                     
                     // Asignamos una URL para ingresar a los detalles de la carpeta o folder donde esta el documento que fue cargado
-                    var folderUrl = "/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
+                    // var folderUrl = "/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
+                    
+                    // ################## PARA DESARROLLO EN XAMPP LOCAL ###############
+                    // NUEVO - - - Lineas de código para abrir el archivo en un almacenamiento nuevo con la dirección URL de XAMPP LOCAL - CÓDIGO NUEVO
+                    var documentUrl = "/fultra_v9/fultra/backoffice/folders/extensions/open_pdf.php?folder=" + encodeURIComponent(item.key_folder) + "&file=" + encodeURIComponent(item.file_name_document);
+                    
+                    // Asignamos una URL para ingresar a los detalles de la carpeta o folder donde esta el documento que fue cargado
+                    var folderUrl = "/fultra_v9/fultra/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
                     
                     // Crear elementos <li> para cada registro de documento y agregarlos a la lista desplegable
                     var listItem = `
@@ -141,7 +154,10 @@ $(document).ready(function() {
             // url: "/fultra/app/webservice.php",
             
             // linea de código para el despliegue en FULTRA
-            url: "/app/webservice.php",
+            // url: "/app/webservice.php",
+            
+            // linea de código para el desarrollo en XAMPP LOCAL
+            url: "/fultra_v9/fultra/app/webservice.php",
             
             data: {
                 action: "deleteDocumentNotify",
@@ -181,7 +197,10 @@ $(document).ready(function() {
             // url: "/fultra/app/webservice.php",
             
             // linea de código para el despliegue en FULTRA
-            url: "/app/webservice.php",
+            // url: "/app/webservice.php",
+            
+            // linea de código para el desarrollo en XAMPP LOCAL
+            url: "/fultra_v9/fultra/app/webservice.php",
             
             data: {
                 action: "clearNotifications",

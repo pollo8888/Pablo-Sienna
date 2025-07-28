@@ -1,13 +1,389 @@
 <?php
-  // Llamada a una función para mostrar los detalles de un usuario.
-  // Se pasa el ID de usuario y la clave de usuario de la sesión actual como argumentos.
-  $userNav = $controller->getDetailUser($_SESSION['user']['id_user'], $_SESSION['user']['key_user']);
-  $current_page = basename($_SERVER['PHP_SELF']); // Obtiene el nombre del archivo actual
-  
-  $users_pages = ['create-user.php', 'detail-user.php', 'update-user.php', 'users.php'];
-  $clientes_pages = ['folders.php', 'subfolder.php'];
-  $tablero_pages = ['all_folders.php'];
-  $material_pages = ['resources.php'];
+declare(strict_types=1);
+
+/**
+ * Enumeración para las secciones de navegación
+ */
+enum NavigationSection: string
+{
+    case USERS = 'users';
+    case CLIENTS = 'clients';
+    case DASHBOARD = 'dashboard';
+    case MATERIALS = 'materials';
+    case VULNERABILITIES = 'vulnerabilities';  // Nueva sección añadida
+    case OTHER = 'other';
+}
+
+/**
+ * Clase para manejar la navegación y el estado de la barra de navegación
+ */
+class NavigationHandler
+{
+    private WebController $controller;
+    private array $userNav;
+    private string $currentPage;
+    private array $navigationPages;
+    
+    public function __construct(WebController $controller)
+    {
+        $this->controller = $controller;
+        $this->currentPage = basename($_SERVER['PHP_SELF']);
+        $this->initializeNavigationPages();
+        $this->loadUserNavigation();
+    }
+    
+    /**
+     * Inicializa la configuración de páginas por sección
+     */
+    private function initializeNavigationPages(): void
+    {
+        $this->navigationPages = [
+            NavigationSection::USERS->value => [
+                'create-user.php',
+                'detail-user.php', 
+                'update-user.php',
+                'users.php'
+            ],
+            NavigationSection::CLIENTS->value => [
+                'folders.php',
+                'subfolder.php'
+            ],
+            NavigationSection::DASHBOARD->value => [
+                'all_folders.php'
+            ],
+            NavigationSection::MATERIALS->value => [
+                'resources.php'
+            ],
+            NavigationSection::VULNERABILITIES->value => [  // Nueva sección
+                'vulnerabilities.php',
+                'vulnerability-scan.php',
+                'security-audit.php'
+            ]
+        ];
+    }
+    
+    /**
+     * Carga los datos de navegación del usuario
+     */
+    private function loadUserNavigation(): void
+    {
+        if (!isset($_SESSION['user']['id_user'], $_SESSION['user']['key_user'])) {
+            throw new InvalidArgumentException('Session user data is invalid');
+        }
+        
+        $this->userNav = $this->controller->getDetailUser(
+            $_SESSION['user']['id_user'], 
+            $_SESSION['user']['key_user']
+        );
+        
+        if (empty($this->userNav)) {
+            throw new RuntimeException('User navigation data could not be loaded');
+        }
+    }
+    
+    /**
+     * Obtiene los datos del usuario para la navegación
+     */
+    public function getUserNavigation(): array
+    {
+        return $this->userNav;
+    }
+    
+    /**
+     * Obtiene la página actual
+     */
+    public function getCurrentPage(): string
+    {
+        return $this->currentPage;
+    }
+    
+    /**
+     * Determina la sección activa basada en la página actual
+     */
+    public function getActiveSection(): NavigationSection
+    {
+        foreach ($this->navigationPages as $section => $pages) {
+            if (in_array($this->currentPage, $pages, true)) {
+                return NavigationSection::from($section);
+            }
+        }
+        
+        return NavigationSection::OTHER;
+    }
+    
+    /**
+     * Verifica si una página específica está activa
+     */
+    public function isPageActive(string $page): bool
+    {
+        return $this->currentPage === $page;
+    }
+    
+    /**
+     * Verifica si una sección específica está activa
+     */
+    public function isSectionActive(NavigationSection $section): bool
+    {
+        return $this->getActiveSection() === $section;
+    }
+    
+    /**
+     * Obtiene las páginas de una sección específica
+     */
+    public function getSectionPages(NavigationSection $section): array
+    {
+        return $this->navigationPages[$section->value] ?? [];
+    }
+    
+    /**
+     * Obtiene todas las páginas de navegación
+     */
+    public function getAllNavigationPages(): array
+    {
+        return $this->navigationPages;
+    }
+    
+    /**
+     * Genera las clases CSS para un elemento de navegación
+     */
+    public function getNavItemClasses(string $page, string $baseClass = 'nav-link'): string
+    {
+        $classes = [$baseClass];
+        
+        if ($this->isPageActive($page)) {
+            $classes[] = 'active';
+        }
+        
+        return implode(' ', $classes);
+    }
+    
+    /**
+     * Genera las clases CSS para una sección de navegación
+     */
+    public function getNavSectionClasses(NavigationSection $section, string $baseClass = 'nav-section'): string
+    {
+        $classes = [$baseClass];
+        
+        if ($this->isSectionActive($section)) {
+            $classes[] = 'active';
+        }
+        
+        return implode(' ', $classes);
+    }
+    
+    /**
+     * Verifica si el usuario tiene permisos para acceder a una sección
+     */
+    public function hasAccessToSection(NavigationSection $section): bool
+    {
+        $userType = (int)($this->userNav['id_type_user'] ?? 0);
+        
+        return match($section) {
+            NavigationSection::USERS => in_array($userType, [1, 2]), // Admin y Supervisor
+            NavigationSection::CLIENTS => in_array($userType, [1, 2, 3]), // Admin, Supervisor y Ventas
+            NavigationSection::DASHBOARD => in_array($userType, [1, 2]), // Admin y Supervisor
+            NavigationSection::MATERIALS => in_array($userType, [1, 2, 3]), // Todos los tipos
+            NavigationSection::VULNERABILITIES => in_array($userType, [1]), // Solo Administradores
+            NavigationSection::OTHER => true
+        };
+    }
+    
+    /**
+     * Obtiene el título de una sección
+     */
+    public function getSectionTitle(NavigationSection $section): string
+    {
+        return match($section) {
+            NavigationSection::USERS => 'Gestión de Usuarios',
+            NavigationSection::CLIENTS => 'Gestión de Clientes',
+            NavigationSection::DASHBOARD => 'Tablero de Control',
+            NavigationSection::MATERIALS => 'Material de Apoyo',
+            NavigationSection::VULNERABILITIES => 'Operaciones Vulnerables',  // Nuevo título
+            NavigationSection::OTHER => 'Otras Páginas'
+        };
+    }
+    
+    /**
+     * Obtiene el ícono de una sección
+     */
+    public function getSectionIcon(NavigationSection $section): string
+    {
+        return match($section) {
+            NavigationSection::USERS => 'fas fa-users',
+            NavigationSection::CLIENTS => 'fas fa-folder-open',
+            NavigationSection::DASHBOARD => 'fas fa-chart-bar',
+            NavigationSection::MATERIALS => 'fas fa-book',
+            NavigationSection::VULNERABILITIES => 'fas fa-shield-alt',  // Nuevo ícono de seguridad
+            NavigationSection::OTHER => 'fas fa-ellipsis-h'
+        };
+    }
+    
+    /**
+     * Genera breadcrumbs basados en la página actual
+     */
+    public function generateBreadcrumbs(): array
+    {
+        $section = $this->getActiveSection();
+        $breadcrumbs = [
+            ['title' => 'Inicio', 'url' => 'index.php']
+        ];
+        
+        if ($section !== NavigationSection::OTHER) {
+            $breadcrumbs[] = [
+                'title' => $this->getSectionTitle($section),
+                'url' => $this->getSectionPages($section)[0] ?? '#'
+            ];
+        }
+        
+        // Agregar página actual si no es la primera de la sección
+        $sectionPages = $this->getSectionPages($section);
+        if (!empty($sectionPages) && $sectionPages[0] !== $this->currentPage) {
+            $breadcrumbs[] = [
+                'title' => $this->getPageTitle($this->currentPage),
+                'url' => null // Página actual, sin enlace
+            ];
+        }
+        
+        return $breadcrumbs;
+    }
+    
+    /**
+     * Obtiene el título de una página específica
+     */
+    private function getPageTitle(string $page): string
+    {
+        $titles = [
+            'users.php' => 'Lista de Usuarios',
+            'create-user.php' => 'Crear Usuario',
+            'detail-user.php' => 'Detalle de Usuario',
+            'update-user.php' => 'Actualizar Usuario',
+            'folders.php' => 'Carpetas de Clientes',
+            'subfolder.php' => 'Subcarpetas',
+            'all_folders.php' => 'Todas las Carpetas',
+            'resources.php' => 'Material de Apoyo',
+            'vulnerabilities.php' => 'Operaciones Vulnerables',  // Nuevo título
+            'vulnerability-scan.php' => 'Escaneo de Vulnerabilidades',
+            'security-audit.php' => 'Auditoría de Seguridad'
+        ];
+        
+        return $titles[$page] ?? ucfirst(str_replace(['.php', '-', '_'], ['', ' ', ' '], $page));
+    }
+}
+
+// Verificar que existe el controlador y la sesión
+if (!isset($controller) || !($controller instanceof WebController)) {
+    throw new RuntimeException('WebController instance is required for navigation');
+}
+
+if (!isset($_SESSION['user']) || empty($_SESSION['user'])) {
+    throw new RuntimeException('User session is required for navigation');
+}
+
+try {
+    // Inicializar el manejador de navegación
+    $navigationHandler = new NavigationHandler($controller);
+    
+    // Obtener datos para compatibilidad con el código existente
+    $userNav = $navigationHandler->getUserNavigation();
+    $current_page = $navigationHandler->getCurrentPage();
+    
+    // Mantener arrays originales para compatibilidad
+    $users_pages = $navigationHandler->getSectionPages(NavigationSection::USERS);
+    $clientes_pages = $navigationHandler->getSectionPages(NavigationSection::CLIENTS);
+    $tablero_pages = $navigationHandler->getSectionPages(NavigationSection::DASHBOARD);
+    $material_pages = $navigationHandler->getSectionPages(NavigationSection::MATERIALS);
+    $vulnerabilities_pages = $navigationHandler->getSectionPages(NavigationSection::VULNERABILITIES);  // Nueva variable
+    
+} catch (Exception $e) {
+    error_log("Navigation error: " . $e->getMessage());
+    
+    // Fallback para mantener funcionalidad básica
+    $userNav = [];
+    $current_page = basename($_SERVER['PHP_SELF']);
+    $users_pages = ['create-user.php', 'detail-user.php', 'update-user.php', 'users.php'];
+    $clientes_pages = ['folders.php', 'subfolder.php'];
+    $tablero_pages = ['all_folders.php'];
+    $material_pages = ['resources.php'];
+    $vulnerabilities_pages = ['vulnerabilities.php', 'vulnerability-scan.php', 'security-audit.php'];  // Fallback
+}
+
+/**
+ * Funciones helper para usar en las vistas
+ */
+
+/**
+ * Verifica si una página está activa
+ */
+function isPageActive(string $page): bool
+{
+    global $navigationHandler;
+    return $navigationHandler?->isPageActive($page) ?? (basename($_SERVER['PHP_SELF']) === $page);
+}
+
+/**
+ * Verifica si una sección está activa
+ */
+function isSectionActive(array $pages): bool
+{
+    global $current_page;
+    return in_array($current_page, $pages, true);
+}
+
+/**
+ * Genera clases CSS para elementos de navegación
+ */
+function getNavClasses(string $page, string $baseClass = 'nav-link'): string
+{
+    $classes = [$baseClass];
+    if (isPageActive($page)) {
+        $classes[] = 'active';
+    }
+    return implode(' ', $classes);
+}
+
+/**
+ * Obtiene el nombre de usuario para mostrar en la navegación
+ */
+function getUserDisplayName(): string
+{
+    global $userNav;
+    return htmlspecialchars($userNav['name_user'] ?? 'Usuario', ENT_QUOTES, 'UTF-8');
+}
+
+/**
+ * Obtiene el tipo de usuario
+ */
+function getUserType(): string
+{
+    global $userNav;
+    $typeNames = [
+        1 => 'Administrador',
+        2 => 'Supervisor', 
+        3 => 'Ventas',
+        4 => 'Usuario'
+    ];
+    
+    $typeId = (int)($userNav['id_type_user'] ?? 0);
+    return $typeNames[$typeId] ?? 'Usuario';
+}
+
+/**
+ * Verifica si el usuario tiene permisos de administrador
+ */
+function isAdmin(): bool
+{
+    global $userNav;
+    return ((int)($userNav['id_type_user'] ?? 0)) === 1;
+}
+
+/**
+ * Verifica si el usuario tiene permisos de supervisor o superior
+ */
+function isSupervisorOrAbove(): bool
+{
+    global $userNav;
+    return in_array((int)($userNav['id_type_user'] ?? 0), [1, 2], true);
+}
 ?>
 
 <style>
@@ -48,6 +424,8 @@
   .nav-link.active .nav-icon {
     color: #ffffff; /* Color del ícono en la opción activa */
   }
+  
+
   
   /* Estilos para el contenedor de las notificaciones de los documentos */
   .dropNotifications {
@@ -371,14 +749,6 @@
         
         <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1)-->
         <?php if($_SESSION['user']['id_type_user'] == 1){ ?>
-          <!--
-          <li class="nav-item">
-            <a href="backoffice/users/create-user.php" class="nav-link">
-              <i class="fa fa-user-plus nav-icon"></i>
-              <p>Crear usuario</p>
-            </a>
-          </li>
-          -->
           <li class="nav-item">
             <a href="backoffice/users/users.php" class="nav-link <?php echo (in_array($current_page, $users_pages)) ? 'active' : ''; ?>">
               <i class="fa fa-users nav-icon"></i>
@@ -387,21 +757,24 @@
           </li>
         <?php } ?>
         
+
+
+         <!-- NUEVA SECCIÓN: OPERACIONES VULNERABLES (Solo para Administradores) -->
+        <?php if($_SESSION['user']['id_type_user'] == 1){ ?>
+          <li class="nav-item">
+            <a href="backoffice/vulnerabilities/vulnerabilities.php" class="nav-link <?php echo ($current_page == 'vulnerabilities.php') ? 'active' : ''; ?>">
+              <i class="fas fa-shield-alt nav-icon"></i>
+              <p>Op Vulnerables</p>
+            </a>
+          </li>
+        <?php } ?>
+      
         <li class="nav-item">
           <a href="backoffice/folders/folders.php" class="nav-link <?php echo (in_array($current_page, $clientes_pages)) ? 'active' : ''; ?>">
             <i class="fa fa-folder-open nav-icon"></i>
             <p>Clientes</p>
           </a>
         </li>
-        
-        <!--
-        <li class="nav-item">
-          <a href="backoffice/documents/documents.php" class="nav-link">
-            <i class="fa fa-file nav-icon"></i>
-            <p>Consultar documentos</p>
-          </a>
-        </li>
-        -->
         
         <li class="nav-item">
           <a href="backoffice/folders/all_folders.php" class="nav-link <?php echo (in_array($current_page, $tablero_pages)) ? 'active' : ''; ?>">
@@ -416,7 +789,7 @@
             <p>Material de Apoyo</p>
           </a>
         </li>
-      
+
       </ul>
     </nav>
   </div>

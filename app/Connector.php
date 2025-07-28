@@ -12,14 +12,14 @@
       if ($this->production_mode) {
         $this->DBhost = 'localhost';
         $this->DBname = 'adm_fultra';
-        $this->DBuser = 'adm_fultra';
-        $this->DBpass = '!1GfTlyk94f7eOdel';
+        $this->DBuser = 'root';
+        $this->DBpass = '';
       }
       else {
         $this->DBhost = 'localhost';
         $this->DBname = 'adm_fultra';
-        $this->DBuser = 'adm_fultra';
-        $this->DBpass = '!1GfTlyk94f7eOdel';
+        $this->DBuser = 'root';
+        $this->DBpass = '';
       }
       $this->connector = new PDO("mysql:host=$this->DBhost;dbname=$this->DBname;charset=utf8",
       $this->DBuser,

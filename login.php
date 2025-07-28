@@ -1,43 +1,255 @@
 <?php
-  session_start();
-  include "app/config.php";
-  //include "app/debug.php";
-  include "app/WebController.php";
-  
-  // Inicializar la variable de mensaje
-  $mssg = '';
-  
-  // Verificar si el usuario ya está autenticado
-  if (!empty($_SESSION['user']['login'])) {
-    header("location: index.php");
-    exit();
-  }
-  
-  // Verificar si se envió el formulario
-  if (!empty($_POST)) {
-    if (!empty($_POST['email_user']) && !empty($_POST['password_user'])) {
-      // Validar credenciales
-      $controller = new WebController();
-      $user = $controller->loginUser($_POST['email_user'], $_POST['password_user']);
-      if ($user) {
-        // Almacenar información de usuario en la sesión
-        $_SESSION['user']['login'] = true;
-        $_SESSION['user']['id_user'] = $user['id_user'];
-        $_SESSION['user']['id_type_user'] = $user['id_type_user'];
-        $_SESSION['user']['key_user'] = $user['key_user'];
-        $_SESSION['user']['name_user'] = $user['name_user'];
-        $_SESSION['user']['status_user'] = $user['status_user'];
-        // Redirigir al usuario autenticado
-        header('location: index.php');
-        exit();
-      } else {
-        $mssg = "El correo electrónico o contraseña es inválida. Verifícala antes de volver a intentarlo";
-      }
-    } else {
-      $mssg = "Ingresa un password";
+declare(strict_types=1);
+
+session_start();
+require_once "app/config.php";
+require_once "app/WebController.php";
+
+/**
+ * Clase para manejar la autenticación de usuarios
+ */
+class AuthenticationHandler
+{
+    private WebController $controller;
+    private string $message;
+    
+    public function __construct()
+    {
+        $this->controller = new WebController();
+        $this->message = '';
     }
-  }
+    
+    /**
+     * Verifica si el usuario ya está autenticado
+     */
+    public function isUserAuthenticated(): bool
+    {
+        return !empty($_SESSION['user']['login']);
+    }
+    
+    /**
+     * Redirige al usuario autenticado al dashboard
+     */
+    public function redirectToDashboard(): void
+    {
+        if ($this->isUserAuthenticated()) {
+            header("Location: index.php");
+            exit();
+        }
+    }
+    
+    /**
+     * Valida los datos de entrada del formulario
+     */
+    public function validateLoginData(array $postData): array
+    {
+        $email = trim($postData['email_user'] ?? '');
+        $password = $postData['password_user'] ?? '';
+        
+        $errors = [];
+        
+        if (empty($email)) {
+            $errors[] = "El correo electrónico es requerido";
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errors[] = "El formato del correo electrónico no es válido";
+        }
+        
+        if (empty($password)) {
+            $errors[] = "La contraseña es requerida";
+        }
+        
+        return [
+            'email' => $email,
+            'password' => $password,
+            'errors' => $errors,
+            'is_valid' => empty($errors)
+        ];
+    }
+    
+    /**
+     * Intenta autenticar al usuario
+     */
+    public function attemptLogin(string $email, string $password): bool
+    {
+        try {
+            $user = $this->controller->loginUser($email, $password);
+            
+            if ($user === null || $user === false) {
+                $this->message = "El correo electrónico o contraseña es inválida. Verifícala antes de volver a intentarlo";
+                return false;
+            }
+            
+            $this->createUserSession($user);
+            return true;
+            
+        } catch (Exception $e) {
+            error_log("Login error: " . $e->getMessage());
+            $this->message = "Error en el sistema. Por favor, intenta más tarde";
+            return false;
+        }
+    }
+    
+    /**
+     * Crea la sesión del usuario autenticado
+     */
+    private function createUserSession(array $user): void
+    {
+        // Regenerar ID de sesión por seguridad
+        session_regenerate_id(true);
+        
+        $_SESSION['user'] = [
+            'login' => true,
+            'id_user' => (int)$user['id_user'],
+            'id_type_user' => (int)$user['id_type_user'],
+            'key_user' => $user['key_user'],
+            'name_user' => $user['name_user'],
+            'status_user' => (int)$user['status_user'],
+            'login_time' => time(),
+            'last_activity' => time()
+        ];
+    }
+    
+    /**
+     * Procesa el formulario de login
+     */
+    public function processLoginForm(array $postData): bool
+    {
+        $validation = $this->validateLoginData($postData);
+        
+        if (!$validation['is_valid']) {
+            $this->message = implode('. ', $validation['errors']);
+            return false;
+        }
+        
+        return $this->attemptLogin($validation['email'], $validation['password']);
+    }
+    
+    /**
+     * Redirige al usuario autenticado exitosamente
+     */
+    public function redirectAfterSuccessfulLogin(): void
+    {
+        header('Location: index.php');
+        exit();
+    }
+    
+    /**
+     * Obtiene el mensaje de error/estado
+     */
+    public function getMessage(): string
+    {
+        return $this->message;
+    }
+    
+    /**
+     * Establece un mensaje personalizado
+     */
+    public function setMessage(string $message): void
+    {
+        $this->message = $message;
+    }
+    
+    /**
+     * Limpia la sesión por seguridad
+     */
+    public function clearSession(): void
+    {
+        session_unset();
+        session_destroy();
+    }
+    
+    /**
+     * Obtiene el valor de un campo del formulario de manera segura
+     */
+    public function getFormValue(array $postData, string $field): string
+    {
+        return htmlspecialchars($postData[$field] ?? '', ENT_QUOTES, 'UTF-8');
+    }
+}
+
+// Inicialización del sistema de autenticación
+try {
+    $auth = new AuthenticationHandler();
+    
+    // Verificar si el usuario ya está autenticado
+    $auth->redirectToDashboard();
+    
+    // Procesar formulario si se envió
+    if (!empty($_POST)) {
+        if ($auth->processLoginForm($_POST)) {
+            $auth->redirectAfterSuccessfulLogin();
+        }
+    }
+    
+    // Obtener mensaje para mostrar en la vista
+    $mssg = $auth->getMessage();
+    
+    // Mantener compatibilidad para obtener valores del formulario
+    $email_value = $auth->getFormValue($_POST, 'email_user');
+    
+} catch (Exception $e) {
+    error_log("Authentication system error: " . $e->getMessage());
+    
+    // En caso de error crítico, limpiar sesión y mostrar mensaje genérico
+    session_unset();
+    session_destroy();
+    $mssg = "Error en el sistema de autenticación. Por favor, contacta al administrador";
+    $email_value = '';
+} catch (TypeError $e) {
+    error_log("Type error in authentication: " . $e->getMessage());
+    
+    session_unset();
+    session_destroy();
+    $mssg = "Error de configuración del sistema. Contacta al administrador";
+    $email_value = '';
+}
+
+/**
+ * Función helper para mostrar mensajes en la vista
+ */
+function displayMessage(string $message, string $type = 'error'): string
+{
+    if (empty($message)) {
+        return '';
+    }
+    
+    $alertClass = match($type) {
+        'success' => 'alert-success',
+        'warning' => 'alert-warning',
+        'info' => 'alert-info',
+        default => 'alert-danger'
+    };
+    
+    return sprintf(
+        '<div class="alert %s alert-dismissible fade show" role="alert">
+            %s
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>',
+        $alertClass,
+        htmlspecialchars($message, ENT_QUOTES, 'UTF-8')
+    );
+}
+
+/**
+ * Función helper para generar token CSRF
+ */
+function generateCSRFToken(): string
+{
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+/**
+ * Función helper para validar token CSRF
+ */
+function validateCSRFToken(string $token): bool
+{
+    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+}
 ?>
+
 
 <!doctype html>
 <html lang="es">

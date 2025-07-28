@@ -9,7 +9,10 @@ $(document).ready(function() {
             // url: "/fultra/app/webservice.php",
             
             // linea de código para el despliegue en FULTRA
-            url: "/app/webservice.php",
+            // url: "/app/webservice.php",
+            
+            // linea de código para el desarrollo en XAMPP LOCAL
+            url: "/fultra_v9/fultra/app/webservice.php",
             
             data: {
                 action: "getNoticationsTracings"
@@ -39,7 +42,10 @@ $(document).ready(function() {
             // url: "/fultra/app/webservice.php",
             
             // linea de código para el despliegue en FULTRA
-            url: "/app/webservice.php",
+            // url: "/app/webservice.php",
+            
+            // linea de código para el desarrollo en XAMPP LOCAL
+            url: "/fultra_v9/fultra/app/webservice.php",
             
             data: {
                 action: "getNotWachTracings"
@@ -73,11 +79,13 @@ $(document).ready(function() {
                     var formattedDate = date.toLocaleString('es-MX', options);
                     
                     // ########## Despliegue en SYSOP ##########
-                    // Declaramos la URL hacia la carpeta donde se esta guardando el seguimiento
                     // var folderUrl = "/fultra/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
                     
                     // ########## Despliegue en FULTRA ##########
-                    var folderUrl = "/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
+                    // var folderUrl = "/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
+                    
+                    // ########## Despliegue en XAMPP LOCAL ##########
+                    var folderUrl = "/fultra_v9/fultra/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
                     
                     // Función para truncar texto con puntos suspensivos
                     function truncateText(text, maxLength) {
@@ -129,7 +137,10 @@ $(document).ready(function() {
             // url: "/fultra/app/webservice.php",
             
             // linea de código para el despliegue en FULTRA
-            url: "/app/webservice.php",
+            // url: "/app/webservice.php",
+            
+            // linea de código para el desarrollo en XAMPP LOCAL
+            url: "/fultra_v9/fultra/app/webservice.php",
             
             data: {
                 action: "deleteTracingNotify",
@@ -169,7 +180,10 @@ $(document).ready(function() {
             // url: "/fultra/app/webservice.php",
             
             // linea de código para el despliegue en FULTRA
-            url: "/app/webservice.php",
+            // url: "/app/webservice.php",
+            
+            // linea de código para el desarrollo en XAMPP LOCAL
+            url: "/fultra_v9/fultra/app/webservice.php",
             
             data: {
                 action: "clearTracingsNotify",
