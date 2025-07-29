@@ -8,6 +8,8 @@
   $clientes_pages = ['folders.php', 'subfolder.php'];
   $tablero_pages = ['all_folders.php'];
   $material_pages = ['resources.php'];
+  $empresas_pages = ['companies.php', 'create-company.php', 'update-company.php', 'detail-company.php']; // ← AGREGAR ESTA LÍNEA
+
 ?>
 
 <style>
@@ -391,6 +393,15 @@
           <a href="../folders/folders.php" class="nav-link <?php echo (in_array($current_page, $clientes_pages)) ? 'active' : ''; ?>">
             <i class="fa fa-folder-open nav-icon"></i>
             <p>Clientes</p>
+          </a>
+        </li>
+
+
+                <!-- NUEVA OPCIÓN: EMPRESAS -->
+        <li class="nav-item">
+          <a href="../companies/companies.php" class="nav-link <?php echo (in_array($current_page, $empresas_pages)) ? 'active' : ''; ?>">
+            <i class="fa fa-building nav-icon"></i>
+            <p>Empresas</p>
           </a>
         </li>
         

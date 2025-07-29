@@ -16,11 +16,6 @@ if (!isset($_SESSION['user']) || empty($_SESSION['user'])) {
     exit(); // Es importante salir después de redirigir para evitar que el código siguiente se ejecute innecesariamente
 }
 
-// Verificar que solo administradores puedan acceder
-if ($_SESSION['user']['id_type_user'] != 1) {
-    header("Location: ../../index.php");
-    exit();
-}
 
 // Obtener la lista de los usuarios del departamento de ventas y que estén activos (3 -> Tipo de Usuario Ventas, 1 -> Activos)
 $customersList = $controller->getCustomersList(3, 1);

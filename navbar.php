@@ -8,6 +8,8 @@ enum NavigationSection: string
 {
     case USERS = 'users';
     case CLIENTS = 'clients';
+    case COMPANIES = 'companies';  // ← AGREGAR ESTA LÍNEA
+
     case DASHBOARD = 'dashboard';
     case MATERIALS = 'materials';
     case VULNERABILITIES = 'vulnerabilities';  // Nueva sección añadida
@@ -48,6 +50,12 @@ class NavigationHandler
                 'folders.php',
                 'subfolder.php'
             ],
+                    NavigationSection::COMPANIES->value => [  // ← AGREGAR ESTA SECCIÓN
+            'companies.php',
+            'create-company.php',
+            'update-company.php',
+            'detail-company.php'
+        ],
             NavigationSection::DASHBOARD->value => [
                 'all_folders.php'
             ],
@@ -181,9 +189,10 @@ class NavigationHandler
         return match($section) {
             NavigationSection::USERS => in_array($userType, [1, 2]), // Admin y Supervisor
             NavigationSection::CLIENTS => in_array($userType, [1, 2, 3]), // Admin, Supervisor y Ventas
+            NavigationSection::COMPANIES => in_array($userType, [1,3]), // Solo Administradores
             NavigationSection::DASHBOARD => in_array($userType, [1, 2]), // Admin y Supervisor
             NavigationSection::MATERIALS => in_array($userType, [1, 2, 3]), // Todos los tipos
-            NavigationSection::VULNERABILITIES => in_array($userType, [1]), // Solo Administradores
+            NavigationSection::VULNERABILITIES => in_array($userType, [1,2,3]), // Solo Administradores
             NavigationSection::OTHER => true
         };
     }
@@ -196,6 +205,7 @@ class NavigationHandler
         return match($section) {
             NavigationSection::USERS => 'Gestión de Usuarios',
             NavigationSection::CLIENTS => 'Gestión de Clientes',
+            NavigationSection::COMPANIES => 'Gestión de Empresas',
             NavigationSection::DASHBOARD => 'Tablero de Control',
             NavigationSection::MATERIALS => 'Material de Apoyo',
             NavigationSection::VULNERABILITIES => 'Operaciones Vulnerables',  // Nuevo título
@@ -211,6 +221,7 @@ class NavigationHandler
         return match($section) {
             NavigationSection::USERS => 'fas fa-users',
             NavigationSection::CLIENTS => 'fas fa-folder-open',
+            NavigationSection::COMPANIES => 'fas fa-building',
             NavigationSection::DASHBOARD => 'fas fa-chart-bar',
             NavigationSection::MATERIALS => 'fas fa-book',
             NavigationSection::VULNERABILITIES => 'fas fa-shield-alt',  // Nuevo ícono de seguridad
@@ -290,9 +301,12 @@ try {
     // Mantener arrays originales para compatibilidad
     $users_pages = $navigationHandler->getSectionPages(NavigationSection::USERS);
     $clientes_pages = $navigationHandler->getSectionPages(NavigationSection::CLIENTS);
+    $empresas_pages = $navigationHandler->getSectionPages(NavigationSection::COMPANIES);  // ← AGREGAR ESTA LÍNEA
     $tablero_pages = $navigationHandler->getSectionPages(NavigationSection::DASHBOARD);
     $material_pages = $navigationHandler->getSectionPages(NavigationSection::MATERIALS);
     $vulnerabilities_pages = $navigationHandler->getSectionPages(NavigationSection::VULNERABILITIES);  // Nueva variable
+
+
     
 } catch (Exception $e) {
     error_log("Navigation error: " . $e->getMessage());
@@ -305,6 +319,8 @@ try {
     $tablero_pages = ['all_folders.php'];
     $material_pages = ['resources.php'];
     $vulnerabilities_pages = ['vulnerabilities.php', 'vulnerability-scan.php', 'security-audit.php'];  // Fallback
+    $empresas_pages = ['companies.php', 'create-company.php', 'update-company.php', 'detail-company.php'];
+
 }
 
 /**
@@ -765,6 +781,14 @@ function isSupervisorOrAbove(): bool
             <p>Clientes</p>
           </a>
         </li>
+
+        <li class="nav-item">
+          <a href="backoffice/companies/companies.php" class="nav-link <?php echo (in_array($current_page, $empresas_pages)) ? 'active' : ''; ?>">
+            <i class="fa fa-building nav-icon"></i>
+            <p>Empresas</p>
+          </a>
+        </li>
+        
 
         
         
