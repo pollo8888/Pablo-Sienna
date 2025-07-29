@@ -423,11 +423,11 @@
                                                                     <em>Puedes ver este seguimiento en el portal administrativo accediendo a trav&eacute;s del bot&oacute;n "Ver seguimiento"</em>
                                                                 </p>
                                                                 <div style="text-align: center; margin: 30px 0;">
-                                                                    <!--<a href="https://desarrollo.sysop26.com/fultra/backoffice/folders/subfolder.php?id=<?php echo $templateData['id_folder']; ?>&key=<?php echo $templateData['key_folder']; ?>" style="background-color: #FF5800; color: #ffffff; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-size: 16px;">
+                                                                    <!--<a href="https://desarrollo.sysop26.com/sienna/backoffice/folders/subfolder.php?id=<?php echo $templateData['id_folder']; ?>&key=<?php echo $templateData['key_folder']; ?>" style="background-color: #FF5800; color: #ffffff; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-size: 16px;">
                                                                         Ver seguimiento
                                                                     </a>-->
 
-                                                                    <a href="https://pld.fultra.net/backoffice/folders/subfolder.php?id=<?php echo $templateData['id_folder']; ?>&key=<?php echo $templateData['key_folder']; ?>" style="background-color: #FF5800; color: #ffffff; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-size: 16px;">
+                                                                    <a href="https://pld.sienna.net/backoffice/folders/subfolder.php?id=<?php echo $templateData['id_folder']; ?>&key=<?php echo $templateData['key_folder']; ?>" style="background-color: #FF5800; color: #ffffff; padding: 12px 25px; border-radius: 5px; text-decoration: none; font-size: 16px;">
                                                                         Ver seguimiento
                                                                     </a>
                                                                 </div>
@@ -459,7 +459,7 @@
                                         <tbody>
                                           <tr>
                                             <td class="mcnTextContent" style="padding-top:0; padding-right:18px; padding-bottom:9px; padding-left:18px;" valign="top">
-                                              <em>FULTRA Soluciones al Transporte | Derechos Reservados</em><br>
+                                              <em>SIENNA Soluciones al Transporte | Derechos Reservados</em><br>
                                               <!--Tel&eacute;fonos de Atenci&oacute;n: +52 (81)1233 00 00 Ext. 125 escr&iacute;banos a: <a class="moz-txt-link-abbreviated" href="mailto:soporte@sysop.com.mx" moz-do-not-send="true">soporte@sysop.com.mx</a>-->
                                             </td>
                                           </tr>

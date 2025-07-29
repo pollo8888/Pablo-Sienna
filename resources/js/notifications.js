@@ -6,9 +6,9 @@ $(document).ready(function() {
         $.ajax({
             type: "GET",
             // linea de código para el desarrollo en SysOp
-            // url: "/fultra/app/webservice.php",
+            // url: "/sienna/app/webservice.php",
             
-            // linea de código para el despliegue en FULTRA
+            // linea de código para el despliegue en SIENNA
             // url: "/app/webservice.php",
             
             // linea de código para el desarrollo en MAC XAMPP /Sienna/
@@ -39,9 +39,9 @@ $(document).ready(function() {
         $.ajax({
             type: "GET",
             // linea de código para el desarrollo en SysOp
-            // url: "/fultra/app/webservice.php",
+            // url: "/sienna/app/webservice.php",
             
-            // linea de código para el despliegue en FULTRA
+            // linea de código para el despliegue en SIENNA
             // url: "/app/webservice.php",
             
             // linea de código para el desarrollo en MAC XAMPP /Sienna/
@@ -82,18 +82,18 @@ $(document).ready(function() {
                     // ############## PARA DESPLIEGUE EN LOCAL O MODIFICAR EL ANTIGUO PARA QUE NO SE ABRA EN EXTERNO
                     
                     // NUEVO - - lineas de código para abrir el archivo en un almacenamiento nuevo con la dirección URL de SysOp o Local - NUEVO
-                    // var documentUrl = "/fultra/backoffice/folders/extensions/open_pdf.php?folder=" + encodeURIComponent(item.key_folder) + "&file=" + encodeURIComponent(item.file_name_document);
+                    // var documentUrl = "/sienna/backoffice/folders/extensions/open_pdf.php?folder=" + encodeURIComponent(item.key_folder) + "&file=" + encodeURIComponent(item.file_name_document);
                     
                     // ANTIGUO - - lineas de código para el desarrollo en SysOp - ANTIGUO
-                    //var documentUrl = "/fultra/uploads/documents/" + encodeURIComponent(item.key_folder) + "/" + encodeURIComponent(item.file_name_document);
+                    //var documentUrl = "/sienna/uploads/documents/" + encodeURIComponent(item.key_folder) + "/" + encodeURIComponent(item.file_name_document);
                     
                     // Asignamos una URL para ingresar a los detalles de la carpeta o folder donde esta el documento que fue cargado
-                    // var folderUrl = "/fultra/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
+                    // var folderUrl = "/sienna/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
                     
-                    // ################## PARA DESPLIEGUE EN FULTRA ###############
-                    // lineas de código para el despliegue en FULTRA
+                    // ################## PARA DESPLIEGUE EN SIENNA ###############
+                    // lineas de código para el despliegue en SIENNA
                     
-                    // NUEVO - - - Lineas de código para abrir el archivo en un almacenamiento nuevo con la dirección URL de FULTRA - CÓDIGO NUEVO
+                    // NUEVO - - - Lineas de código para abrir el archivo en un almacenamiento nuevo con la dirección URL de SIENNA - CÓDIGO NUEVO
                     // var documentUrl = "/backoffice/folders/extensions/open_pdf.php?folder=" + encodeURIComponent(item.key_folder) + "&file=" + encodeURIComponent(item.file_name_document);
                     
                     // ANTIGUIO - - - CÓDIGO ANTIGUO
@@ -151,9 +151,9 @@ $(document).ready(function() {
         $.ajax({
             type: "POST",
             // linea de código para el desarrollo en SysOp
-            // url: "/fultra/app/webservice.php",
+            // url: "/sienna/app/webservice.php",
             
-            // linea de código para el despliegue en FULTRA
+            // linea de código para el despliegue en SIENNA
             // url: "/app/webservice.php",
             
             // linea de código para el desarrollo en MAC XAMPP /Sienna/
@@ -194,9 +194,9 @@ $(document).ready(function() {
         $.ajax({
             type: "GET",
             // linea de código para el desarrollo en SysOp
-            // url: "/fultra/app/webservice.php",
+            // url: "/sienna/app/webservice.php",
             
-            // linea de código para el despliegue en FULTRA
+            // linea de código para el despliegue en SIENNA
             // url: "/app/webservice.php",
             
             // linea de código para el desarrollo en MAC XAMPP /Sienna/

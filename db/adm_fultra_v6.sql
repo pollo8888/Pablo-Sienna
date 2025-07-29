@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Base de datos: `adm_fultra`
+-- Base de datos: `adm_sienna`
 --
 
 -- --------------------------------------------------------
@@ -134,7 +134,7 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id_user`, `id_type_user`, `key_user`, `name_user`, `rfc_user`, `photo_user`, `phone_user`, `email_user`, `password_user`, `status_user`, `created_at_user`, `updated_at_user`, `eliminated_at_user`) VALUES
 (1, 1, 'USR-B7M0N', 'ADMINISTRADOR SYSOP', NULL, 'USR-B7M0N_s-sysop_(1).png', '8112330000', 'malonso@sysop.com.mx', '$2y$10$mzBfCLvY5bBF.LadIntI4.nF3r1C0opvtCb.ZvB1G41Z8R3rFvPJi', 1, '2024-10-23 13:33:31', '2024-10-23 13:33:31', NULL),
-(2, 1, 'USR-8BZ7C', 'ADMINISTRACION FULTRA', NULL, NULL, '1234567890', 'administracion@fultra.mx', '$2y$10$d4CT7NQ0mIHKehwgCBjRKO3wP6FkIW4Q9.C6uuzsvDW54a6FowxWG', 1, '2024-10-23 13:35:28', '2024-10-23 13:35:28', NULL);
+(2, 1, 'USR-8BZ7C', 'ADMINISTRACION SIENNA', NULL, NULL, '1234567890', 'administracion@sienna.mx', '$2y$10$d4CT7NQ0mIHKehwgCBjRKO3wP6FkIW4Q9.C6uuzsvDW54a6FowxWG', 1, '2024-10-23 13:35:28', '2024-10-23 13:35:28', NULL);
 
 --
 -- Índices para tablas volcadas

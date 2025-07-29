@@ -2,13 +2,13 @@
 Configuración a la base de datos
 
 DBhost = 'localhost';
-DBname = 'adm_fultra';
-DBuser = 'adm_fultra';
+DBname = 'adm_sienna';
+DBuser = 'adm_sienna';
 DBpass = '!1GfTlyk94f7eOdel';
 
 --**--**--**--**--**--**--**--**--**--**--**--**
 
 Datos de acceso al portal
 
-User: administracion@fultra.mx
+User: administracion@sienna.mx
 Password: SecretPass01@

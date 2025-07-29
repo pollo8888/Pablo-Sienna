@@ -11,13 +11,13 @@
       $this->production_mode = self::MODE;
       if ($this->production_mode) {
         $this->DBhost = 'localhost';
-        $this->DBname = 'adm_fultra';
+        $this->DBname = 'adm_sienna';
         $this->DBuser = 'root';
         $this->DBpass = '';
       }
       else {
         $this->DBhost = 'localhost';
-        $this->DBname = 'adm_fultra';
+        $this->DBname = 'adm_sienna';
         $this->DBuser = 'root';
         $this->DBpass = '';
       }

@@ -6,9 +6,9 @@ $(document).ready(function() {
         $.ajax({
             type: "GET",
             // linea de código para el desarrollo en SysOp
-            // url: "/fultra/app/webservice.php",
+            // url: "/sienna/app/webservice.php",
             
-            // linea de código para el despliegue en FULTRA
+            // linea de código para el despliegue en SIENNA
             // url: "/app/webservice.php",
             
             // linea de código para el desarrollo en MAC XAMPP /Sienna/
@@ -39,9 +39,9 @@ $(document).ready(function() {
         $.ajax({
             type: "GET",
             // linea de código para el desarrollo en SysOp
-            // url: "/fultra/app/webservice.php",
+            // url: "/sienna/app/webservice.php",
             
-            // linea de código para el despliegue en FULTRA
+            // linea de código para el despliegue en SIENNA
             // url: "/app/webservice.php",
             
             // linea de código para el desarrollo en MAC XAMPP /Sienna/
@@ -81,10 +81,10 @@ $(document).ready(function() {
                     var formattedDate = date.toLocaleString('es-MX', options);
                     
                     // LINEAS DE CÓDIGO PARA SYSOP //
-                    // var folderUrl = "/fultra/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
-                    // var userUrl = "/fultra/backoffice/users/detail-user.php?id=" + encodeURIComponent(item.id_user_customer) + "&key=" + encodeURIComponent(item.key_user_customer);
+                    // var folderUrl = "/sienna/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
+                    // var userUrl = "/sienna/backoffice/users/detail-user.php?id=" + encodeURIComponent(item.id_user_customer) + "&key=" + encodeURIComponent(item.key_user_customer);
                     
-                    // ################## PARA DESPLIEGUE EN FULTRA ###############
+                    // ################## PARA DESPLIEGUE EN SIENNA ###############
                     // var folderUrl = "/backoffice/folders/subfolder.php?id=" + encodeURIComponent(item.id_folder) + "&key=" + encodeURIComponent(item.key_folder);
                     // var userUrl = "/backoffice/users/detail-user.php?id=" + encodeURIComponent(item.id_user_customer) + "&key=" + encodeURIComponent(item.key_user_customer);
                     
@@ -150,9 +150,9 @@ $(document).ready(function() {
         $.ajax({
             type: "POST",
             // linea de código para el desarrollo en SysOp
-            // url: "/fultra/app/webservice.php",
+            // url: "/sienna/app/webservice.php",
             
-            // linea de código para el despliegue en FULTRA
+            // linea de código para el despliegue en SIENNA
             // url: "/app/webservice.php",
             
             // linea de código para el desarrollo en MAC XAMPP /Sienna/
@@ -205,9 +205,9 @@ $(document).ready(function() {
         $.ajax({
             type: "GET",
             // linea de código para el desarrollo en SysOp
-            // url: "/fultra/app/webservice.php",
+            // url: "/sienna/app/webservice.php",
             
-            // linea de código para el despliegue en FULTRA
+            // linea de código para el despliegue en SIENNA
             // url: "/app/webservice.php",
             
             // linea de código para el desarrollo en MAC XAMPP /Sienna/

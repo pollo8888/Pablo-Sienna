@@ -257,7 +257,7 @@ function validateCSRFToken(string $token): bool
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>FULTRA MX</title>
+    <title>SIENNA MX</title>
     <link rel="stylesheet" href="resources/plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" type="text/css" href="resources/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="resources/css/micromodal.css">

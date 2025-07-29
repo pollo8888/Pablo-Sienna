@@ -5,9 +5,9 @@ Options -Indexes
 RewriteEngine On
 
 # CONFIGURACIÓN PARA SERVIDOR PRODUCCIÓN (comentado)
-#RewriteCond %{REQUEST_URI} ^/fultra/uploads/documents/ [NC]
+#RewriteCond %{REQUEST_URI} ^/sienna/uploads/documents/ [NC]
 #RewriteCond %{REQUEST_URI} ^/uploads/documents/ [NC]
-#RewriteCond %{REQUEST_URI} ^/fultra/uploads/material/ [NC]
+#RewriteCond %{REQUEST_URI} ^/sienna/uploads/material/ [NC]
 #RewriteCond %{REQUEST_URI} ^/uploads/material/ [NC]
 
 # CONFIGURACIÓN PARA MAC XAMPP /Sienna/

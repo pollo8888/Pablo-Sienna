@@ -205,7 +205,7 @@ if(!empty($_POST['action']) && $_POST['action'] == 'update'){
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>FULTRA MX</title>
+    <title>SIENNA MX</title>
     <link rel="stylesheet" href="../../resources/plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="../../resources/plugins/datatables-bs4/css/dataTables.bootstrap4.css">
     <link rel="stylesheet" href="../../resources/dist/css/adminlte.min.css">
@@ -236,19 +236,19 @@ if(!empty($_POST['action']) && $_POST['action'] == 'update'){
         padding-right: 30px;
       }
       
-      /* NUEVOS ESTILOS PARA EMPRESA */
-      #empresa-section, #rol-empresa-section {
-        border-left: 4px solid #007bff;
-        padding: 15px;
-        background-color: #f8f9fa;
-        border-radius: 5px;
-        margin: 10px 0;
-        display: none;
+
+      #empresa-section {
+          border-left: 4px solid #007bff;
+          padding: 15px;
+          background-color: #f8f9fa;
+          border-radius: 5px;
+          margin: 10px 0;
+          display: none;
       }
 
-      #empresa-section label, #rol-empresa-section label {
-        color: #007bff;
-        font-weight: 600;
+      #empresa-section label {
+          color: #007bff;
+          font-weight: 600;
       }
 
       #empresa-actual {
@@ -354,32 +354,7 @@ if(!empty($_POST['action']) && $_POST['action'] == 'update'){
                                                     <small class="form-text text-muted">Seleccione la empresa a la que pertenece este usuario</small>
                                                 </div>
 
-                                                <!-- Rol en la Empresa (solo para clientes empresa) -->
-                                                <div class="form-group" id="rol-empresa-section">
-                                                    <label for="company_role">Rol en la Empresa:</label>
-                                                    <select name="user[company_role]" class="form-control" id="company_role">
-                                                        <option value="operador" <?php echo (isset($_POST['user']['company_role']) ? 
-                                                                                          ($_POST['user']['company_role'] == 'operador' ? 'selected' : '') : 
-                                                                                          ($user['company_role'] == 'operador' ? 'selected' : '')); ?>>
-                                                            Operador
-                                                        </option>
-                                                        <option value="admin_empresa" <?php echo (isset($_POST['user']['company_role']) ? 
-                                                                                                 ($_POST['user']['company_role'] == 'admin_empresa' ? 'selected' : '') : 
-                                                                                                 ($user['company_role'] == 'admin_empresa' ? 'selected' : '')); ?>>
-                                                            Administrador de Empresa
-                                                        </option>
-                                                        <option value="consultor" <?php echo (isset($_POST['user']['company_role']) ? 
-                                                                                              ($_POST['user']['company_role'] == 'consultor' ? 'selected' : '') : 
-                                                                                              ($user['company_role'] == 'consultor' ? 'selected' : '')); ?>>
-                                                            Consultor
-                                                        </option>
-                                                    </select>
-                                                    <small class="form-text text-muted">
-                                                        <strong>Operador:</strong> Registra operaciones PLD<br>
-                                                        <strong>Admin Empresa:</strong> Gestiona usuarios de su empresa<br>
-                                                        <strong>Consultor:</strong> Solo consulta información
-                                                    </small>
-                                                </div>
+                                                
 
                                                 <!-- Mostrar información actual de la empresa -->
                                                 <?php if($user['id_company'] && $user['name_company']) { ?>
@@ -399,25 +374,11 @@ if(!empty($_POST['action']) && $_POST['action'] == 'update'){
                                                             </div>
                                                         </div>
                                                         <div class="row mt-2">
-                                                            <div class="col-lg-12">
-                                                                <strong>Rol Actual:</strong> 
-                                                                <?php
-                                                                switch($user['company_role']) {
-                                                                  case 'admin_empresa':
-                                                                    echo '<span class="badge badge-primary">Administrador de Empresa</span>';
-                                                                    break;
-                                                                  case 'operador':
-                                                                    echo '<span class="badge badge-success">Operador</span>';
-                                                                    break;
-                                                                  case 'consultor':
-                                                                    echo '<span class="badge badge-info">Consultor</span>';
-                                                                    break;
-                                                                  default:
-                                                                    echo ucfirst($user['company_role']);
-                                                                }
-                                                                ?>
-                                                            </div>
-                                                        </div>
+                                                          <div class="col-lg-12">
+                                                              <strong>Tipo:</strong> 
+                                                              <span class="badge badge-info">Cliente Empresa</span>
+                                                          </div>
+                                                      </div>
                                                     </div>
                                                 </div>
                                                 <?php } else if($user['id_type_user'] == 3) { ?>
@@ -603,26 +564,23 @@ if(!empty($_POST['action']) && $_POST['action'] == 'update'){
     <script>
     $(document).ready(function() {
       // Función para mostrar/ocultar campos de empresa
-      function toggleEmpresaFields() {
-        var tipoUsuario = $('#id_type_user').val();
-        
-        if (tipoUsuario == '3') { // Cliente Empresa
-          $('#empresa-section').show();
-          $('#rol-empresa-section').show();
-          $('#id_company').attr('required', true);
-          
-          // Mostrar información actual si existe
-          <?php if($user['id_company']) { ?>
-          $('#empresa-actual').show();
-          <?php } ?>
-        } else { // Admin o Empleado FULTRA
-          $('#empresa-section').hide();
-          $('#rol-empresa-section').hide();
-          $('#empresa-actual').hide();
-          $('#id_company').removeAttr('required').val('').trigger('change');
-          $('#company_role').val('operador');
+        function toggleEmpresaFields() {
+            var tipoUsuario = $('#id_type_user').val();
+            
+            if (tipoUsuario == '3') { // Cliente Empresa
+              $('#empresa-section').show();
+              $('#id_company').attr('required', true);
+              
+              // Mostrar información actual si existe
+              <?php if($user['id_company']) { ?>
+              $('#empresa-actual').show();
+              <?php } ?>
+            } else { // Admin o Empleado SIENNA
+              $('#empresa-section').hide();
+              $('#empresa-actual').hide();
+              $('#id_company').removeAttr('required').val('').trigger('change');
+            }
         }
-      }
       
       // Ejecutar al cargar la página
       toggleEmpresaFields();

@@ -20,12 +20,12 @@
       $url = "/uploads"; // Esto es la URL relativa que usarás para acceder a los archivos desde la web
       
       // ESTE CÓDIGO ES PARA RUTAS EN EL SERVIDOR DIRECTAMENTE DE SYSOP - (omitir)
-      // $server = "/var/www/vhosts/sysop26.com/desarrollo.sysop26.com/fultra/uploads";
-      // $url = "https://desarrollo.sysop26.com/fultra/uploads";
+      // $server = "/var/www/vhosts/sysop26.com/desarrollo.sysop26.com/sienna/uploads";
+      // $url = "https://desarrollo.sysop26.com/sienna/uploads";
       
-      // Lineas de código para despliegue en FULTRA Y DIRECTAMENTE EN EL SERVER DE FULTRA (opcional)-----
-      // $server = "/var/www/vhosts/fultra.net/pld.fultra.net/uploads";
-      // $url = "https://pld.fultra.net/uploads";
+      // Lineas de código para despliegue en SIENNA Y DIRECTAMENTE EN EL SERVER DE SIENNA (opcional)-----
+      // $server = "/var/www/vhosts/sienna.net/pld.sienna.net/uploads";
+      // $url = "https://pld.sienna.net/uploads";
       
       $folders = array(
         // Sección para subir la Fotografía del Usuario (photo_user -> tabla: users)

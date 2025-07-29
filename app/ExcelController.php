@@ -22,7 +22,7 @@
             // Create new Spreadsheet object
             $spreadsheet = new Spreadsheet();
             // Set document properties
-            $spreadsheet->getProperties()->setTitle('Sheet1')->setCreator('FULTRA');
+            $spreadsheet->getProperties()->setTitle('Sheet1')->setCreator('SIENNA');
             // Define the headers and the corresponding data keys
             $headers = [
                 'Clave' => 'key_folder',

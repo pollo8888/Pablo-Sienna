@@ -1507,15 +1507,7 @@
         return $this->execute($query, $params);
     }
 
-    /**
-     * Eliminar empresa (cambiar status)
-     */
-    public function deleteCompany($data) {
-        $query = "UPDATE companies SET status_company = 3, eliminated_at_company = NOW() 
-                  WHERE id_company = ? AND key_company = ?";
-        $params = array($data['idCompany'], $data['keyCompany']);
-        return $this->execute($query, $params);
-    }
+
 
     /**
      * Verificar si RFC de empresa ya existe
@@ -1552,6 +1544,35 @@
         $params = array($idCompany);
         return $this->consult($query, $params);
     }
+
+
+      /**
+   * Verificar si RFC de empresa ya existe excluyendo una empresa específica
+   */
+  public function getRFCCompanyExclude($rfcCompany, $excludeCompanyId) {
+      $query = "SELECT * FROM companies WHERE rfc_company = ? AND status_company = 1 AND id_company != ?";
+      $params = array($rfcCompany, $excludeCompanyId);
+      return $this->consult($query, $params, true);
+  }
+
+
+/**
+ * Eliminar empresa (versión simplificada si no usas key_company)
+ */
+public function deleteCompany($data) {
+    // Si usas key_company en tu tabla
+    if(isset($data['keyCompany']) && !empty($data['keyCompany'])) {
+        $query = "UPDATE companies SET status_company = 3, eliminated_at_company = NOW() 
+                  WHERE id_company = ? AND key_company = ?";
+        $params = array($data['idCompany'], $data['keyCompany']);
+    } else {
+        // Si NO usas key_company en tu tabla
+        $query = "UPDATE companies SET status_company = 3, eliminated_at_company = NOW() 
+                  WHERE id_company = ?";
+        $params = array($data['idCompany']);
+    }
+    return $this->execute($query, $params);
+}
   
   }
 ?>

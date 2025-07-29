@@ -1,14 +1,284 @@
-# Proyecto de Administración FULTRA
+# ANÁLISIS DEL SISTEMA SIENNA
+## Flujo de Trabajo y Arquitectura del Proyecto
 
-```Plazo de desarrollo:
-Inicio: - 11/03/2024
-Fin:    - 27/05/2024
+---
 
-```Fecha de implementación:
-- 29/05/2024 
+## 📋 INFORMACIÓN GENERAL DEL PROYECTO
 
-### Desarrollo y Despliegue por:
-SysOp / Ing. Mario Alberto Alonso Alvarado
+**Nombre**: Sistema de Administración SIENNA  
+**Período de desarrollo**: Inicia 29/07/2025  
+**Desarrollador**: Ing. Uzziel López Valdez
 
-# mario.blazter99@gmail.com
-# https://www.linkedin.com/in/mario-alberto-alonso-alvarado-672632210/
+**IMPORTANTE**: Este sistema anteriormente se llamaba FULTRA, ahora se denomina **SIENNA**. Toda referencia a FULTRA debe entenderse como SIENNA.
+
+---
+
+## 🎯 PROPÓSITO DEL SISTEMA
+
+Sistema especializado para la **gestión de operaciones vulnerables ante el SAT**, diseñado para empresas que manejan múltiples razones sociales y necesitan cumplir con las obligaciones fiscales de prevención de lavado de dinero.
+
+---
+
+## 🏢 ARQUITECTURA REAL DEL SISTEMA
+
+### **MODELO DE IMPLEMENTACIÓN**
+- **Un sistema = Un cliente específico** (ejemplo: Chedraui)
+- **Instalación independiente** por cada cliente nuevo
+- **Base de datos dedicada** por cliente
+- **Configuración personalizada** según necesidades del cliente
+
+### **ROLES Y PERMISOS IMPLEMENTADOS**
+
+#### **1. ADMINISTRADOR (Tipo 1) - TÚ**
+**Función**: Setup y configuración inicial del sistema
+- Instalas el sistema para el cliente (Chedraui)
+- Configuras base de datos y servidor
+- Creas LA ÚNICA cuenta de usuario para el cliente
+- Entregas el sistema funcionando
+
+#### **2. USUARIO (Tipo 2) - UNA CUENTA COMPARTIDA PARA TODO CHEDRAUI**
+**Función**: Operación diaria del sistema
+- **Usuario compartido**: administracion@sienna.mx (actualizado de sienna.mx)
+- **Contraseña compartida**: SecretPass01@
+- Gerardo, Ana, Carlos, etc. **todos usan la misma cuenta**
+- Todos ven y manejan la misma información
+- Gestionan las empresas filiales de Chedraui
+
+#### **3. VENTAS (Tipo 3) - NO SE USA**
+- Código existe en el sistema para escalabilidad futura
+- Para el proyecto de Chedraui NO se implementa
+- Solo hay UNA cuenta de usuario compartida
+
+---
+
+## 🔧 STACK TECNOLÓGICO
+
+**Base de datos**: MariaDB 5.5.68  
+**Backend**: PHP 7.4.33  
+**Frontend**: JavaScript, AJAX  
+**Autenticación**: Password hashing (BCRYPT)  
+**Email**: SMTP con Amazon SES  
+
+**Configuración de Base de Datos** (heredada del sistema original):
+```
+DBhost = 'localhost'
+DBname = 'adm_sienna' (actualizado de adm_sienna)
+DBuser = 'adm_sienna' (actualizado de adm_sienna)
+DBpass = '!1GfTlyk94f7eOdel'
+```
+
+---
+
+## 📊 FLUJO DE TRABAJO PRINCIPAL
+
+### **FASE 1: SETUP INICIAL (TÚ - ADMINISTRADOR)**
+1. **Instalación del sistema** en servidor del cliente
+2. **Configuración de base de datos** dedicada
+3. **Personalización de URLs** y dominios
+4. **Configuración SMTP** del cliente
+5. **Creación de LA cuenta única** para el cliente
+6. **Entrega y capacitación**
+
+### **FASE 2: OPERACIÓN DIARIA (CHEDRAUI - USUARIOS)**
+
+#### **1. Acceso al Sistema**
+- Todos los empleados usan: `administracion@sienna.mx` (actualizado)
+- Misma contraseña para todos: `SecretPass01@`
+- Sin segregación de usuarios
+
+#### **2. Gestión de Empresas**
+- Registro de las diferentes razones sociales que maneja Chedraui:
+  - Inmobiliaria El Faro
+  - Constructora Tezontle  
+  - Otras filiales de Chedraui
+- Creación automática de estructura de carpetas por empresa
+
+#### **3. Gestión de Clientes**
+- Registro de clientes por cada empresa
+- Tipos soportados: Persona Física, Persona Moral, Fideicomiso
+- Organización jerárquica automática de carpetas
+
+#### **4. Gestión Documental**
+- Almacenamiento estructurado por empresa/cliente
+- Subida de documentos (INE, contratos, comprobantes)
+- Sistema de carpetas automático:
+
+```
+📁 Empresa (ej. Inmobiliaria El Faro)
+└── 📁 Cliente 1 (ej. Juan Pérez)
+    ├── 📄 INE
+    ├── 📄 Contrato
+    └── 📄 Comprobantes
+└── 📁 Cliente 2 (ej. Ana Torres)
+    └── 📄 Documentos...
+```
+
+#### **5. Operaciones Vulnerables**
+- Registro de operaciones por tipo de cliente
+- Validación automática de umbrales SAT
+- Generación automática de avisos cuando se requiere
+- Seguimiento de compliance fiscal
+
+---
+
+## 🏗️ ARQUITECTURA DEL SISTEMA
+
+### **MÓDULOS PRINCIPALES**
+- **Usuarios**: Gestión de empleados y permisos (solo para admin)
+- **Empresas**: Registro de razones sociales de Chedraui
+- **Clientes**: Base de datos de clientes por empresa
+- **Documentos**: Sistema de archivos organizado
+- **Operaciones Vulnerables**: Registro y seguimiento SAT
+- **Notificaciones**: Sistema automatizado de alertas
+
+### **ESTRUCTURA ORGANIZACIONAL**
+```
+🏢 SISTEMA CHEDRAUI
+├── 👨‍💼 Admin (Tú) - Solo setup inicial
+└── 👥 UNA CUENTA COMPARTIDA
+    ├── Gerardo usa esta cuenta
+    ├── Ana usa esta cuenta  
+    ├── Carlos usa esta cuenta
+    └── Todos gestionan:
+        ├── 🏪 Inmobiliaria El Faro
+        ├── 🏗️ Constructora Tezontle
+        └── 📄 Mismos clientes y documentos
+```
+
+---
+
+## ⚙️ CONFIGURACIONES TÉCNICAS CRÍTICAS
+
+### **ARCHIVOS A MODIFICAR POR INSTALACIÓN**
+1. **app/Connector.php** → Credenciales BD del cliente
+2. **app/FileController.php** → Rutas de almacenamiento  
+3. **app/MailController.php** → SMTP del cliente
+4. **resources/js/notifications.js** → URLs del dominio
+5. **.htaccess** → Protección de documentos
+6. **app/emailsTemplates/sendNoticeCustomers.php** → Enlaces del sistema
+
+### **ALMACENAMIENTO DE ARCHIVOS**
+- **Interno**: `../../uploads/documents/`
+- **Externo**: `E:/uploads/documents/` (configurable)
+- **Protección**: .htaccess para URLs seguras
+
+### **CONFIGURACIÓN EMAIL SMTP** (heredada, a actualizar)
+- **Servidor**: Amazon SES (email-smtp.us-east-2.amazonaws.com)
+- **Puerto**: 465
+- **From**: notificaciones@sienna.mx (actualizado de atencionsienna.mx)
+
+### **LÍMITES DEL SERVIDOR**
+- **memory_limit**: 1024M
+- **post_max_size**: 510M  
+- **upload_max_filesize**: 500M
+- **max_execution_time**: 600
+
+---
+
+## 🔄 CASO PRÁCTICO: FLUJO DIARIO DE GERARDO
+
+### **Escenario**: Gerardo (empleado de Chedraui) registra una nueva operación
+
+1. **Login** → Se logea con `administracion@sienna.mx`
+
+2. **Registro de Empresa** → Va al módulo Empresas
+   - Agrega "Inmobiliaria El Faro"
+   - El sistema crea automáticamente la carpeta
+
+3. **Registro de Cliente** → Va al módulo Clientes  
+   - Agrega "Juan Pérez" para "Inmobiliaria El Faro"
+   - El sistema crea subcarpeta automáticamente
+
+4. **Subida de Documentos** → Entra a la carpeta de Juan Pérez
+   - Sube INE, contrato, comprobantes
+   - Todo queda organizado automáticamente
+
+5. **Registro de Operación Vulnerable** → Desde la empresa
+   - Registra operación de compra por $1,700,000
+   - El sistema valida automáticamente si requiere aviso SAT
+   - Genera alerta si excede umbrales
+
+### **Resultado Final en el Sistema**
+```
+📁 Inmobiliaria El Faro
+└── 📁 Juan Pérez
+    ├── 📄 INE.pdf
+    ├── 📄 Contrato.pdf
+    └── 📄 Comprobante.pdf
+
+📝 Operación #001
+Empresa: Inmobiliaria El Faro
+Cliente: Juan Pérez  
+Tipo: Compra
+Monto: $1,700,000
+Estatus: ⚠️ Requiere aviso al SAT
+```
+
+---
+
+## 📈 CARACTERÍSTICAS DESTACADAS
+
+### **AUTOMATIZACIÓN**
+- Creación automática de carpetas por empresa/cliente
+- Validaciones automáticas de umbrales SAT
+- Generación automática de alertas y avisos
+
+### **ORGANIZACIÓN**
+- Estructura jerárquica empresa → cliente → documentos
+- Sistema de carpetas inteligente
+- Búsquedas y filtros por empresa/cliente
+
+### **SEGURIDAD**
+- Autenticación con hashing BCRYPT
+- Protección de URLs de documentos
+- Validaciones de permisos por tipo de usuario
+
+### **ESCALABILIDAD**
+- Configuración flexible de almacenamiento (interno/externo)
+- Sistema preparado para múltiples tipos de usuario
+- Arquitectura modular para futuras expansiones
+
+### **COMPLIANCE**
+- Cumplimiento automático con obligaciones SAT
+- Registro detallado de operaciones vulnerables
+- Sistema de alertas y seguimiento
+
+---
+
+## 🚨 PUNTOS DE CONFIGURACIÓN IMPORTANTES
+
+### **DEPLOYMENT CHECKLIST**
+- [ ] Modificar **6 archivos específicos** para cada instalación
+- [ ] Configurar **CRON jobs** para tareas programadas  
+- [ ] Decidir almacenamiento: **interno vs externo**
+- [ ] Configurar **URLs públicas** vs rutas relativas según entorno
+- [ ] Establecer credenciales SMTP del cliente
+- [ ] Crear cuenta única de usuario para el cliente
+
+### **CONSIDERACIONES OPERATIVAS**
+- Un solo login compartido por toda la organización del cliente
+- Todos los usuarios ven la misma información
+- Sin segregación por departamentos o vendedores  
+- Sistema diseñado para colaboración total del equipo
+
+---
+
+## 💼 VALOR DEL SISTEMA
+
+### **PARA EL CLIENTE (CHEDRAUI)**
+- Sistema dedicado exclusivamente a sus operaciones
+- Gestión completa de múltiples razones sociales
+- Cumplimiento automatizado con obligaciones SAT
+- Organización eficiente de documentación
+- Un solo punto de acceso para todo el equipo
+
+### **PARA TI (ADMINISTRADOR/DESARROLLADOR)**
+- Modelo de instalación replicable por cliente
+- Sistema escalable para futuras necesidades
+- Configuración personalizable por implementación  
+- Control total sobre cada instalación
+- Arquitectura preparada para crecimiento
+
+---
+
+**RESUMEN EJECUTIVO**: El Sistema SIENNA es una solución integral para la gestión de operaciones vulnerables ante el SAT, implementado como sistema dedicado por cliente con una cuenta compartida para toda la organización, automatizando el cumplimiento fiscal y organizando eficientemente la documentación empresarial.

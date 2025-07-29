@@ -5,7 +5,7 @@
     class MailController {
         // Configuración SYSOP //
         /*
-        const SMTP_FROMNAME = 'FULTRA MX';
+        const SMTP_FROMNAME = 'SIENNA MX';
         const SMTP_USERNAME = '#####';
         const IS_SMTP = true;
         const SMTP_HOST = '#####';
@@ -27,8 +27,8 @@
         }
         */
         
-        // CONFIGURACIÓN Y DESPLIEGUE EN FULTRA //
-        const SMTP_FROMNAME = 'FULTRA MX';
+        // CONFIGURACIÓN Y DESPLIEGUE EN SIENNA //
+        const SMTP_FROMNAME = 'SIENNA MX';
         const SMTP_USERNAME = 'AKIA26BTXSH4GSM2CT67';
         const IS_SMTP = true;
         const SMTP_HOST = 'email-smtp.us-east-2.amazonaws.com';
@@ -39,7 +39,7 @@
             try {
                 $this->mail = new PHPMailer();
                 $this->mail->CharSet = 'UTF-8';
-                $this->mail->From = 'notificaciones@atencionfultra.mx';
+                $this->mail->From = 'notificaciones@atencionsienna.mx';
                 $this->mail->FromName = self::SMTP_FROMNAME;
                 $this->mail->SMTPAuth = self::IS_SMTP;
                 $this->mail->SMTPSecure = 'ssl';
@@ -59,10 +59,10 @@
         
         public function sendNoticeCustomers($dataNotice, $emails, $dataUser, $dataFolder) {
             try {
-                $this->mail->Subject = "FULTRA MX || NUEVO SEGUIMIENTO";
+                $this->mail->Subject = "SIENNA MX || NUEVO SEGUIMIENTO";
                 $this->mail->IsHTML(true);
                 $this->mail->ClearReplyTos();
-                $this->mail->addReplyTo("notificaciones@atencionfultra.mx", 'FULTRA MX');
+                $this->mail->addReplyTo("notificaciones@atencionsienna.mx", 'SIENNA MX');
                 
                 // Iterar sobre los correos electrónicos
                 foreach ($emails as $email) {
