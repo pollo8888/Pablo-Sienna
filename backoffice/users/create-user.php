@@ -20,7 +20,7 @@ if ($_SESSION['user']['id_type_user'] != 1) {
 
 // Llama a la función getUserTypes() en el controlador para obtener los tipos de usuarios disponibles.
 $userTypes = $controller->getUserTypes();
-$companies = $controller->getActiveCompanies();
+$companies = $controller->getSystemCompanies(1);
 
 function uploadFilePhoto($folio, $filename = null)
 {
@@ -217,6 +217,9 @@ if (!empty($_POST['action'])) {
         }
     }
 }
+
+
+
 
 $permitted_chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 $clave = substr(str_shuffle($permitted_chars), 0, 5);
@@ -2214,7 +2217,7 @@ $usr_rfc = substr(str_shuffle($permitted_chars), 0, 13);
                     '<i class="fas fa-spinner fa-spin"></i> Creando usuario...'
                 );
             }
-
+            
         // ✅ AGREGAR AQUÍ LA FUNCIÓN togglePassword()
             window.togglePassword = function() {
                 var passwordField = document.getElementById('password_user');

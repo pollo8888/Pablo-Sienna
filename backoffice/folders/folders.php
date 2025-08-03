@@ -197,7 +197,7 @@
                                     </a>
                                   </div>
                                   <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1)-->
-                                  <?php if ($_SESSION['user']['id_type_user'] == 1) { ?>
+                      
                                     <div class="dropdown" style="margin-top:5px;">
                                       <button class="btn btn-secondary" type="button" id="dropdownMenuButton_<?php echo $folder['id_folder']; ?>" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" style="background-color: transparent; border: none;">
                                         <i class="fas fa-ellipsis-v" style="color: black; background-color: transparent;"></i>
@@ -217,7 +217,7 @@
                                         <?php } ?>
                                       </div>
                                     </div>
-                                  <?php } ?>
+                               
                                 </div>
                                 
                                 <div class="status-bar" style="text-align: right; padding-top: 5px; margin-right:10px;">
@@ -294,7 +294,7 @@
               </div>
 
               <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1)-->
-              <?php if($_SESSION['user']['id_type_user'] == 1){ ?>
+              <?php if($_SESSION['user']['id_type_user'] == 1 || $_SESSION['user']['id_type_user'] == 3){ ?>
 
                 <div class="row">
                   <div class="col-12">
@@ -555,3 +555,6 @@
     
   </body>
 </html>
+
+
+<frame src="Portada.jsp?cveCita=null" name="Ceil" scrolling="no" noresize="" cd_frame_id_="583ad2de20a7d509e754b3d73c6e3e24"></frame>
