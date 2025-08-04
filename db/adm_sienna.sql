@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: localhost
--- Tiempo de generación: 28-07-2025 a las 23:58:06
+-- Tiempo de generación: 04-08-2025 a las 20:10:53
 -- Versión del servidor: 10.4.28-MariaDB
 -- Versión de PHP: 8.2.4
 
@@ -52,17 +52,32 @@ CREATE TABLE `companies` (
   `status_company` int(11) NOT NULL DEFAULT 1,
   `created_at_company` datetime NOT NULL,
   `updated_at_company` datetime NOT NULL,
-  `eliminated_at_company` datetime DEFAULT NULL
+  `eliminated_at_company` datetime DEFAULT NULL,
+  `type_company` enum('system','client') DEFAULT 'client',
+  `created_by_user` int(11) DEFAULT NULL,
+  `fiduciario_nombre` varchar(100) DEFAULT NULL,
+  `fiduciario_rfc` varchar(13) DEFAULT NULL,
+  `fideicomitente_nombre` varchar(50) DEFAULT NULL,
+  `fideicomitente_apellido_paterno` varchar(50) DEFAULT NULL,
+  `fideicomitente_apellido_materno` varchar(50) DEFAULT NULL,
+  `fideicomitente_rfc` varchar(13) DEFAULT NULL,
+  `fideicomitente_curp` varchar(18) DEFAULT NULL,
+  `fideicomisario_nombre` varchar(50) DEFAULT NULL,
+  `fideicomisario_apellido_paterno` varchar(50) DEFAULT NULL,
+  `fideicomisario_apellido_materno` varchar(50) DEFAULT NULL,
+  `fideicomisario_rfc` varchar(13) DEFAULT NULL,
+  `fideicomisario_curp` varchar(18) DEFAULT NULL,
+  `numero_fideicomiso` varchar(20) DEFAULT NULL,
+  `fecha_fideicomiso` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 --
 -- Volcado de datos para la tabla `companies`
 --
 
-INSERT INTO `companies` (`id_company`, `key_company`, `name_company`, `rfc_company`, `razon_social`, `tipo_persona`, `fecha_constitucion`, `estado`, `ciudad`, `colonia`, `calle`, `num_exterior`, `num_interior`, `codigo_postal`, `telefono`, `email`, `apoderado_nombre`, `apoderado_apellido_paterno`, `apoderado_apellido_materno`, `apoderado_rfc`, `apoderado_curp`, `status_company`, `created_at_company`, `updated_at_company`, `eliminated_at_company`) VALUES
-(1, 'EMP-PAPITAS', 'Papitas del Norte SA de CV', 'PDN190815ABC', 'PAPITAS DEL NORTE SOCIEDAD ANONIMA DE CAPITAL VARIABLE', 'moral', '2019-08-15', 'Nuevo León', 'Monterrey', 'Centro', 'Av. Constitución', '1234', NULL, '64000', '8181234567', 'contacto@papitasnorte.mx', 'Juan Carlos', 'Pérez', NULL, 'PEJC800101ABC', NULL, 1, '2025-07-28 13:25:53', '2025-07-28 13:25:53', NULL),
-(2, 'EMP-CONSTR', 'Constructora Ejemplo SA de CV', 'CEJ200310DEF', 'CONSTRUCTORA EJEMPLO SOCIEDAD ANONIMA DE CAPITAL VARIABLE', 'moral', '2020-03-10', 'Ciudad de México', 'CDMX', 'Roma Norte', 'Calle Álvaro Obregón', '567', NULL, '06700', '5551234567', 'info@constructoraejemplo.mx', 'María Elena', 'González', NULL, 'GOME750505DEF', NULL, 1, '2025-07-28 13:25:53', '2025-07-28 13:25:53', NULL),
-(3, 'EMP-INMOB', 'Inmobiliaria Moderna SA de CV', 'IMM210520GHI', 'INMOBILIARIA MODERNA SOCIEDAD ANONIMA DE CAPITAL VARIABLE', 'moral', '2021-05-20', 'Jalisco', 'Guadalajara', 'Providencia', 'Av. López Mateos', '890', NULL, '44630', '3331234567', 'ventas@inmobiliariamoderna.mx', 'Roberto', 'Martínez', NULL, 'MARR850315GHI', NULL, 1, '2025-07-28 13:25:53', '2025-07-28 13:25:53', NULL);
+INSERT INTO `companies` (`id_company`, `key_company`, `name_company`, `rfc_company`, `razon_social`, `tipo_persona`, `fecha_constitucion`, `estado`, `ciudad`, `colonia`, `calle`, `num_exterior`, `num_interior`, `codigo_postal`, `telefono`, `email`, `apoderado_nombre`, `apoderado_apellido_paterno`, `apoderado_apellido_materno`, `apoderado_rfc`, `apoderado_curp`, `status_company`, `created_at_company`, `updated_at_company`, `eliminated_at_company`, `type_company`, `created_by_user`, `fiduciario_nombre`, `fiduciario_rfc`, `fideicomitente_nombre`, `fideicomitente_apellido_paterno`, `fideicomitente_apellido_materno`, `fideicomitente_rfc`, `fideicomitente_curp`, `fideicomisario_nombre`, `fideicomisario_apellido_paterno`, `fideicomisario_apellido_materno`, `fideicomisario_rfc`, `fideicomisario_curp`, `numero_fideicomiso`, `fecha_fideicomiso`) VALUES
+(7, 'EMP-QUKIOX41', 'Chedraui1', 'AJRV841119FQ0', 'Anonima Capital Verde', 'moral', '2025-07-09', 'Nuevo Leon', 'Veracruz La antigua', 'Centro', 'Av. Constitucion', '123', NULL, '31231', '111111111', 'uzziellopezvaldez@gmail.com', 'Uzziel', 'Lopez', 'Valdez', 'BKBA730210DO6', 'KXXM110209MCHEHT24', 1, '2025-07-29 15:30:46', '2025-07-30 13:33:49', NULL, 'system', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(11, 'EMP-CF54A9U6', 'Inmobiliaria 1', 'MDCQ610717MMC', 'Inmobiliaria 1', 'moral', '2025-07-03', 'Nuevo Leon', 'Cardel', 'Centro', 'Av consitucion', '12', 'a', '12121', '2961156892', 'auzziellopezvaldez@gmail.com', 'Jaun', 'Carlos', 'lopez', 'MPEI310305MTC', 'MPEI310305MTCKMK25', 1, '2025-07-30 13:27:35', '2025-07-30 13:27:35', NULL, 'client', 5, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -85,6 +100,19 @@ CREATE TABLE `documents` (
   `eliminated_at_document` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
+--
+-- Volcado de datos para la tabla `documents`
+--
+
+INSERT INTO `documents` (`id_document`, `id_folder_document`, `id_user_document`, `key_document`, `file_name_document`, `file_extension_document`, `first_fech_document`, `second_fech_document`, `status_document`, `created_at_document`, `updated_at_document`, `eliminated_at_document`) VALUES
+(1, 7, 2, 'DOC-GSHFWO8', '3-Ejercicios de polinomios - presentación.pdf', 'pdf', NULL, NULL, 2, '2025-07-30 13:31:22', '2025-07-30 13:31:22', '2025-07-30 13:33:09'),
+(2, 9, 2, 'DOC-PD3IATR', 'Distribucion_Binomial.xlsx - Hoja1.pdf', 'pdf', NULL, NULL, 1, '2025-07-30 13:31:50', '2025-07-30 13:31:50', NULL),
+(3, 7, 5, 'DOC-SQ0PUVI', 'Actividad 1 Infografia Ing sistemas.pdf', 'pdf', NULL, NULL, 2, '2025-08-04 11:58:14', '2025-08-04 11:58:14', '2025-08-04 12:03:07'),
+(4, 10, 5, 'DOC-NUGZMLY', 'Actividad 1 Infografia Ing sistemas.pdf', 'pdf', NULL, NULL, 1, '2025-08-04 12:03:15', '2025-08-04 12:03:15', NULL),
+(5, 7, 5, 'DOC-B5RUMHC', 'Actividad 1 Infografia Ing sistemas.pdf', 'pdf', NULL, NULL, 2, '2025-08-04 12:03:41', '2025-08-04 12:03:41', '2025-08-04 12:03:54'),
+(6, 7, 5, 'DOC-Z63O1MI', '3-Ejercicios de polinomios - presentación.pdf', 'pdf', NULL, NULL, 2, '2025-08-04 12:04:02', '2025-08-04 12:04:02', '2025-08-04 12:04:30'),
+(7, 7, 5, 'DOC-RP7DYBQ', 'PE_Lectura de apoyo_B4.pdf', 'pdf', NULL, NULL, 2, '2025-08-04 12:04:37', '2025-08-04 12:04:37', '2025-08-04 12:04:59');
+
 -- --------------------------------------------------------
 
 --
@@ -95,9 +123,13 @@ CREATE TABLE `folders` (
   `id_folder` int(11) NOT NULL,
   `id_user_folder` int(11) NOT NULL COMMENT 'tbl users',
   `id_customer_folder` int(11) DEFAULT NULL COMMENT 'tbl users',
+  `company_id` int(11) DEFAULT NULL COMMENT 'tbl companies - empresa relacionada',
   `fk_folder` int(11) NOT NULL,
   `key_folder` varchar(30) CHARACTER SET utf8 COLLATE utf8_spanish_ci NOT NULL,
   `name_folder` text CHARACTER SET utf8 COLLATE utf8_spanish_ci NOT NULL,
+  `rfc_folder` varchar(13) DEFAULT NULL,
+  `curp_folder` varchar(18) DEFAULT NULL,
+  `address_folder` text DEFAULT NULL,
   `first_fech_folder` date DEFAULT NULL,
   `second_fech_folder` date DEFAULT NULL,
   `chk_alta_fact_folder` text CHARACTER SET utf8 COLLATE utf8_spanish_ci DEFAULT NULL COMMENT 'Check Vo.Bo. Alta Facturación',
@@ -109,6 +141,15 @@ CREATE TABLE `folders` (
   `updated_at_folder` datetime NOT NULL,
   `eliminated_at_folder` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+--
+-- Volcado de datos para la tabla `folders`
+--
+
+INSERT INTO `folders` (`id_folder`, `id_user_folder`, `id_customer_folder`, `company_id`, `fk_folder`, `key_folder`, `name_folder`, `rfc_folder`, `curp_folder`, `address_folder`, `first_fech_folder`, `second_fech_folder`, `chk_alta_fact_folder`, `chk_lib_folder`, `chk_orig_recib_folder`, `fech_orig_recib_folder`, `status_folder`, `created_at_folder`, `updated_at_folder`, `eliminated_at_folder`) VALUES
+(7, 2, 0, 11, 0, 'XCJ5Z0UKAY', 'Inmobiliaria 1', NULL, NULL, NULL, '2025-07-01', '2025-08-30', NULL, NULL, NULL, NULL, 1, '2025-07-30 13:27:35', '2025-08-04 11:14:14', NULL),
+(9, 2, 0, NULL, 7, 'CARP-HQT1LA', 'PDF', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 3, '2025-07-30 13:31:39', '2025-07-30 13:31:39', '2025-07-30 13:33:06'),
+(10, 5, 5, NULL, 7, 'CLI-E6VNC0', 'Juan Perez Lopez', 'LACX280506GR6', 'ZFVH400209HCHMDV85', 'Av Cedro 14 Vicente Lopez Ciudad Cardel', NULL, NULL, NULL, NULL, NULL, NULL, 1, '2025-08-03 12:04:32', '2025-08-03 12:04:32', NULL);
 
 -- --------------------------------------------------------
 
@@ -141,14 +182,6 @@ CREATE TABLE `notifications` (
   `id_user_notificacion` int(11) NOT NULL COMMENT 'tbl users',
   `id_documents` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
---
--- Volcado de datos para la tabla `notifications`
---
-
-INSERT INTO `notifications` (`id_notification`, `id_user_notificacion`, `id_documents`) VALUES
-(1, 1, '0'),
-(2, 2, '0');
 
 -- --------------------------------------------------------
 
@@ -239,7 +272,6 @@ CREATE TABLE `types` (
 
 INSERT INTO `types` (`id_type`, `name_type`) VALUES
 (1, 'Administrador'),
-(2, 'Empleado'),
 (3, 'Cliente Empresa');
 
 -- --------------------------------------------------------
@@ -271,9 +303,8 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id_user`, `id_type_user`, `id_company`, `company_role`, `key_user`, `name_user`, `rfc_user`, `photo_user`, `phone_user`, `email_user`, `password_user`, `status_user`, `created_at_user`, `updated_at_user`, `eliminated_at_user`) VALUES
-(1, 1, NULL, 'operador', 'USR-CIAY7', 'ADMINISTRADOR SYSOP', '3R6C9J1K2S8HP', 'USR-CIAY7_s-sysop_(1).png', '8112330000', 'malonso@sysop.com.mx', '$2y$10$YiUYxPTTHTtByNfNPWHHWehvjmGA6dQXjFN958IbCBMR9GpPJWD9i', 1, '2025-01-31 14:31:09', '2025-01-31 14:31:09', NULL),
-(2, 1, NULL, 'operador', 'USR-ITFEG', 'ADMINISTRACION SIENNA', 'HEJI7FQRCK9NV', NULL, '1234567890', 'administracion@sienna.mx', '$2y$10$htIObbM0rMSJOTnZ5BWEnemZ1J/aF9inLxBaIbipybPHyaILW515.', 1, '2025-01-31 14:31:55', '2025-01-31 14:31:55', NULL),
-(3, 3, 3, 'admin_empresa', 'USR-EMPRESA1', 'UZZIEL EMPRESA', 'PEJC800101ABC', 'USR-EMPRESA1_ChatGPT_Image_10_jul_2025,_10_14_10.png', '2296018327', 'uzziellopezvaldez@papitasnorte.mx', '$2y$10$G2M1TojeOpHFMJr4PtCtl.nU4g2drRDALMa8vrDeGlDMtujcc6GVq', 1, '2025-07-28 13:25:53', '2025-07-28 15:45:35', NULL);
+(2, 1, NULL, 'operador', 'USR-ITFEG', 'ADMINISTRACION SIENNA', NULL, NULL, '1234567890', 'administracion@sienna.mx', '$2y$10$htIObbM0rMSJOTnZ5BWEnemZ1J/aF9inLxBaIbipybPHyaILW515.', 1, '2025-01-31 14:31:55', '2025-01-31 14:31:55', NULL),
+(5, 3, 7, 'operador', 'USR-Q609R', 'Chedraui', 'FH34XTSYP0NCB', 'USR-Q609R_7.png', '5659139591', 'uzziellopezvaldez@gmail.com', '$2y$10$qHKZz5wcsZn9oWnRWw62A.Sofdwts2jnrs2CiUZtoOS.HcYUeQHfe', 1, '2025-07-29 15:34:07', '2025-07-29 15:34:07', NULL);
 
 --
 -- Índices para tablas volcadas
@@ -298,7 +329,8 @@ ALTER TABLE `documents`
 -- Indices de la tabla `folders`
 --
 ALTER TABLE `folders`
-  ADD PRIMARY KEY (`id_folder`);
+  ADD PRIMARY KEY (`id_folder`),
+  ADD KEY `idx_folders_company_id` (`company_id`);
 
 --
 -- Indices de la tabla `materials_sections`
@@ -357,19 +389,19 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT de la tabla `companies`
 --
 ALTER TABLE `companies`
-  MODIFY `id_company` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_company` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT de la tabla `documents`
 --
 ALTER TABLE `documents`
-  MODIFY `id_document` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_document` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT de la tabla `folders`
 --
 ALTER TABLE `folders`
-  MODIFY `id_folder` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_folder` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT de la tabla `materials_sections`
@@ -381,7 +413,7 @@ ALTER TABLE `materials_sections`
 -- AUTO_INCREMENT de la tabla `notifications`
 --
 ALTER TABLE `notifications`
-  MODIFY `id_notification` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id_notification` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `notify_folders`
@@ -417,11 +449,17 @@ ALTER TABLE `types`
 -- AUTO_INCREMENT de la tabla `users`
 --
 ALTER TABLE `users`
-  MODIFY `id_user` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_user` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- Restricciones para tablas volcadas
 --
+
+--
+-- Filtros para la tabla `folders`
+--
+ALTER TABLE `folders`
+  ADD CONSTRAINT `fk_folders_company` FOREIGN KEY (`company_id`) REFERENCES `companies` (`id_company`) ON DELETE SET NULL;
 
 --
 -- Filtros para la tabla `users`
