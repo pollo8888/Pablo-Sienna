@@ -221,61 +221,58 @@ class WebController extends Connector
 
   // Función para crear una nueva carpeta o folder en la base de datos.
   // Archivos -> backoffice/folders/all_folders.php , backoffice/folders/folders.php , backoffice/folders/subfolder.php
-  public function createFolder($data)
-  {
+  public function createFolder($data) {
     // Comprobamos si se ha seleccionado un ejecutivo de ventas
     $id_customer_folder = !empty($data['id_customer_folder']) ? $data['id_customer_folder'] : 0;
-    // Comprobamos si se ha asignado una empresa (NUEVO)
-    $company_id = !empty($data['company_id']) ? $data['company_id'] : null;
-
     // Inicializamos las variables para las fechas como null.
     $firstFech = null;
     $secondFech = null;
     $fech_orig_recib_folder = null;
+    
     // Inicializamos las variables para los campos de los checks como null.
     $chk_alta_fact_folder = isset($data['chk_alta_fact_folder']) ? $data['chk_alta_fact_folder'] : null;
     $chk_lib_folder = isset($data['chk_lib_folder']) ? $data['chk_lib_folder'] : null;
     $chk_orig_recib_folder = isset($data['chk_orig_recib_folder']) ? $data['chk_orig_recib_folder'] : null;
-    // Verificamos si 'first_fech_folder' o 'second_fech_folder' están vacíos.
-    // Si cualquiera de ellos está vacío, ambas fechas se mantendrán como null.
-    if (empty($data['first_fech_folder']) || empty($data['second_fech_folder'])) {
-      $firstFech = null;
-      $secondFech = null;
+    
+    // Verificamos si las fechas están vacías
+    if(empty($data['first_fech_folder']) || empty($data['second_fech_folder'])) {
+        $firstFech = null;
+        $secondFech = null;
     } else {
-      // Si ambas fechas han sido seleccionadas, las asignamos a las variables correspondientes.
-      $firstFech = $data['first_fech_folder'];
-      $secondFech = $data['second_fech_folder'];
+        $firstFech = $data['first_fech_folder'];
+        $secondFech = $data['second_fech_folder'];
     }
+    
     // Verificamos si 'chk_orig_recib_folder' esta vacio para colocar la fecha como NULL
-    if (empty($data['chk_orig_recib_folder'])) {
-      $fech_orig_recib_folder = null;
+    if(empty($data['chk_orig_recib_folder'])) {
+        $fech_orig_recib_folder = null;
     } else {
-      // Si no esta vacio se ingresa la fecha que selecciono el cliente para el campo de Fecha de original recibido
-      $fech_orig_recib_folder = $data['fech_orig_recib_folder'];
+        $fech_orig_recib_folder = $data['fech_orig_recib_folder'];
     }
-
-    // Consulta SQL ACTUALIZADA para insertar una nueva fila en la tabla 'folders' incluyendo company_id.
-    $query = "INSERT INTO folders(id_user_folder, id_customer_folder, company_id, fk_folder, key_folder, name_folder, first_fech_folder, second_fech_folder, chk_alta_fact_folder, chk_lib_folder, chk_orig_recib_folder, fech_orig_recib_folder, status_folder, created_at_folder, updated_at_folder) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1,NOW(),NOW())";
-
-    // Parámetros ACTUALIZADOS para la consulta preparada
+    
+    // Consulta SQL ACTUALIZADA para incluir los nuevos campos
+    $query = "INSERT INTO folders(id_user_folder, id_customer_folder, fk_folder, key_folder, name_folder, rfc_folder, curp_folder, address_folder, first_fech_folder, second_fech_folder, chk_alta_fact_folder, chk_lib_folder, chk_orig_recib_folder, fech_orig_recib_folder, status_folder, created_at_folder, updated_at_folder) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,NOW(),NOW())";
+    
+    // Parámetros ACTUALIZADOS
     $params = array(
-      $data['id_user_folder'],   // ID del usuario al que pertenece la carpeta.
-      $id_customer_folder,       // ID del ejecutivo de ventas, si se selecciono se guarda el id si no se guarda 0
-      $company_id,               // ID de la empresa relacionada (NUEVO) - puede ser NULL
-      $data['fk_folder'],        // Clave foránea que enlaza con otra carpeta (si aplica).
-      $data['key_folder'],       // Clave única para identificar la carpeta.
-      $data['name_folder'],      // Nombre de la carpeta.
-      $firstFech,                // Fecha inicial asociada a la carpeta.
-      $secondFech,               // Fecha final asociada a la carpeta.
-      $chk_alta_fact_folder,     // Check Vo.Bo. Alta Facturación	
-      $chk_lib_folder,           // Check Vo.Bo. Liberación
-      $chk_orig_recib_folder,    // Check Original Recibido
-      $fech_orig_recib_folder    // Fecha de Original Recibido
+        $data['id_user_folder'],
+        $id_customer_folder,
+        $data['fk_folder'],
+        $data['key_folder'],
+        $data['name_folder'],
+        isset($data['rfc_folder']) ? $data['rfc_folder'] : null,
+        isset($data['curp_folder']) ? $data['curp_folder'] : null,
+        isset($data['address_folder']) ? $data['address_folder'] : null,
+        $firstFech,
+        $secondFech,
+        $chk_alta_fact_folder,
+        $chk_lib_folder,
+        $chk_orig_recib_folder,
+        $fech_orig_recib_folder
     );
-    // Ejecuta la consulta preparada con los parámetros proporcionados.
+    
     return $this->execute($query, $params);
-  }
-
+}
   // Función para obtener todas las carpetas según el estatus especificado.
   // Archivos -> backoffice/folders/folders.php
   public function getFolders($statusFolder)
@@ -1917,5 +1914,14 @@ public function getClientCompaniesStats() {
         'fideicomiso' => $fideicomiso['total']
     );
 }
+
+// Función para obtener todas las empresas (carpetas principales)
+public function getCompanies($statusFolder = 1) {
+    $query = "SELECT id_folder, name_folder FROM folders WHERE status_folder = ? AND fk_folder = 0 ORDER BY name_folder ASC";
+    $params = array($statusFolder);
+    return $this->consult($query, $params);
+}
+
+
 }
 ?>

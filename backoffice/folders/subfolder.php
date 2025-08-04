@@ -1103,7 +1103,7 @@ $clave = substr(str_shuffle($permitted_chars), 0, 6);
                                                                     </a>
                                                                 </div>
                                                                 <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1)-->
-                                                                <?php if ($_SESSION['user']['id_type_user'] == 1) { ?>
+                                                         
                                                                     <div class="dropdown" style="margin-top:5px;">
                                                                         <button class="btn btn-secondary" type="button"
                                                                             id="dropdownMenuButton_<?php echo $folder['id_sub_folder']; ?>"
@@ -1120,7 +1120,7 @@ $clave = substr(str_shuffle($permitted_chars), 0, 6);
                                                                                 <i class="fas fa-pen"></i> Editar expediente
                                                                             </a>
                                                                             <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1)-->
-                                                                            <?php if ($_SESSION['user']['id_type_user'] == 1) { ?>
+                                                                         
                                                                                 <hr>
                                                                                 <form action="#" method="POST">
                                                                                     <input name="deleteFolder[idFolder]" type="hidden"
@@ -1134,10 +1134,10 @@ $clave = substr(str_shuffle($permitted_chars), 0, 6);
                                                                                         <i class="fas fa-trash"></i> Mover a la papelera
                                                                                     </button>
                                                                                 </form>
-                                                                            <?php } ?>
+                                                               
                                                                         </div>
                                                                     </div>
-                                                                <?php } ?>
+                                                             
                                                             </div>
 
                                                             <div class="status-bar"
@@ -1288,7 +1288,7 @@ $clave = substr(str_shuffle($permitted_chars), 0, 6);
                                                                             <i class="fas fa-download"></i> Descargar
                                                                         </a>
                                                                         <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1)-->
-                                                                        <?php if ($_SESSION['user']['id_type_user'] == 1) { ?>
+                                                                     
                                                                             <hr>
                                                                             <form action="#" method="POST">
                                                                                 <input name="deleteDocument[id_document]"
@@ -1307,7 +1307,7 @@ $clave = substr(str_shuffle($permitted_chars), 0, 6);
                                                                                     <i class="fas fa-trash"></i> Mover a la papelera
                                                                                 </button>
                                                                             </form>
-                                                                        <?php } ?>
+                                                              
                                                                     </div>
                                                                 </div>
                                                             </div>

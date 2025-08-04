@@ -21,6 +21,7 @@
 
   // Obtener la lista de los usuarios del departamento de ventas y que esten activos (3 -> tipo de usuario ventas, 1 -> activos)
   $customersList = $controller->getCustomersList(3, 1);
+  $companiesList = $controller->getCompanies(1);
 
   //FUNCIÓN PARA CREAR UNA NUEVA CARPETA
   // Verifica si se ha dado clic en algun boton a traves del action
@@ -272,103 +273,103 @@
     </div>
     
     <!-- Modal para agregar una nueva carpeta -->
-    <div class="modal fade" id="modalAgregarCarpeta" tabindex="-1" aria-labelledby="modalAgregarCarpetaLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="modalAgregarCarpetaLabel">Agregar nuevo cliente</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <!-- Formulario para agregar una nueva carpeta -->
-            <form id="formAgregarCarpeta" action="folders.php" method="POST">
-              <input name="folder[id_user_folder]" type="text" class="form-control" id="id_user_folder" required value="<?php echo $_SESSION['user']['id_user']; ?>" readonly style="display:none;" hidden>
-              <input name="folder[fk_folder]" type="text" class="form-control" id="fk_folder" required value="0" readonly style="display:none;" hidden>
-              <input name="folder[key_folder]" type="text" class="form-control" id="key_folder" required value="CARP-<?php echo $clave; ?>" readonly style="display:none;" hidden>
 
+    <!-- Modal para agregar nuevo cliente -->
+<div class="modal fade" id="modalAgregarCarpeta" tabindex="-1" aria-labelledby="modalAgregarCarpetaLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalAgregarCarpetaLabel">Agregar nuevo cliente</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <!-- Formulario para agregar cliente -->
+        <form id="formAgregarCliente" action="folders.php" method="POST">
+          <input name="folder[id_user_folder]" type="hidden" value="<?php echo $_SESSION['user']['id_user']; ?>">
+          <input name="folder[key_folder]" type="hidden" value="CLI-<?php echo $clave; ?>">
+
+          <!-- Alerta si no hay empresas -->
+          <?php if (empty($companiesList)): ?>
+            <div class="alert alert-warning" role="alert">
+              <i class="fas fa-exclamation-triangle"></i>
+              <strong>¡Atención!</strong> No hay empresas registradas. 
+              <a href="../companies/companies.php" class="alert-link">Haz clic aquí para registrar una empresa primero.</a>
+            </div>
+          <?php endif; ?>
+
+          <!-- Select para elegir empresa -->
+          <div class="form-group">
+            <label for="empresa_select">Empresa a la que pertenece el cliente: <span style="color: red;">*</span></label>
+            <select name="folder[fk_folder]" id="empresa_select" class="form-control" required <?php echo empty($companiesList) ? 'disabled' : ''; ?>>
+              <option value="">-- Seleccionar empresa --</option>
+              <?php foreach($companiesList as $company): ?>
+                <option value="<?php echo $company['id_folder']; ?>">
+                  <?php echo $company['name_folder']; ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+            <small class="text-muted">
+              Si no ves la empresa que necesitas, 
+              <a href="../companies/companies.php" target="_blank">ve al módulo de Empresas</a> 
+              para registrarla primero.
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="name_cliente">Nombre completo del cliente: <span style="color: red;">*</span></label>
+            <input type="text" name="folder[name_folder]" class="form-control" id="name_cliente" required autocomplete="off" placeholder="Ej. Juan Pérez López">
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
               <div class="form-group">
-                <label for="name_folder">Nombre del cliente:</label>
-                <input type="text" name="folder[name_folder]" class="form-control" id="name_folder" required autocomplete="off">
+                <label for="rfc_cliente">RFC del cliente:</label>
+                <input type="text" name="folder[rfc_folder]" class="form-control" id="rfc_cliente" pattern="[A-Z&Ñ]{4}[0-9]{2}(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])[A-Z0-9]{2}[0-9A]" maxlength="13" placeholder="PEPJ850525AB1">
+                <small class="text-muted">Formato: 4 letras + 6 números + 3 caracteres</small>
               </div>
-
-              <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1)-->
-              <?php if($_SESSION['user']['id_type_user'] == 1 || $_SESSION['user']['id_type_user'] == 3){ ?>
-
-                <div class="row">
-                  <div class="col-12">
-                    <label>Plazo de vigencia <small style="color:red;">(*Plazo opcional)</small></label>
-                  </div>
-                  <div class="col-lg-6 col-md-6 col-sm-12">
-                    <div class="form-group">
-                      <input type="date" class="form-control" name="folder[first_fech_folder]">
-                    </div>
-                  </div>
-                  <div class="col-lg-6 col-md-6 col-sm-12">
-                    <div class="form-group">
-                      <input type="date" class="form-control" name="folder[second_fech_folder]">                  
-                    </div>
-                  </div>
-                </div>
-              
-                <!-- Checkboxes organizados en dos filas -->
-                <div class="row">
-                  <div class="col-lg-6 col-md-6 col-sm-12">
-                    <div class="form-check">
-                      <input type="checkbox" class="form-check-input" id="opcion1" value="Si" name="folder[chk_alta_fact_folder]">
-                      <label class="form-check-label" for="opcion1">Vo.Bo. Alta Facturación</label>
-                    </div>
-                  </div>
-                  <div class="col-lg-6 col-md-6 col-sm-12">
-                    <div class="form-check">
-                      <input type="checkbox" class="form-check-input" id="opcion2" value="Si" name="folder[chk_lib_folder]">
-                      <label class="form-check-label" for="opcion2">Vo.Bo. Liberación</label>
-                    </div>
-                  </div>
-                </div>
-              
-                <div class="row mt-2">
-                  <div class="col-lg-6 col-md-6 col-sm-12">
-                    <div class="form-check">
-                      <input type="checkbox" class="form-check-input" id="opcion3" value="Si" name="folder[chk_orig_recib_folder]">
-                      <label class="form-check-label" for="opcion3">Original Recibido</label>
-                    </div>
-                  </div>
-                </div>
-              
-                <div id="fecha-original-recibido" class="form-group" style="margin-top:15px;">
-                  <label>Fecha de original recibido:</label>
-                  <input type="date" class="form-control" name="folder[fech_orig_recib_folder]">
-                </div>
-                
-              <?php } ?>
-
-              <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1)-->
-              <?php if($_SESSION['user']['id_type_user'] == 1){ ?>
-                <div class="form-group" style="margin-top:10px;">
-                  <label for="id_customer_folder">Asesor comercial <small style="color:red;">(*Opcional)</small></label>
-                  <select name="folder[id_customer_folder]" id="id_customer_folder" class="form-control selectAddCustomer">
-                    <option value="">--</option>
-                    <?php foreach($customersList as $key => $value){ ?>
-                      <option value="<?php echo $value['id_user']; ?>">
-                        <?php echo $value['name_user']; ?>
-                      </option>
-                    <?php } ?>
-                  </select>
-                </div>
-              <?php } else { ?>
-                <div class="form-group" style="margin-top:10px;">
-                  <input name="folder[id_customer_folder]" type="text" class="form-control" required value="<?php echo $_SESSION['user']['id_user']; ?>" readonly style="display:none;" hidden>
-                </div>
-              <?php } ?>
-              
-              <button type="submit" class="btn btn-lg btn-block" style="background-color: #37424A; color: #ffffff;" name="action" value="create">Guardar</button>
-            </form>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="curp_cliente">CURP del cliente:</label>
+                <input type="text" name="folder[curp_folder]" class="form-control" id="curp_cliente" maxlength="18" placeholder="PEPJ850525HDFRNS05">
+                <small class="text-muted">18 caracteres</small>
+              </div>
+            </div>
           </div>
-        </div>
+
+          <div class="form-group">
+            <label for="address_cliente">Dirección del cliente:</label>
+            <textarea name="folder[address_folder]" class="form-control" id="address_cliente" rows="3" placeholder="Calle, número, colonia, ciudad, estado, CP"></textarea>
+          </div>
+
+          <!-- Ejecutivo de ventas (mantener la lógica existente) -->
+          <?php if($_SESSION['user']['id_type_user'] == 1): ?>
+            <div class="form-group">
+              <label for="id_customer_folder">Ejecutivo de ventas asignado:</label>
+              <select name="folder[id_customer_folder]" id="id_customer_folder" class="form-control">
+                <option value="0">-- Sin asignar --</option>
+                <?php foreach($customersList as $customer): ?>
+                  <option value="<?php echo $customer['id_user']; ?>">
+                    <?php echo $customer['name_user']; ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+          <?php else: ?>
+            <input name="folder[id_customer_folder]" type="hidden" value="<?php echo $_SESSION['user']['id_user']; ?>">
+          <?php endif; ?>
+
+          <button type="submit" class="btn btn-lg btn-block" style="background-color: #37424A; color: #ffffff;" name="action" value="create" <?php echo empty($companiesList) ? 'disabled' : ''; ?>>
+            <?php echo empty($companiesList) ? 'Primero registra una empresa' : 'Guardar Cliente'; ?>
+          </button>
+        </form>
       </div>
     </div>
+  </div>
+</div>
     
     <!-- Modal para editar una carpeta -->
     <div class="modal fade" id="modalEditarCarpeta" tabindex="-1" aria-labelledby="modalEditarCarpetaLabel" aria-hidden="true">
@@ -552,6 +553,56 @@
         });
       });
     </script>
+
+
+<script>
+$(document).ready(function() {
+  // Limpiar el modal al cerrarlo
+  $('#modalAgregarCarpeta').on('hidden.bs.modal', function() {
+    // Limpiar formulario
+    $('#formAgregarCliente')[0].reset();
+  });
+
+  // Validar que se seleccione una empresa al registrar cliente
+  $('#formAgregarCliente').submit(function(e) {
+    var empresaSelected = $('#empresa_select').val();
+    if (!empresaSelected) {
+      e.preventDefault();
+      alert('Por favor selecciona una empresa para el cliente.');
+      $('#empresa_select').focus();
+      return false;
+    }
+  });
+
+  // Formatear RFC en mayúsculas
+  $('#rfc_cliente').on('input', function() {
+    this.value = this.value.toUpperCase();
+  });
+
+  // Formatear CURP en mayúsculas
+  $('#curp_cliente').on('input', function() {
+    this.value = this.value.toUpperCase();
+  });
+
+  // Validación básica de RFC (opcional)
+  $('#rfc_cliente').on('blur', function() {
+    var rfc = this.value;
+    if (rfc.length > 0 && rfc.length !== 13) {
+      alert('El RFC debe tener exactamente 13 caracteres');
+      this.focus();
+    }
+  });
+
+  // Validación básica de CURP (opcional)
+  $('#curp_cliente').on('blur', function() {
+    var curp = this.value;
+    if (curp.length > 0 && curp.length !== 18) {
+      alert('La CURP debe tener exactamente 18 caracteres');
+      this.focus();
+    }
+  });
+});
+</script>
     
   </body>
 </html>
