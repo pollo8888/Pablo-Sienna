@@ -58,8 +58,17 @@ $key_tracing = substr(str_shuffle($permitted_chars_tracing), 0, 6);
 // FUNCIÓN PARA CREAR UNA NUEVA CARPETA
 // Verifica si se ha dado clic en algun boton a traves del action
 if (!empty($_POST['action'])) {
+    // Si la acción es 'add', se intenta crear un nuevo cliente
+    if ($_POST['action'] == 'add') {
+        // Llama al método para crear un cliente y obtiene el ID del cliente creado
+        $folderId = $controller->createFolder($_POST['folder']);
+        // Si se crea el cliente correctamente, redirecciona a la página actual
+        if ($folderId) {
+            header("location: subfolder.php?id={$folder['id_folder']}&key={$folder['key_folder']}");
+        }
+    }
     // Si la acción es 'create', se intenta crear una carpeta nueva
-    if ($_POST['action'] == 'createFolder') {
+    else if ($_POST['action'] == 'createFolder') {
         // Llama al método para crear una carpeta y obtiene el ID de la carpeta creada
         $folderId = $controller->createFolder($_POST['newFolder']);
         // Si se crea la carpeta correctamente, redirecciona a la página de carpetas
@@ -1396,75 +1405,7 @@ $clave = substr(str_shuffle($permitted_chars), 0, 6);
 
 
 
-    <!-- Modal para agregar nuevo cliente -->
-    <div class="modal fade" id="modalAgregarCliente" tabindex="-1" aria-labelledby="modalAgregarClienteLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalAgregarClienteLabel">Agregar nuevo cliente</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-
-                <div class="modal-body">
-                    <!-- Formulario para agregar cliente -->
-                    <form id="formAgregarCliente" action="subfolder.php" method="POST">
-                        <input name="folder[id_user_folder]" type="hidden"
-                            value="<?php echo $_SESSION['user']['id_user']; ?>">
-                        <input name="folder[key_folder]" type="hidden"
-                            value="CLI-<?php echo substr(md5(uniqid(rand(), true)), 0, 6); ?>">
-
-                        <!-- Campo oculto para la empresa actual -->
-                        <input name="folder[fk_folder]" type="hidden" value="<?php echo $folder['id_folder']; ?>">
-
-                        <div class="form-group">
-                            <label for="name_cliente">Nombre completo del cliente: <span
-                                    style="color: red;">*</span></label>
-                            <input type="text" name="folder[name_folder]" class="form-control" id="name_cliente"
-                                required autocomplete="off" placeholder="Ej. Juan Pérez López">
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="rfc_cliente">RFC del cliente:</label>
-                                    <input type="text" name="folder[rfc_folder]" class="form-control" id="rfc_cliente"
-                                        pattern="[A-Z&Ñ]{4}[0-9]{2}(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])[A-Z0-9]{2}[0-9A]"
-                                        maxlength="13" placeholder="PEPJ850525AB1">
-                                    <small class="text-muted">Formato: 4 letras + 6 números + 3 caracteres</small>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="curp_cliente">CURP del cliente:</label>
-                                    <input type="text" name="folder[curp_folder]" class="form-control" id="curp_cliente"
-                                        maxlength="18" placeholder="PEPJ850525HDFRNS05">
-                                    <small class="text-muted">18 caracteres</small>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="address_cliente">Dirección del cliente:</label>
-                            <textarea name="folder[address_folder]" class="form-control" id="address_cliente" rows="3"
-                                placeholder="Calle, número, colonia, ciudad, estado, CP"></textarea>
-                        </div>
-
-                        <!-- Campo oculto para el ejecutivo de ventas -->
-                        <input name="folder[id_customer_folder]" type="hidden"
-                            value="<?php echo $_SESSION['user']['id_user']; ?>">
-
-                        <button type="submit" class="btn btn-lg btn-block"
-                            style="background-color: #37424A; color: #ffffff;" name="action" value="create">
-                            Guardar Cliente
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+    <?php include 'modal_agregar_cliente.php'; ?>
 
     <!-- Modal para agregar una nueva carpeta -->
     <div class="modal fade" id="modalAgregarCarpeta" tabindex="-1" aria-labelledby="modalAgregarCarpetaLabel"
