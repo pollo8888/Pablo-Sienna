@@ -7,6 +7,7 @@
     private $DBuser;
     private $DBpass;
     private $connector;
+    
     public function __construct(){
       $this->production_mode = self::MODE;
       if ($this->production_mode) {
@@ -27,9 +28,16 @@
       array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8'"));
       $this->connector->query("SET lc_time_names = 'es_ES';");
     }
+    
     function __destruct(){
       $this->connector = null;
     }
+    
+    // ⭐ AGREGAR ESTE MÉTODO - ES LA SOLUCIÓN
+    public function connection(){
+      return $this->connector;
+    }
+    
     public function consult($query, $params = null, $single = NULL){
       $response = array();
       $sentencia = $this->connector->prepare($query);
@@ -48,6 +56,7 @@
       if ($single) return reset($response);
       else return $response;
     }
+    
     public function execute($query, $params){
       $response = null;
       $sentencia = $this->connector->prepare($query);

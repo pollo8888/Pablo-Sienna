@@ -221,58 +221,269 @@ class WebController extends Connector
 
   // Función para crear una nueva carpeta o folder en la base de datos.
   // Archivos -> backoffice/folders/all_folders.php , backoffice/folders/folders.php , backoffice/folders/subfolder.php
-  public function createFolder($data) {
+
+  // Función para crear una nueva carpeta o folder en la base de datos.
+// Archivos -> backoffice/folders/all_folders.php , backoffice/folders/folders.php , backoffice/folders/subfolder.php
+  public function createFolder($data)
+  {
     // Comprobamos si se ha seleccionado un ejecutivo de ventas
     $id_customer_folder = !empty($data['id_customer_folder']) ? $data['id_customer_folder'] : 0;
+
     // Inicializamos las variables para las fechas como null.
     $firstFech = null;
     $secondFech = null;
     $fech_orig_recib_folder = null;
-    
+
     // Inicializamos las variables para los campos de los checks como null.
     $chk_alta_fact_folder = isset($data['chk_alta_fact_folder']) ? $data['chk_alta_fact_folder'] : null;
     $chk_lib_folder = isset($data['chk_lib_folder']) ? $data['chk_lib_folder'] : null;
     $chk_orig_recib_folder = isset($data['chk_orig_recib_folder']) ? $data['chk_orig_recib_folder'] : null;
-    
+
     // Verificamos si las fechas están vacías
-    if(empty($data['first_fech_folder']) || empty($data['second_fech_folder'])) {
-        $firstFech = null;
-        $secondFech = null;
+    if (empty($data['first_fech_folder']) || empty($data['second_fech_folder'])) {
+      $firstFech = null;
+      $secondFech = null;
     } else {
-        $firstFech = $data['first_fech_folder'];
-        $secondFech = $data['second_fech_folder'];
+      $firstFech = $data['first_fech_folder'];
+      $secondFech = $data['second_fech_folder'];
     }
-    
+
     // Verificamos si 'chk_orig_recib_folder' esta vacio para colocar la fecha como NULL
-    if(empty($data['chk_orig_recib_folder'])) {
-        $fech_orig_recib_folder = null;
+    if (empty($data['chk_orig_recib_folder'])) {
+      $fech_orig_recib_folder = null;
     } else {
-        $fech_orig_recib_folder = $data['fech_orig_recib_folder'];
+      $fech_orig_recib_folder = $data['fech_orig_recib_folder'];
     }
-    
-    // Consulta SQL ACTUALIZADA para incluir los nuevos campos
-    $query = "INSERT INTO folders(id_user_folder, id_customer_folder, fk_folder, key_folder, name_folder, rfc_folder, curp_folder, address_folder, first_fech_folder, second_fech_folder, chk_alta_fact_folder, chk_lib_folder, chk_orig_recib_folder, fech_orig_recib_folder, status_folder, created_at_folder, updated_at_folder) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,NOW(),NOW())";
-    
-    // Parámetros ACTUALIZADOS
+
+    // Determinar el nombre completo y RFC según el tipo de persona
+    $name_folder = '';
+    $rfc_folder = '';
+    $curp_folder = null;
+
+    if (isset($data['tipo_persona'])) {
+      switch ($data['tipo_persona']) {
+        case 'fisica':
+          // Construir nombre completo para persona física
+          $name_folder = trim($data['pf_nombre'] . ' ' . $data['pf_apellido_paterno'] . ' ' . $data['pf_apellido_materno']);
+          $rfc_folder = $data['pf_rfc'];
+          $curp_folder = !empty($data['pf_curp']) ? $data['pf_curp'] : null;
+          break;
+
+        case 'moral':
+          $name_folder = $data['pm_razon_social'];
+          $rfc_folder = $data['pm_rfc'];
+          break;
+
+        case 'fideicomiso':
+          $name_folder = $data['fid_razon_social'];
+          $rfc_folder = $data['fid_rfc'];
+          break;
+      }
+    } else {
+      // Mantener compatibilidad con el código anterior
+      $name_folder = $data['name_folder'];
+      $rfc_folder = isset($data['rfc_folder']) ? $data['rfc_folder'] : null;
+      $curp_folder = isset($data['curp_folder']) ? $data['curp_folder'] : null;
+    }
+
+    // Construir la consulta SQL dinámicamente según el tipo de persona
+    $baseQuery = "INSERT INTO folders (
+        id_user_folder, id_customer_folder, company_id, fk_folder, key_folder, 
+        name_folder, rfc_folder, curp_folder, address_folder, 
+        first_fech_folder, second_fech_folder, 
+        chk_alta_fact_folder, chk_lib_folder, chk_orig_recib_folder, fech_orig_recib_folder,
+        status_folder, created_at_folder, updated_at_folder, tipo_persona";
+
+    $baseValues = "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,1,NOW(),NOW(),?";
+
     $params = array(
-        $data['id_user_folder'],
-        $id_customer_folder,
-        $data['fk_folder'],
-        $data['key_folder'],
-        $data['name_folder'],
-        isset($data['rfc_folder']) ? $data['rfc_folder'] : null,
-        isset($data['curp_folder']) ? $data['curp_folder'] : null,
-        isset($data['address_folder']) ? $data['address_folder'] : null,
-        $firstFech,
-        $secondFech,
-        $chk_alta_fact_folder,
-        $chk_lib_folder,
-        $chk_orig_recib_folder,
-        $fech_orig_recib_folder
+      $data['id_user_folder'],
+      $id_customer_folder,
+      isset($data['company_id']) ? $data['company_id'] : null,
+      $data['fk_folder'],
+      $data['key_folder'],
+      $name_folder,
+      $rfc_folder,
+      $curp_folder,
+      isset($data['address_folder']) ? $data['address_folder'] : null,
+      $firstFech,
+      $secondFech,
+      $chk_alta_fact_folder,
+      $chk_lib_folder,
+      $chk_orig_recib_folder,
+      $fech_orig_recib_folder,
+      isset($data['tipo_persona']) ? $data['tipo_persona'] : null
     );
-    
+
+    // Agregar campos específicos según el tipo de persona
+    if (isset($data['tipo_persona'])) {
+      switch ($data['tipo_persona']) {
+        case 'fisica':
+          $baseQuery .= ", pf_nombre, pf_apellido_paterno, pf_apellido_materno, pf_fecha_nacimiento,
+                              pf_estado, pf_ciudad, pf_colonia, pf_codigo_postal, pf_calle, 
+                              pf_num_exterior, pf_num_interior, pf_telefono, pf_email,
+                              pf_tiene_domicilio_extranjero, pf_pais_origen, pf_estado_extranjero,
+                              pf_ciudad_extranjero, pf_colonia_extranjero, pf_calle_extranjero,
+                              pf_num_exterior_ext, pf_num_interior_ext, pf_codigo_postal_ext";
+
+          $baseValues .= ",?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?";
+
+          // Agregar parámetros de persona física
+          $params[] = $data['pf_nombre'];
+          $params[] = $data['pf_apellido_paterno'];
+          $params[] = !empty($data['pf_apellido_materno']) ? $data['pf_apellido_materno'] : null;
+          $params[] = !empty($data['pf_fecha_nacimiento']) ? $data['pf_fecha_nacimiento'] : null;
+          $params[] = !empty($data['pf_estado']) ? $data['pf_estado'] : null;
+          $params[] = !empty($data['pf_ciudad']) ? $data['pf_ciudad'] : null;
+          $params[] = !empty($data['pf_colonia']) ? $data['pf_colonia'] : null;
+          $params[] = !empty($data['pf_codigo_postal']) ? $data['pf_codigo_postal'] : null;
+          $params[] = !empty($data['pf_calle']) ? $data['pf_calle'] : null;
+          $params[] = !empty($data['pf_num_exterior']) ? $data['pf_num_exterior'] : null;
+          $params[] = !empty($data['pf_num_interior']) ? $data['pf_num_interior'] : null;
+          $params[] = !empty($data['pf_telefono']) ? $data['pf_telefono'] : null;
+          $params[] = !empty($data['pf_email']) ? $data['pf_email'] : null;
+          $params[] = isset($data['pf_tiene_domicilio_extranjero']) ? 1 : 0;
+          $params[] = !empty($data['pf_pais_origen']) ? $data['pf_pais_origen'] : null;
+          $params[] = !empty($data['pf_estado_extranjero']) ? $data['pf_estado_extranjero'] : null;
+          $params[] = !empty($data['pf_ciudad_extranjero']) ? $data['pf_ciudad_extranjero'] : null;
+          $params[] = !empty($data['pf_colonia_extranjero']) ? $data['pf_colonia_extranjero'] : null;
+          $params[] = !empty($data['pf_calle_extranjero']) ? $data['pf_calle_extranjero'] : null;
+          $params[] = !empty($data['pf_num_exterior_ext']) ? $data['pf_num_exterior_ext'] : null;
+          $params[] = !empty($data['pf_num_interior_ext']) ? $data['pf_num_interior_ext'] : null;
+          $params[] = !empty($data['pf_codigo_postal_ext']) ? $data['pf_codigo_postal_ext'] : null;
+          break;
+
+        case 'moral':
+          $baseQuery .= ", pm_razon_social, pm_fecha_constitucion, 
+                              pm_apoderado_nombre, pm_apoderado_paterno, pm_apoderado_materno,
+                              pm_apoderado_fecha_nacimiento, pm_apoderado_rfc, pm_apoderado_curp,
+                              pm_estado, pm_ciudad, pm_colonia, pm_codigo_postal, pm_calle,
+                              pm_num_exterior, pm_num_interior, pm_telefono, pm_email,
+                              pm_tiene_domicilio_extranjero, pm_pais_origen, pm_estado_extranjero,
+                              pm_ciudad_extranjero, pm_colonia_extranjero, pm_calle_extranjero,
+                              pm_num_exterior_ext, pm_num_interior_ext, pm_codigo_postal_ext";
+
+          $baseValues .= ",?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?";
+
+          // Agregar parámetros de persona moral
+          $params[] = $data['pm_razon_social'];
+          $params[] = !empty($data['pm_fecha_constitucion']) ? $data['pm_fecha_constitucion'] : null;
+          $params[] = !empty($data['pm_apoderado_nombre']) ? $data['pm_apoderado_nombre'] : null;
+          $params[] = !empty($data['pm_apoderado_paterno']) ? $data['pm_apoderado_paterno'] : null;
+          $params[] = !empty($data['pm_apoderado_materno']) ? $data['pm_apoderado_materno'] : null;
+          $params[] = !empty($data['pm_apoderado_fecha_nacimiento']) ? $data['pm_apoderado_fecha_nacimiento'] : null;
+          $params[] = !empty($data['pm_apoderado_rfc']) ? $data['pm_apoderado_rfc'] : null;
+          $params[] = !empty($data['pm_apoderado_curp']) ? $data['pm_apoderado_curp'] : null;
+          $params[] = !empty($data['pm_estado']) ? $data['pm_estado'] : null;
+          $params[] = !empty($data['pm_ciudad']) ? $data['pm_ciudad'] : null;
+          $params[] = !empty($data['pm_colonia']) ? $data['pm_colonia'] : null;
+          $params[] = !empty($data['pm_codigo_postal']) ? $data['pm_codigo_postal'] : null;
+          $params[] = !empty($data['pm_calle']) ? $data['pm_calle'] : null;
+          $params[] = !empty($data['pm_num_exterior']) ? $data['pm_num_exterior'] : null;
+          $params[] = !empty($data['pm_num_interior']) ? $data['pm_num_interior'] : null;
+          $params[] = !empty($data['pm_telefono']) ? $data['pm_telefono'] : null;
+          $params[] = !empty($data['pm_email']) ? $data['pm_email'] : null;
+          $params[] = isset($data['pm_tiene_domicilio_extranjero']) ? 1 : 0;
+          $params[] = !empty($data['pm_pais_origen']) ? $data['pm_pais_origen'] : null;
+          $params[] = !empty($data['pm_estado_extranjero']) ? $data['pm_estado_extranjero'] : null;
+          $params[] = !empty($data['pm_ciudad_extranjero']) ? $data['pm_ciudad_extranjero'] : null;
+          $params[] = !empty($data['pm_colonia_extranjero']) ? $data['pm_colonia_extranjero'] : null;
+          $params[] = !empty($data['pm_calle_extranjero']) ? $data['pm_calle_extranjero'] : null;
+          $params[] = !empty($data['pm_num_exterior_ext']) ? $data['pm_num_exterior_ext'] : null;
+          $params[] = !empty($data['pm_num_interior_ext']) ? $data['pm_num_interior_ext'] : null;
+          $params[] = !empty($data['pm_codigo_postal_ext']) ? $data['pm_codigo_postal_ext'] : null;
+          break;
+
+        case 'fideicomiso':
+          $baseQuery .= ", fid_razon_social, fid_numero_referencia,
+                              fid_apoderado_nombre, fid_apoderado_paterno, fid_apoderado_materno,
+                              fid_apoderado_fecha_nacimiento, fid_apoderado_rfc, fid_apoderado_curp,
+                              fid_estado, fid_ciudad, fid_colonia, fid_codigo_postal, fid_calle,
+                              fid_num_exterior, fid_num_interior, fid_telefono, fid_email,
+                              fid_tiene_domicilio_extranjero, fid_pais_origen, fid_estado_extranjero,
+                              fid_ciudad_extranjero, fid_colonia_extranjero, fid_calle_extranjero,
+                              fid_num_exterior_ext, fid_num_interior_ext, fid_codigo_postal_ext";
+
+          $baseValues .= ",?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?";
+
+          // Agregar parámetros de fideicomiso
+          $params[] = $data['fid_razon_social'];
+          $params[] = !empty($data['fid_numero_referencia']) ? $data['fid_numero_referencia'] : null;
+          $params[] = !empty($data['fid_apoderado_nombre']) ? $data['fid_apoderado_nombre'] : null;
+          $params[] = !empty($data['fid_apoderado_paterno']) ? $data['fid_apoderado_paterno'] : null;
+          $params[] = !empty($data['fid_apoderado_materno']) ? $data['fid_apoderado_materno'] : null;
+          $params[] = !empty($data['fid_apoderado_fecha_nacimiento']) ? $data['fid_apoderado_fecha_nacimiento'] : null;
+          $params[] = !empty($data['fid_apoderado_rfc']) ? $data['fid_apoderado_rfc'] : null;
+          $params[] = !empty($data['fid_apoderado_curp']) ? $data['fid_apoderado_curp'] : null;
+          $params[] = !empty($data['fid_estado']) ? $data['fid_estado'] : null;
+          $params[] = !empty($data['fid_ciudad']) ? $data['fid_ciudad'] : null;
+          $params[] = !empty($data['fid_colonia']) ? $data['fid_colonia'] : null;
+          $params[] = !empty($data['fid_codigo_postal']) ? $data['fid_codigo_postal'] : null;
+          $params[] = !empty($data['fid_calle']) ? $data['fid_calle'] : null;
+          $params[] = !empty($data['fid_num_exterior']) ? $data['fid_num_exterior'] : null;
+          $params[] = !empty($data['fid_num_interior']) ? $data['fid_num_interior'] : null;
+          $params[] = !empty($data['fid_telefono']) ? $data['fid_telefono'] : null;
+          $params[] = !empty($data['fid_email']) ? $data['fid_email'] : null;
+          $params[] = isset($data['fid_tiene_domicilio_extranjero']) ? 1 : 0;
+          $params[] = !empty($data['fid_pais_origen']) ? $data['fid_pais_origen'] : null;
+          $params[] = !empty($data['fid_estado_extranjero']) ? $data['fid_estado_extranjero'] : null;
+          $params[] = !empty($data['fid_ciudad_extranjero']) ? $data['fid_ciudad_extranjero'] : null;
+          $params[] = !empty($data['fid_colonia_extranjero']) ? $data['fid_colonia_extranjero'] : null;
+          $params[] = !empty($data['fid_calle_extranjero']) ? $data['fid_calle_extranjero'] : null;
+          $params[] = !empty($data['fid_num_exterior_ext']) ? $data['fid_num_exterior_ext'] : null;
+          $params[] = !empty($data['fid_num_interior_ext']) ? $data['fid_num_interior_ext'] : null;
+          $params[] = !empty($data['fid_codigo_postal_ext']) ? $data['fid_codigo_postal_ext'] : null;
+          break;
+      }
+    }
+
+    // Cerrar la consulta
+    $query = $baseQuery . ") " . $baseValues . ")";
+
+    // Ejecutar la consulta
     return $this->execute($query, $params);
-}
+  }
+
+
+
+
+
+  // Método auxiliar para construir la dirección completa
+  private function construirDireccion($data, $prefijo)
+  {
+    $direccion = '';
+
+    if (!empty($data[$prefijo . '_calle'])) {
+      $direccion .= $data[$prefijo . '_calle'];
+    }
+
+    if (!empty($data[$prefijo . '_num_exterior'])) {
+      $direccion .= ' #' . $data[$prefijo . '_num_exterior'];
+    }
+
+    if (!empty($data[$prefijo . '_num_interior'])) {
+      $direccion .= ' Int. ' . $data[$prefijo . '_num_interior'];
+    }
+
+    if (!empty($data[$prefijo . '_colonia'])) {
+      $direccion .= ', Col. ' . $data[$prefijo . '_colonia'];
+    }
+
+    if (!empty($data[$prefijo . '_ciudad'])) {
+      $direccion .= ', ' . $data[$prefijo . '_ciudad'];
+    }
+
+    if (!empty($data[$prefijo . '_estado'])) {
+      $direccion .= ', ' . $data[$prefijo . '_estado'];
+    }
+
+    if (!empty($data[$prefijo . '_codigo_postal'])) {
+      $direccion .= ' C.P. ' . $data[$prefijo . '_codigo_postal'];
+    }
+
+    return trim($direccion);
+  }
+
   // Función para obtener todas las carpetas según el estatus especificado.
   // Archivos -> backoffice/folders/folders.php
   public function getFolders($statusFolder)
@@ -299,52 +510,372 @@ class WebController extends Connector
 
   // Función para actualizar la información de una carpeta (nombre y plazo de vencimiento - fecha inicial y fecha final)
   // Archivos -> backoffice/folders/all_folders.php , backoffice/folders/folders.php , backoffice/folders/subfolder.php
-  public function updateNameFolder($data)
-  {
+
+
+  // Función para actualizar la información completa de una carpeta
+// Archivos -> backoffice/folders/all_folders.php , backoffice/folders/folders.php , backoffice/folders/subfolder.php
+  // Función para actualizar la información completa de una carpeta
+// Archivos -> backoffice/folders/all_folders.php , backoffice/folders/folders.php , backoffice/folders/subfolder.php
+
+public function updateNameFolder($data)
+{
+    // Debug: Verificar qué datos llegan
+    error_log("updateNameFolder called with data: " . print_r($data, true));
+
     // Comprobamos si se ha seleccionado un ejecutivo de ventas
     $id_customer_folder = !empty($data['id_customer_folder']) ? $data['id_customer_folder'] : 0;
+
     // Inicializamos las variables para las fechas como null.
     $firstFech = null;
     $secondFech = null;
     $fech_orig_recib_folder = null;
+
     // Inicializamos las variables para los campos de los checks como null.
     $chk_alta_fact_folder = isset($data['chk_alta_fact_folder']) ? $data['chk_alta_fact_folder'] : null;
     $chk_lib_folder = isset($data['chk_lib_folder']) ? $data['chk_lib_folder'] : null;
     $chk_orig_recib_folder = isset($data['chk_orig_recib_folder']) ? $data['chk_orig_recib_folder'] : null;
+
     // Verificamos si 'first_fech_folder' o 'second_fech_folder' están vacíos.
-    // Si cualquiera de ellos está vacío, ambas fechas se mantendrán como null.
     if (empty($data['first_fech_folder']) || empty($data['second_fech_folder'])) {
-      $firstFech = null;
-      $secondFech = null;
+        $firstFech = null;
+        $secondFech = null;
     } else {
-      // Si ambas fechas han sido seleccionadas, las asignamos a las variables correspondientes.
-      $firstFech = $data['first_fech_folder'];
-      $secondFech = $data['second_fech_folder'];
+        $firstFech = $data['first_fech_folder'];
+        $secondFech = $data['second_fech_folder'];
     }
+
     // Verificamos si 'chk_orig_recib_folder' esta vacio para colocar la fecha como NULL
     if (empty($data['chk_orig_recib_folder'])) {
-      $fech_orig_recib_folder = null;
+        $fech_orig_recib_folder = null;
     } else {
-      // Si no esta vacio se ingresa la fecha que selecciono el cliente para el campo de Fecha de original recibido
-      $fech_orig_recib_folder = $data['fech_orig_recib_folder'];
+        $fech_orig_recib_folder = $data['fech_orig_recib_folder'];
     }
-    // Definición de la consulta SQL para actualizar el nombre de la carpeta
-    $query = "UPDATE folders SET id_customer_folder = ?, name_folder = ?, first_fech_folder = ?, second_fech_folder = ?, chk_alta_fact_folder = ?, chk_lib_folder = ?, chk_orig_recib_folder = ?, fech_orig_recib_folder = ?, updated_at_folder = NOW() WHERE id_folder = ?";
+
+    // ========== NUEVOS CAMPOS PARA PERSONA FÍSICA ==========
+    $pf_nombre = isset($data['pf_nombre']) ? $data['pf_nombre'] : null;
+    $pf_apellido_paterno = isset($data['pf_apellido_paterno']) ? $data['pf_apellido_paterno'] : null;
+    $pf_apellido_materno = isset($data['pf_apellido_materno']) ? $data['pf_apellido_materno'] : null;
+    $pf_fecha_nacimiento = !empty($data['pf_fecha_nacimiento']) ? $data['pf_fecha_nacimiento'] : null;
+    $pf_estado = isset($data['pf_estado']) ? $data['pf_estado'] : null;
+    $pf_ciudad = isset($data['pf_ciudad']) ? $data['pf_ciudad'] : null;
+    $pf_colonia = isset($data['pf_colonia']) ? $data['pf_colonia'] : null;
+    $pf_codigo_postal = isset($data['pf_codigo_postal']) ? $data['pf_codigo_postal'] : null;
+    $pf_calle = isset($data['pf_calle']) ? $data['pf_calle'] : null;
+    $pf_num_exterior = isset($data['pf_num_exterior']) ? $data['pf_num_exterior'] : null;
+    $pf_num_interior = isset($data['pf_num_interior']) ? $data['pf_num_interior'] : null;
+    $pf_telefono = isset($data['pf_telefono']) ? $data['pf_telefono'] : null;
+    $pf_email = isset($data['pf_email']) ? $data['pf_email'] : null;
+
+    // Domicilio extranjero persona física
+    $pf_tiene_domicilio_extranjero = isset($data['pf_tiene_domicilio_extranjero']) ? 1 : 0;
+    $pf_pais_origen = isset($data['pf_pais_origen']) ? $data['pf_pais_origen'] : null;
+    $pf_estado_extranjero = isset($data['pf_estado_extranjero']) ? $data['pf_estado_extranjero'] : null;
+    $pf_ciudad_extranjero = isset($data['pf_ciudad_extranjero']) ? $data['pf_ciudad_extranjero'] : null;
+    $pf_colonia_extranjero = isset($data['pf_colonia_extranjero']) ? $data['pf_colonia_extranjero'] : null;
+    $pf_calle_extranjero = isset($data['pf_calle_extranjero']) ? $data['pf_calle_extranjero'] : null;
+    $pf_num_exterior_ext = isset($data['pf_num_exterior_ext']) ? $data['pf_num_exterior_ext'] : null;
+    $pf_num_interior_ext = isset($data['pf_num_interior_ext']) ? $data['pf_num_interior_ext'] : null;
+    $pf_codigo_postal_ext = isset($data['pf_codigo_postal_ext']) ? $data['pf_codigo_postal_ext'] : null;
+
+    // ========== NUEVOS CAMPOS PARA PERSONA MORAL ==========
+    $pm_razon_social = isset($data['pm_razon_social']) ? $data['pm_razon_social'] : null;
+    $pm_fecha_constitucion = !empty($data['pm_fecha_constitucion']) ? $data['pm_fecha_constitucion'] : null;
+    $pm_apoderado_nombre = isset($data['pm_apoderado_nombre']) ? $data['pm_apoderado_nombre'] : null;
+    $pm_apoderado_paterno = isset($data['pm_apoderado_paterno']) ? $data['pm_apoderado_paterno'] : null;
+    $pm_apoderado_materno = isset($data['pm_apoderado_materno']) ? $data['pm_apoderado_materno'] : null;
+    $pm_apoderado_fecha_nacimiento = !empty($data['pm_apoderado_fecha_nacimiento']) ? $data['pm_apoderado_fecha_nacimiento'] : null;
+    $pm_apoderado_rfc = isset($data['pm_apoderado_rfc']) ? $data['pm_apoderado_rfc'] : null;
+    $pm_apoderado_curp = isset($data['pm_apoderado_curp']) ? $data['pm_apoderado_curp'] : null;
+    $pm_estado = isset($data['pm_estado']) ? $data['pm_estado'] : null;
+    $pm_ciudad = isset($data['pm_ciudad']) ? $data['pm_ciudad'] : null;
+    $pm_colonia = isset($data['pm_colonia']) ? $data['pm_colonia'] : null;
+    $pm_codigo_postal = isset($data['pm_codigo_postal']) ? $data['pm_codigo_postal'] : null;
+    $pm_calle = isset($data['pm_calle']) ? $data['pm_calle'] : null;
+    $pm_num_exterior = isset($data['pm_num_exterior']) ? $data['pm_num_exterior'] : null;
+    $pm_num_interior = isset($data['pm_num_interior']) ? $data['pm_num_interior'] : null;
+    $pm_telefono = isset($data['pm_telefono']) ? $data['pm_telefono'] : null;
+    $pm_email = isset($data['pm_email']) ? $data['pm_email'] : null;
+
+    // Domicilio extranjero persona moral
+    $pm_tiene_domicilio_extranjero = isset($data['pm_tiene_domicilio_extranjero']) ? 1 : 0;
+    $pm_pais_origen = isset($data['pm_pais_origen']) ? $data['pm_pais_origen'] : null;
+    $pm_estado_extranjero = isset($data['pm_estado_extranjero']) ? $data['pm_estado_extranjero'] : null;
+    $pm_ciudad_extranjero = isset($data['pm_ciudad_extranjero']) ? $data['pm_ciudad_extranjero'] : null;
+    $pm_colonia_extranjero = isset($data['pm_colonia_extranjero']) ? $data['pm_colonia_extranjero'] : null;
+    $pm_calle_extranjero = isset($data['pm_calle_extranjero']) ? $data['pm_calle_extranjero'] : null;
+    $pm_num_exterior_ext = isset($data['pm_num_exterior_ext']) ? $data['pm_num_exterior_ext'] : null;
+    $pm_num_interior_ext = isset($data['pm_num_interior_ext']) ? $data['pm_num_interior_ext'] : null;
+    $pm_codigo_postal_ext = isset($data['pm_codigo_postal_ext']) ? $data['pm_codigo_postal_ext'] : null;
+
+    // ========== NUEVOS CAMPOS PARA FIDEICOMISO ==========
+    $fid_razon_social = isset($data['fid_razon_social']) ? $data['fid_razon_social'] : null;
+    $fid_numero_referencia = isset($data['fid_numero_referencia']) ? $data['fid_numero_referencia'] : null;
+    $fid_apoderado_nombre = isset($data['fid_apoderado_nombre']) ? $data['fid_apoderado_nombre'] : null;
+    $fid_apoderado_paterno = isset($data['fid_apoderado_paterno']) ? $data['fid_apoderado_paterno'] : null;
+    $fid_apoderado_materno = isset($data['fid_apoderado_materno']) ? $data['fid_apoderado_materno'] : null;
+    $fid_apoderado_fecha_nacimiento = !empty($data['fid_apoderado_fecha_nacimiento']) ? $data['fid_apoderado_fecha_nacimiento'] : null;
+    $fid_apoderado_rfc = isset($data['fid_apoderado_rfc']) ? $data['fid_apoderado_rfc'] : null;
+    $fid_apoderado_curp = isset($data['fid_apoderado_curp']) ? $data['fid_apoderado_curp'] : null;
+    $fid_estado = isset($data['fid_estado']) ? $data['fid_estado'] : null;
+    $fid_ciudad = isset($data['fid_ciudad']) ? $data['fid_ciudad'] : null;
+    $fid_colonia = isset($data['fid_colonia']) ? $data['fid_colonia'] : null;
+    $fid_codigo_postal = isset($data['fid_codigo_postal']) ? $data['fid_codigo_postal'] : null;
+    $fid_calle = isset($data['fid_calle']) ? $data['fid_calle'] : null;
+    $fid_num_exterior = isset($data['fid_num_exterior']) ? $data['fid_num_exterior'] : null;
+    $fid_num_interior = isset($data['fid_num_interior']) ? $data['fid_num_interior'] : null;
+    $fid_telefono = isset($data['fid_telefono']) ? $data['fid_telefono'] : null;
+    $fid_email = isset($data['fid_email']) ? $data['fid_email'] : null;
+
+    // Domicilio extranjero fideicomiso
+    $fid_tiene_domicilio_extranjero = isset($data['fid_tiene_domicilio_extranjero']) ? 1 : 0;
+    $fid_pais_origen = isset($data['fid_pais_origen']) ? $data['fid_pais_origen'] : null;
+    $fid_estado_extranjero = isset($data['fid_estado_extranjero']) ? $data['fid_estado_extranjero'] : null;
+    $fid_ciudad_extranjero = isset($data['fid_ciudad_extranjero']) ? $data['fid_ciudad_extranjero'] : null;
+    $fid_colonia_extranjero = isset($data['fid_colonia_extranjero']) ? $data['fid_colonia_extranjero'] : null;
+    $fid_calle_extranjero = isset($data['fid_calle_extranjero']) ? $data['fid_calle_extranjero'] : null;
+    $fid_num_exterior_ext = isset($data['fid_num_exterior_ext']) ? $data['fid_num_exterior_ext'] : null;
+    $fid_num_interior_ext = isset($data['fid_num_interior_ext']) ? $data['fid_num_interior_ext'] : null;
+    $fid_codigo_postal_ext = isset($data['fid_codigo_postal_ext']) ? $data['fid_codigo_postal_ext'] : null;
+
+    // ========== CAMPOS GENERALES ==========
+    $tipo_persona = isset($data['tipo_persona']) ? $data['tipo_persona'] : null;
+    $curp_folder = isset($data['curp_folder']) ? $data['curp_folder'] : null;
+
+    // ===== AQUÍ ESTÁ EL CAMBIO PRINCIPAL - RFC SEGÚN TIPO DE PERSONA =====
+    $rfc_folder = null;
+    
+    // Obtener el RFC del campo correcto según el tipo de persona
+    if ($tipo_persona === 'fisica') {
+        $rfc_folder = isset($data['pf_rfc']) ? $data['pf_rfc'] : null;
+    } elseif ($tipo_persona === 'moral') {
+        $rfc_folder = isset($data['pm_rfc']) ? $data['pm_rfc'] : null;
+    } elseif ($tipo_persona === 'fideicomiso') {
+        $rfc_folder = isset($data['fid_rfc']) ? $data['fid_rfc'] : null;
+    }
+
+    error_log("RFC DEBUG - Tipo: $tipo_persona, RFC: $rfc_folder");
+
+    // GENERAR name_folder dinámicamente según tipo de persona
+    $name_folder = '';
+    switch ($tipo_persona) {
+        case 'fisica':
+            $name_folder = trim($pf_nombre . ' ' . $pf_apellido_paterno . ' ' . $pf_apellido_materno);
+            break;
+        case 'moral':
+            $name_folder = $pm_razon_social ?: 'Empresa';
+            break;
+        case 'fideicomiso':
+            $name_folder = $fid_razon_social ?: 'Fideicomiso';
+            break;
+        default:
+            $name_folder = isset($data['name_folder']) ? $data['name_folder'] : 'Cliente';
+    }
+
+    // Definición de la consulta SQL para actualizar la información completa de la carpeta
+    $query = "UPDATE folders SET 
+                id_customer_folder = ?, 
+                name_folder = ?, 
+                tipo_persona = ?,
+                rfc_folder = ?,
+                curp_folder = ?,
+                first_fech_folder = ?, 
+                second_fech_folder = ?, 
+                chk_alta_fact_folder = ?, 
+                chk_lib_folder = ?, 
+                chk_orig_recib_folder = ?, 
+                fech_orig_recib_folder = ?,
+                
+                -- Campos Persona Física
+                pf_nombre = ?,
+                pf_apellido_paterno = ?,
+                pf_apellido_materno = ?,
+                pf_fecha_nacimiento = ?,
+                pf_estado = ?,
+                pf_ciudad = ?,
+                pf_colonia = ?,
+                pf_codigo_postal = ?,
+                pf_calle = ?,
+                pf_num_exterior = ?,
+                pf_num_interior = ?,
+                pf_telefono = ?,
+                pf_email = ?,
+                pf_tiene_domicilio_extranjero = ?,
+                pf_pais_origen = ?,
+                pf_estado_extranjero = ?,
+                pf_ciudad_extranjero = ?,
+                pf_colonia_extranjero = ?,
+                pf_calle_extranjero = ?,
+                pf_num_exterior_ext = ?,
+                pf_num_interior_ext = ?,
+                pf_codigo_postal_ext = ?,
+                
+                -- Campos Persona Moral
+                pm_razon_social = ?,
+                pm_fecha_constitucion = ?,
+                pm_apoderado_nombre = ?,
+                pm_apoderado_paterno = ?,
+                pm_apoderado_materno = ?,
+                pm_apoderado_fecha_nacimiento = ?,
+                pm_apoderado_rfc = ?,
+                pm_apoderado_curp = ?,
+                pm_estado = ?,
+                pm_ciudad = ?,
+                pm_colonia = ?,
+                pm_codigo_postal = ?,
+                pm_calle = ?,
+                pm_num_exterior = ?,
+                pm_num_interior = ?,
+                pm_telefono = ?,
+                pm_email = ?,
+                pm_tiene_domicilio_extranjero = ?,
+                pm_pais_origen = ?,
+                pm_estado_extranjero = ?,
+                pm_ciudad_extranjero = ?,
+                pm_colonia_extranjero = ?,
+                pm_calle_extranjero = ?,
+                pm_num_exterior_ext = ?,
+                pm_num_interior_ext = ?,
+                pm_codigo_postal_ext = ?,
+                
+                -- Campos Fideicomiso
+                fid_razon_social = ?,
+                fid_numero_referencia = ?,
+                fid_apoderado_nombre = ?,
+                fid_apoderado_paterno = ?,
+                fid_apoderado_materno = ?,
+                fid_apoderado_fecha_nacimiento = ?,
+                fid_apoderado_rfc = ?,
+                fid_apoderado_curp = ?,
+                fid_estado = ?,
+                fid_ciudad = ?,
+                fid_colonia = ?,
+                fid_codigo_postal = ?,
+                fid_calle = ?,
+                fid_num_exterior = ?,
+                fid_num_interior = ?,
+                fid_telefono = ?,
+                fid_email = ?,
+                fid_tiene_domicilio_extranjero = ?,
+                fid_pais_origen = ?,
+                fid_estado_extranjero = ?,
+                fid_ciudad_extranjero = ?,
+                fid_colonia_extranjero = ?,
+                fid_calle_extranjero = ?,
+                fid_num_exterior_ext = ?,
+                fid_num_interior_ext = ?,
+                fid_codigo_postal_ext = ?,
+                
+                updated_at_folder = NOW() 
+              WHERE id_folder = ?";
+
     // Definición de los parámetros que serán insertados en la sentencia SQL
     $params = array(
-      $id_customer_folder,       // ID del ejecutivo de ventas, si se selecciono se guarda el id si no se guarda 0
-      $data['name_folder'],      // Nombre de la carpeta a actualizar
-      $firstFech,                // Fecha inicial asociada a la carpeta.
-      $secondFech,               // Fecha final asociada a la carpeta.
-      $chk_alta_fact_folder,     // Check Vo.Bo. Alta Facturación	
-      $chk_lib_folder,           // Check Vo.Bo. Liberación
-      $chk_orig_recib_folder,    // Check Original Recibido
-      $fech_orig_recib_folder,   // Fecha de Original Recibido
-      $data['id_folder']         // ID de la carpeta que se actualizará
+        // Campos originales
+        $id_customer_folder,
+        $name_folder,
+        $tipo_persona,
+        $rfc_folder,  // ← AQUÍ SE USA EL RFC CORRECTO
+        $curp_folder,
+        $firstFech,
+        $secondFech,
+        $chk_alta_fact_folder,
+        $chk_lib_folder,
+        $chk_orig_recib_folder,
+        $fech_orig_recib_folder,
+
+        // Campos Persona Física
+        $pf_nombre,
+        $pf_apellido_paterno,
+        $pf_apellido_materno,
+        $pf_fecha_nacimiento,
+        $pf_estado,
+        $pf_ciudad,
+        $pf_colonia,
+        $pf_codigo_postal,
+        $pf_calle,
+        $pf_num_exterior,
+        $pf_num_interior,
+        $pf_telefono,
+        $pf_email,
+        $pf_tiene_domicilio_extranjero,
+        $pf_pais_origen,
+        $pf_estado_extranjero,
+        $pf_ciudad_extranjero,
+        $pf_colonia_extranjero,
+        $pf_calle_extranjero,
+        $pf_num_exterior_ext,
+        $pf_num_interior_ext,
+        $pf_codigo_postal_ext,
+
+        // Campos Persona Moral
+        $pm_razon_social,
+        $pm_fecha_constitucion,
+        $pm_apoderado_nombre,
+        $pm_apoderado_paterno,
+        $pm_apoderado_materno,
+        $pm_apoderado_fecha_nacimiento,
+        $pm_apoderado_rfc,
+        $pm_apoderado_curp,
+        $pm_estado,
+        $pm_ciudad,
+        $pm_colonia,
+        $pm_codigo_postal,
+        $pm_calle,
+        $pm_num_exterior,
+        $pm_num_interior,
+        $pm_telefono,
+        $pm_email,
+        $pm_tiene_domicilio_extranjero,
+        $pm_pais_origen,
+        $pm_estado_extranjero,
+        $pm_ciudad_extranjero,
+        $pm_colonia_extranjero,
+        $pm_calle_extranjero,
+        $pm_num_exterior_ext,
+        $pm_num_interior_ext,
+        $pm_codigo_postal_ext,
+
+        // Campos Fideicomiso
+        $fid_razon_social,
+        $fid_numero_referencia,
+        $fid_apoderado_nombre,
+        $fid_apoderado_paterno,
+        $fid_apoderado_materno,
+        $fid_apoderado_fecha_nacimiento,
+        $fid_apoderado_rfc,
+        $fid_apoderado_curp,
+        $fid_estado,
+        $fid_ciudad,
+        $fid_colonia,
+        $fid_codigo_postal,
+        $fid_calle,
+        $fid_num_exterior,
+        $fid_num_interior,
+        $fid_telefono,
+        $fid_email,
+        $fid_tiene_domicilio_extranjero,
+        $fid_pais_origen,
+        $fid_estado_extranjero,
+        $fid_ciudad_extranjero,
+        $fid_colonia_extranjero,
+        $fid_calle_extranjero,
+        $fid_num_exterior_ext,
+        $fid_num_interior_ext,
+        $fid_codigo_postal_ext,
+
+        // ID de la carpeta que se actualizará (debe ir al final)
+        $data['id_folder']
     );
+
+    // Debug: Mostrar query y parámetros antes de ejecutar
+    error_log("Query: " . $query);
+    error_log("Params count: " . count($params));
+    error_log("Generated name_folder: " . $name_folder);
+
     // Ejecución de la consulta SQL con los parámetros proporcionados
     return $this->execute($query, $params);
-  }
+}
+
 
   // Función para ACTUALIZAR UNA CARPETA A ESTATUS DE ELIMINADO
   // Archivos -> backoffice/folders/all_folders.php , backoffice/folders/folders.php , backoffice/folders/subfolder.php
@@ -1582,17 +2113,18 @@ class WebController extends Connector
   /**
    * Actualizar empresa
    */
-public function updateCompany($data, $idCompany) {
+  public function updateCompany($data, $idCompany)
+  {
     // Función helper para limpiar valores vacíos
-    $cleanValue = function($value) {
-        return (!empty($value) && $value !== '') ? $value : null;
+    $cleanValue = function ($value) {
+      return (!empty($value) && $value !== '') ? $value : null;
     };
-    
+
     // Obtener el nombre anterior de la empresa para actualizar la carpeta
     $getCurrentNameQuery = "SELECT name_company FROM companies WHERE id_company = ?";
     $currentCompany = $this->consult($getCurrentNameQuery, array($idCompany), true);
     $oldName = $currentCompany ? $currentCompany['name_company'] : null;
-    
+
     // 1. ACTUALIZAR LA EMPRESA
     $query = "UPDATE companies SET 
         name_company = ?, rfc_company = ?, razon_social = ?, tipo_persona = ?, fecha_constitucion = ?,
@@ -1607,67 +2139,67 @@ public function updateCompany($data, $idCompany) {
         fideicomisario_rfc = ?, fideicomisario_curp = ?, numero_fideicomiso = ?, fecha_fideicomiso = ?,
         updated_at_company = NOW()
         WHERE id_company = ?";
-    
+
     $params = array(
-        $data['name_company'],
-        $data['rfc_company'], 
-        $data['razon_social'], 
-        $data['tipo_persona'],
-        $cleanValue($data['fecha_constitucion']),
-        $cleanValue($data['estado']), 
-        $cleanValue($data['ciudad']), 
-        $cleanValue($data['colonia']), 
-        $cleanValue($data['calle']), 
-        $cleanValue($data['num_exterior']), 
-        $cleanValue($data['num_interior']), 
-        $cleanValue($data['codigo_postal']), 
-        $cleanValue($data['telefono']), 
-        $cleanValue($data['email']), 
-        // Campos del representante legal
-        $cleanValue($data['apoderado_nombre']), 
-        $cleanValue($data['apoderado_apellido_paterno']),
-        $cleanValue($data['apoderado_apellido_materno']), 
-        $cleanValue($data['apoderado_rfc']), 
-        $cleanValue($data['apoderado_curp']),
-        // Campos del fideicomiso
-        $cleanValue($data['fiduciario_nombre']),
-        $cleanValue($data['fiduciario_rfc']),
-        $cleanValue($data['fideicomitente_nombre']),
-        $cleanValue($data['fideicomitente_apellido_paterno']),
-        $cleanValue($data['fideicomitente_apellido_materno']),
-        $cleanValue($data['fideicomitente_rfc']),
-        $cleanValue($data['fideicomitente_curp']),
-        $cleanValue($data['fideicomisario_nombre']),
-        $cleanValue($data['fideicomisario_apellido_paterno']),
-        $cleanValue($data['fideicomisario_apellido_materno']),
-        $cleanValue($data['fideicomisario_rfc']),
-        $cleanValue($data['fideicomisario_curp']),
-        $cleanValue($data['numero_fideicomiso']),
-        $cleanValue($data['fecha_fideicomiso']),
-        $idCompany
+      $data['name_company'],
+      $data['rfc_company'],
+      $data['razon_social'],
+      $data['tipo_persona'],
+      $cleanValue($data['fecha_constitucion']),
+      $cleanValue($data['estado']),
+      $cleanValue($data['ciudad']),
+      $cleanValue($data['colonia']),
+      $cleanValue($data['calle']),
+      $cleanValue($data['num_exterior']),
+      $cleanValue($data['num_interior']),
+      $cleanValue($data['codigo_postal']),
+      $cleanValue($data['telefono']),
+      $cleanValue($data['email']),
+      // Campos del representante legal
+      $cleanValue($data['apoderado_nombre']),
+      $cleanValue($data['apoderado_apellido_paterno']),
+      $cleanValue($data['apoderado_apellido_materno']),
+      $cleanValue($data['apoderado_rfc']),
+      $cleanValue($data['apoderado_curp']),
+      // Campos del fideicomiso
+      $cleanValue($data['fiduciario_nombre']),
+      $cleanValue($data['fiduciario_rfc']),
+      $cleanValue($data['fideicomitente_nombre']),
+      $cleanValue($data['fideicomitente_apellido_paterno']),
+      $cleanValue($data['fideicomitente_apellido_materno']),
+      $cleanValue($data['fideicomitente_rfc']),
+      $cleanValue($data['fideicomitente_curp']),
+      $cleanValue($data['fideicomisario_nombre']),
+      $cleanValue($data['fideicomisario_apellido_paterno']),
+      $cleanValue($data['fideicomisario_apellido_materno']),
+      $cleanValue($data['fideicomisario_rfc']),
+      $cleanValue($data['fideicomisario_curp']),
+      $cleanValue($data['numero_fideicomiso']),
+      $cleanValue($data['fecha_fideicomiso']),
+      $idCompany
     );
-    
+
     $updated = $this->execute($query, $params);
-    
+
     // 2. SI SE ACTUALIZÓ LA EMPRESA Y CAMBIÓ EL NOMBRE, ACTUALIZAR LA CARPETA USANDO company_id
-    if($updated && $oldName && $oldName !== $data['name_company']) {
-        $updateFolderQuery = "UPDATE folders SET 
+    if ($updated && $oldName && $oldName !== $data['name_company']) {
+      $updateFolderQuery = "UPDATE folders SET 
                              name_folder = ?, 
                              updated_at_folder = NOW() 
                              WHERE company_id = ? 
                              AND fk_folder = 0 
                              AND status_folder = 1";
-        
-        $folderParams = array(
-            $data['name_company'], // Nuevo nombre
-            $idCompany // ← USAR LA RELACIÓN DIRECTA company_id
-        );
-        
-        $this->execute($updateFolderQuery, $folderParams);
+
+      $folderParams = array(
+        $data['name_company'], // Nuevo nombre
+        $idCompany // ← USAR LA RELACIÓN DIRECTA company_id
+      );
+
+      $this->execute($updateFolderQuery, $folderParams);
     }
-    
+
     return $updated;
-}
+  }
 
 
   /**
@@ -1768,7 +2300,8 @@ public function updateCompany($data, $idCompany) {
 
   // Función para obtener EMPRESAS CLIENTES (para companies.php)
 // Función para obtener EMPRESAS CLIENTES (para companies.php)
-public function getClientCompanies($status) {
+  public function getClientCompanies($status)
+  {
     // TODOS los usuarios ven TODAS las empresas clientes
     // Sin importar quién las creó
     $query = "SELECT c.*, u.name_user as created_by 
@@ -1777,9 +2310,9 @@ public function getClientCompanies($status) {
               WHERE c.status_company = ? AND c.type_company = 'client'
               ORDER BY c.created_at_company DESC";
     $params = array($status);
-    
+
     return $this->consult($query, $params);
-}
+  }
 
   // Función para crear una empresa cliente
 // Función para crear una empresa cliente
@@ -1878,49 +2411,52 @@ public function getClientCompanies($status) {
 
   // Función para obtener empresas clientes para selects
 
-public function getClientCompaniesForSelect($status) {
+  public function getClientCompaniesForSelect($status)
+  {
     // TODOS ven TODAS las empresas clientes en los selects
     $query = "SELECT * FROM companies WHERE status_company = ? AND type_company = 'client' ORDER BY name_company ASC";
     $params = array($status);
-    
+
     return $this->consult($query, $params);
-}
+  }
 
   // Estadísticas de empresas clientes
 
-public function getClientCompaniesStats() {
+  public function getClientCompaniesStats()
+  {
     // TODOS ven las estadísticas de TODAS las empresas clientes
     $where_clause = "WHERE status_company = 1 AND type_company = 'client'";
     $params = array();
-    
+
     // Total
     $query_total = "SELECT COUNT(*) as total FROM companies $where_clause";
     $total = $this->consult($query_total, $params, true);
-    
+
     // Por tipo
     $query_moral = "SELECT COUNT(*) as total FROM companies $where_clause AND tipo_persona = 'Moral'";
     $moral = $this->consult($query_moral, $params, true);
-    
+
     $query_fisica = "SELECT COUNT(*) as total FROM companies $where_clause AND tipo_persona = 'Física'";
     $fisica = $this->consult($query_fisica, $params, true);
-    
+
     $query_fideicomiso = "SELECT COUNT(*) as total FROM companies $where_clause AND tipo_persona = 'Fideicomiso'";
     $fideicomiso = $this->consult($query_fideicomiso, $params, true);
-    
-    return array(
-        'total' => $total['total'],
-        'moral' => $moral['total'],
-        'fisica' => $fisica['total'], 
-        'fideicomiso' => $fideicomiso['total']
-    );
-}
 
-// Función para obtener todas las empresas (carpetas principales)
-public function getCompanies($statusFolder = 1) {
+    return array(
+      'total' => $total['total'],
+      'moral' => $moral['total'],
+      'fisica' => $fisica['total'],
+      'fideicomiso' => $fideicomiso['total']
+    );
+  }
+
+  // Función para obtener todas las empresas (carpetas principales)
+  public function getCompanies($statusFolder = 1)
+  {
     $query = "SELECT id_folder, name_folder FROM folders WHERE status_folder = ? AND fk_folder = 0 ORDER BY name_folder ASC";
     $params = array($statusFolder);
     return $this->consult($query, $params);
-}
+  }
 
 
 }

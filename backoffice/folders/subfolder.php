@@ -4,6 +4,23 @@ include "../../app/config.php";
 //include "../../app/debug.php";
 include "../../app/WebController.php";
 $controller = new WebController();
+
+// FUNCIÓN DE DEBUG
+function debugLog($step, $data = null) {
+    error_log("DEBUG STEP $step: " . print_r($data, true));
+    echo "<script>console.log('DEBUG STEP $step:', " . json_encode($data) . ");</script>";
+}
+
+// DEBUGGING INICIAL
+if (!empty($_POST)) {
+    debugLog('POST_RECEIVED', [
+        'action' => $_POST['action'] ?? 'NO_ACTION',
+        'updateFolder_isset' => isset($_POST['updateFolder']),
+        'updateFolder_keys' => isset($_POST['updateFolder']) ? array_keys($_POST['updateFolder']) : [],
+        'post_keys' => array_keys($_POST)
+    ]);
+}
+
 // Verificar si la sesión del usuario está activa
 if (!isset($_SESSION['user']) || empty($_SESSION['user'])) {
     // Si no hay sesión activa, destruir la sesión
@@ -12,6 +29,7 @@ if (!isset($_SESSION['user']) || empty($_SESSION['user'])) {
     header("Location: ../../login.php");
     exit(); // Es importante salir después de redirigir para evitar que el código siguiente se ejecute innecesariamente
 }
+
 //FUNCIÓN PARA MOSTRAR LOS DETALLES DE UNA CARPETA
 $folder = $controller->getDetailFolder($_GET['id'], $_GET['key'], 1);
 //FUNCIÓN PARA OBTENER LA KEY DE LA CARPETA PADRE EN CASO DE QUE TENGA LLAVE FORANEA (!= 0)
@@ -49,15 +67,46 @@ if (!empty($_POST['action'])) {
             header("location: subfolder.php?id=$folder[id_folder]&key=$folder[key_folder]");
         }
     }
-    // Si la acción es 'update', se intenta actualizar el nombre de una carpeta existente
+    
+    // ================== CORREGIDO: ACTUALIZAR CARPETA ==================
+    // Si la acción es 'updateFolder', se intenta actualizar la carpeta existente
     else if ($_POST['action'] == 'updateFolder') {
-        // Llama al método para actualizar el nombre de la carpeta y obtiene el ID de la carpeta actualizada
-        $idFolder = $controller->updateNameFolder($_POST['updateFolder']);
-        // Si se actualiza el nombre correctamente, redirecciona a la página de carpetas
-        if ($idFolder) {
-            header("location: subfolder.php?id=$folder[id_folder]&key=$folder[key_folder]");
+        debugLog('BEFORE_UPDATE', [
+            'id_folder' => $_POST['updateFolder']['id_folder'] ?? 'MISSING',
+            'method_exists' => method_exists($controller, 'updateNameFolder'),
+            'data_received' => $_POST['updateFolder'] ?? 'NO_DATA',
+            'tipo_persona' => $_POST['updateFolder']['tipo_persona'] ?? 'NOT_SET'
+        ]);
+        
+        try {
+            // Llama al método para actualizar la carpeta
+            $idFolder = $controller->updateNameFolder($_POST['updateFolder']);
+            
+            debugLog('UPDATE_RESULT', [
+                'result' => $idFolder,
+                'redirect_will_happen' => (bool)$idFolder
+            ]);
+            
+            // Si se actualiza correctamente, redirecciona
+            if ($idFolder) {
+                header("location: subfolder.php?id={$folder['id_folder']}&key={$folder['key_folder']}");
+                exit();
+            } else {
+                debugLog('UPDATE_FAILED', 'updateNameFolder returned false/null');
+                // Opcional: mostrar mensaje de error al usuario
+                echo "<script>alert('Error al actualizar la información. Por favor intente nuevamente.');</script>";
+            }
+        } catch (Exception $e) {
+            debugLog('UPDATE_ERROR', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            // Opcional: mostrar mensaje de error al usuario
+            echo "<script>alert('Error técnico: " . addslashes($e->getMessage()) . "');</script>";
         }
     }
+    
     // Si la acción es 'delete', se intenta eliminar una carpeta existente
     else if ($_POST['action'] == 'deleteFolder') {
         // Llama al método para eliminar la carpeta y obtiene el ID de la carpeta eliminada
@@ -67,7 +116,8 @@ if (!empty($_POST['action'])) {
             header("location: subfolder.php?id=$folder[id_folder]&key=$folder[key_folder]");
         }
     }
-    // Si la acción es 'update', se intenta actualizar el nombre de una carpeta existente
+    
+    // MANTENER COMPATIBILIDAD: updateNameFolder (para otros formularios)
     else if ($_POST['action'] == 'updateNameFolder') {
         // Llama al método para actualizar el nombre de la carpeta y obtiene el ID de la carpeta actualizada
         $idFolder = $controller->updateNameFolder($_POST['updateNameFolder']);
@@ -76,6 +126,7 @@ if (!empty($_POST['action'])) {
             header("location: subfolder.php?id=$folder[id_folder]&key=$folder[key_folder]");
         }
     }
+    
     //ESTE CÓDIGO ES PARA SUBIR DOCUMENTOS CON LOS INPUTS DEL MODAL QUE ESTA OCULTO, EL CÓDIGO FUNCIONA PERO NO ESTA EN USO
     else if ($_POST['action'] == 'saveDocuments') {
         // Ruta de la carpeta de destino
@@ -115,18 +166,6 @@ if (!empty($_POST['action'])) {
                         "first_fech_document" => null,
                         "second_fech_document" => null
                     );
-                    //-------ORIGINAL - con las fechas--------
-                    /*
-                    $dataDocument = array(
-                        "id_folder_document"=>$folder['id_folder'],
-                        "id_user_document"=>$_SESSION['user']['id_user'],
-                        "key_document" =>$keyDocument,
-                        "file_name_document"=>$archivonombre,
-                        "file_extension_document"=>$file_extension,
-                        "first_fech_document"=>$_POST['first_date'][$key], // Acceder al valor correcto del arreglo
-                        "second_fech_document"=>$_POST['second_date'][$key] // Acceder al valor correcto del arreglo
-                    );*/
-
 
                     //Obtenemos la respuesta del documento creado
                     $documentId = $controller->createDocument($dataDocument);
@@ -137,6 +176,7 @@ if (!empty($_POST['action'])) {
             header("location: subfolder.php?id=$folder[id_folder]&key=$folder[key_folder]");
         }
     }
+    
     //ESTE CÓDIGO ES PARA SUBIR LOS ARCHIVOS DE MANERA MASIVA
     else if ($_POST['action'] == 'saveFullDocuments') {
         // Ruta de la carpeta de destino (YA SEA AL INTERIOR DEL SERVER O EN UNA UNIDAD EXTERNA)
@@ -196,6 +236,7 @@ if (!empty($_POST['action'])) {
             header("location: subfolder.php?id=$folder[id_folder]&key=$folder[key_folder]");
         }
     }
+    
     // Si la acción es 'deleteDocument', se intenta eliminar un documento existente
     else if ($_POST['action'] == 'deleteDocument') {
         // Llama al método para eliminar el documento y obtiene el ID del documento eliminado
@@ -205,6 +246,7 @@ if (!empty($_POST['action'])) {
             header("location: subfolder.php?id=$folder[id_folder]&key=$folder[key_folder]");
         }
     }
+    
     // Si la acción es 'update', se intenta actualizar el nombre de una carpeta existente
     else if ($_POST['action'] == 'updateDocument') {
         // Llama al método para actualizar el nombre de la carpeta y obtiene el ID de la carpeta actualizada
@@ -214,6 +256,7 @@ if (!empty($_POST['action'])) {
             header("location: subfolder.php?id=$folder[id_folder]&key=$folder[key_folder]");
         }
     }
+    
     // Si la acción es 'saveTracing', se intenta guardar el seguimiento tomando el texto del input del menú lateral (sin notificación)
     else if ($_POST['action'] == 'saveTracing') {
         // Llama al método para actualizar el nombre de la carpeta y obtiene el ID de la carpeta actualizada
@@ -234,13 +277,13 @@ if (!empty($_POST['action'])) {
         }
     }
 }
+
 //FUNCIÓN PARA GENERAR UNA CLAVE PARA LA CARPETA
 // Cadena de caracteres permitidos para generar la clave
 $permitted_chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 // Genera una clave aleatoria tomando una subcadena de longitud 6 de la cadena de caracteres permitidos
 $clave = substr(str_shuffle($permitted_chars), 0, 6);
 ?>
-
 
 <!doctype html>
 <html lang="es">
@@ -878,48 +921,48 @@ $clave = substr(str_shuffle($permitted_chars), 0, 6);
                         <div class="col-lg-8 col-md-6 col-sm-12">
                             <!--CÓDIGO ORIGINAL (QUITAR EL PHP)-->
                             <?php /*
-                 <form action="#" method="post">
-                     <div class="row">
-                         <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1) O VENTAS (3)-->
-                         <?php if($_SESSION['user']['id_type_user'] == 1 || $_SESSION['user']['id_type_user'] == 3){ ?>
-                             <div class="col-lg-6 col-md-12 col-sm-12">
-                                 <input name="updateNameFolder[id_folder]" type="text" class="form-control form-control-md" id="id_folder" required value="<?php echo $folder['id_folder']; ?>" readonly style="display: none;" hidden>
-                                 <input name="updateNameFolder[name_folder]" type="text" class="form-control form-control-md" id="name_folder" required placeholder="Ejem. SysOp" value="<?php echo $folder['name_folder']; ?>">
-                             </div>
-                         <?php } else { ?>
-                             <div class="col-12">
-                                 <input type="text" class="form-control form-control-md" value="<?php echo $folder['name_folder']; ?>" readonly>
-                             </div>
-                         <?php } ?>
+<form action="#" method="post">
+ <div class="row">
+     <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1) O VENTAS (3)-->
+     <?php if($_SESSION['user']['id_type_user'] == 1 || $_SESSION['user']['id_type_user'] == 3){ ?>
+         <div class="col-lg-6 col-md-12 col-sm-12">
+             <input name="updateNameFolder[id_folder]" type="text" class="form-control form-control-md" id="id_folder" required value="<?php echo $folder['id_folder']; ?>" readonly style="display: none;" hidden>
+             <input name="updateNameFolder[name_folder]" type="text" class="form-control form-control-md" id="name_folder" required placeholder="Ejem. SysOp" value="<?php echo $folder['name_folder']; ?>">
+         </div>
+     <?php } else { ?>
+         <div class="col-12">
+             <input type="text" class="form-control form-control-md" value="<?php echo $folder['name_folder']; ?>" readonly>
+         </div>
+     <?php } ?>
 
 
-                         <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1) O VENTAS (3)-->
-                         <?php if($_SESSION['user']['id_type_user'] == 1 || $_SESSION['user']['id_type_user'] == 3){ ?>
-                             <div class="col-lg-6 col-md-12 col-sm-12" style="display: none;" hidden>
-                                 <button class="btn btn-raised btn-info btn-md btn-block" name="action" value="updateNameFolder">Cambiar nombre</button>
-                             </div>
-                         <?php } ?>
-                     </div>
-                 </form>
-                 */
+     <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1) O VENTAS (3)-->
+     <?php if($_SESSION['user']['id_type_user'] == 1 || $_SESSION['user']['id_type_user'] == 3){ ?>
+         <div class="col-lg-6 col-md-12 col-sm-12" style="display: none;" hidden>
+             <button class="btn btn-raised btn-info btn-md btn-block" name="action" value="updateNameFolder">Cambiar nombre</button>
+         </div>
+     <?php } ?>
+ </div>
+</form>
+*/
                             ?>
                             <!--CÓDIGO NUEVO / con el input y el form por separados-->
                             <?php /*
-                 <form action="#" method="post">
-                     <div class="row">
-                         <div class="col-lg-6 col-md-12 col-sm-12">
-                             <input type="text" class="form-control" id="id_folder" required value="<?php echo $folder['id_folder']; ?>" readonly style="display: none;" hidden>
-                             <input type="text" class="form-control" id="name_folder" required placeholder="Ejem. SysOp" value="<?php echo $folder['name_folder']; ?>" readonly disabled>
-                         </div>
-                         <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1)-->
-                         <?php if($_SESSION['user']['id_type_user'] == 1){ ?>
-                             <div class="col-lg-2">
-                                 <button class="btn btn-raised btn-info btn-md btn-block edit-folder-btn" name="action" value="updateNameFolder"><i class="fas fa-pen"></i></button>
-                             </div>
-                         <?php } ?>
-                     </div>
-                 </form>
-                 */ ?>
+<form action="#" method="post">
+ <div class="row">
+     <div class="col-lg-6 col-md-12 col-sm-12">
+         <input type="text" class="form-control" id="id_folder" required value="<?php echo $folder['id_folder']; ?>" readonly style="display: none;" hidden>
+         <input type="text" class="form-control" id="name_folder" required placeholder="Ejem. SysOp" value="<?php echo $folder['name_folder']; ?>" readonly disabled>
+     </div>
+     <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1)-->
+     <?php if($_SESSION['user']['id_type_user'] == 1){ ?>
+         <div class="col-lg-2">
+             <button class="btn btn-raised btn-info btn-md btn-block edit-folder-btn" name="action" value="updateNameFolder"><i class="fas fa-pen"></i></button>
+         </div>
+     <?php } ?>
+ </div>
+</form>
+*/ ?>
                             <!--Nuevo código con el input y el botón de editar juntos-->
                             <form action="#" method="post">
                                 <div class="row">
@@ -1041,43 +1084,64 @@ $clave = substr(str_shuffle($permitted_chars), 0, 6);
                                             <?php } ?>
                                         </div>
                                         <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1) O VENTAS (3)-->
-                                        <?php if ($_SESSION['user']['id_type_user'] == 1 || $_SESSION['user']['id_type_user'] == 3) { ?>
-                                            <div class="col-lg-4">
-                                                <!-- Botón para abrir el modal de agregar documentos -->
-                                                <!--CÓDIGO ANTIGUO que mostraba un modal para seleccionar un documento de uno por uno-->
-                                                <!--<a href="#" class="btn btn-block" style="background-color: blue; color: #ffffff;" role="button" aria-pressed="true" data-toggle="modal" data-target="#modalAgregarDocuments">
-                                                            <i class="fas fa-plus pr-2"></i>Agregar documentos
-                                                        </a>-->
+                                        <?php
+                                        // Verificamos el tipo de usuario (administrador o ventas)
+                                        if ($_SESSION['user']['id_type_user'] == 1 || $_SESSION['user']['id_type_user'] == 3) {
 
-                                                <!--NUEVO CÓDÍGO QUE PERMITE SUBIR LOS DOCUMENTOS DE MANERA MASIVA-->
-                                                <a href="#" class="btn btn-block"
-                                                    style="background-color: blue; color: #ffffff;" role="button"
-                                                    aria-pressed="true" data-toggle="modal"
-                                                    data-target="#modalAgregarFullDocuments">
-                                                    <i class="fas fa-plus pr-2"></i>Agregar documentos
-                                                </a>
-                                            </div>
-                                            <div class="col-lg-4 text-right">
-                                                <!-- Botón para abrir el modal de agregar nuevas carpetas -->
-                                                <a href="#" class="btn btn-block"
-                                                    style="background-color: blue; color: #ffffff;" role="button"
-                                                    aria-pressed="true" data-toggle="modal"
-                                                    data-target="#modalAgregarCarpeta">
-                                                    <!--<a href="#" class="btn btn-block" style="background-color: #37424A; color: #ffffff;" role="button" aria-pressed="true" data-toggle="modal" data-target="#modalAgregarCarpeta">-->
-                                                    <i class="fas fa-plus pr-2"></i>Agregar nuevo expediente
-                                                </a>
-                                            </div>
+                                            // Si estamos en una carpeta de cliente (fk_folder != 0), mostramos botones de documentos
+                                            if ($folder['fk_folder'] != 0) {
+                                                ?>
+                                                <div class="col-lg-4">
+                                                    <!-- Botón para abrir el modal de agregar documentos -->
+                                                    <!--CÓDIGO ANTIGUO que mostraba un modal para seleccionar un documento de uno por uno-->
+                                                    <!--<a href="#" class="btn btn-block" style="background-color: blue; color: #ffffff;" role="button" aria-pressed="true" data-toggle="modal" data-target="#modalAgregarDocuments">
+                    <i class="fas fa-plus pr-2"></i>Agregar documentos
+                </a>-->
 
-                                            <?php /*
-                                                 <div class="col-lg-3 text-right">
-                                                     <!-- Botón para abrir el modal de agregar nuevas carpetas -->
-                                                     <a href="tracing.php?id=<?php echo $folder['id_folder']; ?>&key=<?php echo $folder['key_folder']; ?>" class="btn btn-block" style="background-color: #5a9e46; color: #ffffff;" role="button" aria-pressed="true">
-                                                         <i class="fas fa-plus pr-2"></i>Seguimiento
-                                                     </a>
-                                                 </div>
-                                                 */ ?>
+                                                    <!--NUEVO CÓDÍGO QUE PERMITE SUBIR LOS DOCUMENTOS DE MANERA MASIVA-->
+                                                    <a href="#" class="btn btn-block"
+                                                        style="background-color: blue; color: #ffffff;" role="button"
+                                                        aria-pressed="true" data-toggle="modal"
+                                                        data-target="#modalAgregarFullDocuments">
+                                                        <i class="fas fa-plus pr-2"></i>Agregar documentos
+                                                    </a>
+                                                </div>
+                                                <div class="col-lg-4 text-right">
+                                                    <!-- Botón para abrir el modal de agregar nuevas carpetas -->
+                                                    <a href="#" class="btn btn-block"
+                                                        style="background-color: blue; color: #ffffff;" role="button"
+                                                        aria-pressed="true" data-toggle="modal"
+                                                        data-target="#modalAgregarCarpeta">
+                                                        <!--<a href="#" class="btn btn-block" style="background-color: #37424A; color: #ffffff;" role="button" aria-pressed="true" data-toggle="modal" data-target="#modalAgregarCarpeta">-->
+                                                        <i class="fas fa-plus pr-2"></i>Agregar nuevo expediente
+                                                    </a>
+                                                </div>
 
-                                        <?php } ?>
+                                                <?php /*
+                     <div class="col-lg-3 text-right">
+                         <!-- Botón para abrir el modal de agregar nuevas carpetas -->
+                         <a href="tracing.php?id=<?php echo $folder['id_folder']; ?>&key=<?php echo $folder['key_folder']; ?>" class="btn btn-block" style="background-color: #5a9e46; color: #ffffff;" role="button" aria-pressed="true">
+                             <i class="fas fa-plus pr-2"></i>Seguimiento
+                         </a>
+                     </div>
+                     */ ?>
+
+                                                <?php
+                                                // Si estamos en una carpeta de empresa (fk_folder == 0), mostramos botón de agregar cliente
+                                            } else if ($folder['fk_folder'] == 0) {
+                                                ?>
+                                                    <div class="col-lg-4 col-md-4 col-sm-4 text-right ml-auto">
+                                                        <!-- Botón para abrir el modal de agregar nuevo cliente -->
+                                                        <a href="#" class="btn btn-block"
+                                                            style="background-color: #FF5800; color: #ffffff;" role="button"
+                                                            aria-pressed="true" data-toggle="modal"
+                                                            data-target="#modalAgregarCliente">
+                                                            <i class="fas fa-plus pr-2"></i>Agregar nuevo cliente
+                                                        </a>
+                                                    </div>
+                                                <?php
+                                            }
+                                        } ?>
                                     </div>
 
                                     <?php if (empty($folders) and empty($folderDocuments)) { ?>
@@ -1103,41 +1167,41 @@ $clave = substr(str_shuffle($permitted_chars), 0, 6);
                                                                     </a>
                                                                 </div>
                                                                 <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1)-->
-                                                         
-                                                                    <div class="dropdown" style="margin-top:5px;">
-                                                                        <button class="btn btn-secondary" type="button"
-                                                                            id="dropdownMenuButton_<?php echo $folder['id_sub_folder']; ?>"
-                                                                            data-toggle="dropdown" aria-haspopup="true"
-                                                                            aria-expanded="false"
-                                                                            style="background-color: transparent; border: none;">
-                                                                            <i class="fas fa-ellipsis-v"
-                                                                                style="color: black; background-color: transparent;"></i>
-                                                                        </button>
-                                                                        <div class="dropdown-menu dropdown-menu-right"
-                                                                            aria-labelledby="dropdownMenuButton_<?php echo $folder['id_sub_folder']; ?>">
-                                                                            <a class="dropdown-item" href="#"
-                                                                                data-folder-id="<?php echo $folder['id_sub_folder']; ?>">
-                                                                                <i class="fas fa-pen"></i> Editar expediente
-                                                                            </a>
-                                                                            <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1)-->
-                                                                         
-                                                                                <hr>
-                                                                                <form action="#" method="POST">
-                                                                                    <input name="deleteFolder[idFolder]" type="hidden"
-                                                                                        class="form-control form-control-sm"
-                                                                                        id="id_sub_folder"
-                                                                                        value="<?php echo $folder['id_sub_folder']; ?>"
-                                                                                        readonly hidden style="display: none;">
-                                                                                    <button class="dropdown-item" type="submit"
-                                                                                        name="action" value="deleteFolder"
-                                                                                        onclick="return confirm('¿Estás seguro de eliminar el expediente?');">
-                                                                                        <i class="fas fa-trash"></i> Mover a la papelera
-                                                                                    </button>
-                                                                                </form>
-                                                               
-                                                                        </div>
+
+                                                                <div class="dropdown" style="margin-top:5px;">
+                                                                    <button class="btn btn-secondary" type="button"
+                                                                        id="dropdownMenuButton_<?php echo $folder['id_sub_folder']; ?>"
+                                                                        data-toggle="dropdown" aria-haspopup="true"
+                                                                        aria-expanded="false"
+                                                                        style="background-color: transparent; border: none;">
+                                                                        <i class="fas fa-ellipsis-v"
+                                                                            style="color: black; background-color: transparent;"></i>
+                                                                    </button>
+                                                                    <div class="dropdown-menu dropdown-menu-right"
+                                                                        aria-labelledby="dropdownMenuButton_<?php echo $folder['id_sub_folder']; ?>">
+                                                                        <a class="dropdown-item" href="#"
+                                                                            data-folder-id="<?php echo $folder['id_sub_folder']; ?>">
+                                                                            <i class="fas fa-pen"></i> Editar expediente
+                                                                        </a>
+                                                                        <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1)-->
+
+                                                                        <hr>
+                                                                        <form action="#" method="POST">
+                                                                            <input name="deleteFolder[idFolder]" type="hidden"
+                                                                                class="form-control form-control-sm"
+                                                                                id="id_sub_folder"
+                                                                                value="<?php echo $folder['id_sub_folder']; ?>"
+                                                                                readonly hidden style="display: none;">
+                                                                            <button class="dropdown-item" type="submit"
+                                                                                name="action" value="deleteFolder"
+                                                                                onclick="return confirm('¿Estás seguro de eliminar el expediente?');">
+                                                                                <i class="fas fa-trash"></i> Mover a la papelera
+                                                                            </button>
+                                                                        </form>
+
                                                                     </div>
-                                                             
+                                                                </div>
+
                                                             </div>
 
                                                             <div class="status-bar"
@@ -1288,26 +1352,26 @@ $clave = substr(str_shuffle($permitted_chars), 0, 6);
                                                                             <i class="fas fa-download"></i> Descargar
                                                                         </a>
                                                                         <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1)-->
-                                                                     
-                                                                            <hr>
-                                                                            <form action="#" method="POST">
-                                                                                <input name="deleteDocument[id_document]"
-                                                                                    type="text" class="form-control form-control-sm"
-                                                                                    id="id_document"
-                                                                                    value="<?php echo $folderDocument['id_document']; ?>"
-                                                                                    readonly hidden style="display: none;">
-                                                                                <input name="deleteDocument[key_document]"
-                                                                                    type="text" class="form-control form-control-sm"
-                                                                                    id="key_document"
-                                                                                    value="<?php echo $folderDocument['key_document']; ?>"
-                                                                                    readonly hidden style="display: none;">
-                                                                                <button class="dropdown-item" type="submit"
-                                                                                    name="action" value="deleteDocument"
-                                                                                    onclick="return confirm('¿Estás seguro de eliminar el documento?');">
-                                                                                    <i class="fas fa-trash"></i> Mover a la papelera
-                                                                                </button>
-                                                                            </form>
-                                                              
+
+                                                                        <hr>
+                                                                        <form action="#" method="POST">
+                                                                            <input name="deleteDocument[id_document]"
+                                                                                type="text" class="form-control form-control-sm"
+                                                                                id="id_document"
+                                                                                value="<?php echo $folderDocument['id_document']; ?>"
+                                                                                readonly hidden style="display: none;">
+                                                                            <input name="deleteDocument[key_document]"
+                                                                                type="text" class="form-control form-control-sm"
+                                                                                id="key_document"
+                                                                                value="<?php echo $folderDocument['key_document']; ?>"
+                                                                                readonly hidden style="display: none;">
+                                                                            <button class="dropdown-item" type="submit"
+                                                                                name="action" value="deleteDocument"
+                                                                                onclick="return confirm('¿Estás seguro de eliminar el documento?');">
+                                                                                <i class="fas fa-trash"></i> Mover a la papelera
+                                                                            </button>
+                                                                        </form>
+
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -1328,6 +1392,78 @@ $clave = substr(str_shuffle($permitted_chars), 0, 6);
 
         </div>
     </div>
+    </div>
+
+
+
+    <!-- Modal para agregar nuevo cliente -->
+    <div class="modal fade" id="modalAgregarCliente" tabindex="-1" aria-labelledby="modalAgregarClienteLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAgregarClienteLabel">Agregar nuevo cliente</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <!-- Formulario para agregar cliente -->
+                    <form id="formAgregarCliente" action="subfolder.php" method="POST">
+                        <input name="folder[id_user_folder]" type="hidden"
+                            value="<?php echo $_SESSION['user']['id_user']; ?>">
+                        <input name="folder[key_folder]" type="hidden"
+                            value="CLI-<?php echo substr(md5(uniqid(rand(), true)), 0, 6); ?>">
+
+                        <!-- Campo oculto para la empresa actual -->
+                        <input name="folder[fk_folder]" type="hidden" value="<?php echo $folder['id_folder']; ?>">
+
+                        <div class="form-group">
+                            <label for="name_cliente">Nombre completo del cliente: <span
+                                    style="color: red;">*</span></label>
+                            <input type="text" name="folder[name_folder]" class="form-control" id="name_cliente"
+                                required autocomplete="off" placeholder="Ej. Juan Pérez López">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="rfc_cliente">RFC del cliente:</label>
+                                    <input type="text" name="folder[rfc_folder]" class="form-control" id="rfc_cliente"
+                                        pattern="[A-Z&Ñ]{4}[0-9]{2}(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])[A-Z0-9]{2}[0-9A]"
+                                        maxlength="13" placeholder="PEPJ850525AB1">
+                                    <small class="text-muted">Formato: 4 letras + 6 números + 3 caracteres</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="curp_cliente">CURP del cliente:</label>
+                                    <input type="text" name="folder[curp_folder]" class="form-control" id="curp_cliente"
+                                        maxlength="18" placeholder="PEPJ850525HDFRNS05">
+                                    <small class="text-muted">18 caracteres</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="address_cliente">Dirección del cliente:</label>
+                            <textarea name="folder[address_folder]" class="form-control" id="address_cliente" rows="3"
+                                placeholder="Calle, número, colonia, ciudad, estado, CP"></textarea>
+                        </div>
+
+                        <!-- Campo oculto para el ejecutivo de ventas -->
+                        <input name="folder[id_customer_folder]" type="hidden"
+                            value="<?php echo $_SESSION['user']['id_user']; ?>">
+
+                        <button type="submit" class="btn btn-lg btn-block"
+                            style="background-color: #37424A; color: #ffffff;" name="action" value="create">
+                            Guardar Cliente
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal para agregar una nueva carpeta -->
@@ -1424,93 +1560,788 @@ $clave = substr(str_shuffle($permitted_chars), 0, 6);
         </div>
     </div>
 
-    <!-- Modal para editar / actualizar una carpeta -->
+
+    <!-- Modal para editar / actualizar cliente -->
     <div class="modal fade" id="modalEditarCarpeta" tabindex="-1" aria-labelledby="modalEditarCarpetaLabel"
         aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalEditarCarpetaLabel">Editar expediente</h5>
+                    <h5 class="modal-title" id="modalEditarCarpetaLabel">Editar cliente</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
+
                 <div class="modal-body">
                     <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1) O VENTAS (3)-->
                     <?php if ($_SESSION['user']['id_type_user'] == 1 || $_SESSION['user']['id_type_user'] == 3) { ?>
-                        <!-- Formulario para editar una carpeta -->
-                        <form id="formEditarCarpeta" action="#" method="POST">
-                            <input type="hidden" name="updateFolder[id_folder]" id="edit_folder_id" style="display:none;"
-                                hidden readonly>
+
+                        <!-- Formulario para editar cliente -->
+                        <form id="formEditarCarpeta" action="subfolder.php" method="POST">
+                            <input type="hidden" name="updateFolder[id_folder]" id="edit_folder_id">
+                            <input type="hidden" name="updateFolder[id_user_folder]"
+                                value="<?php echo $_SESSION['user']['id_user']; ?>">
+
+
+                            <!-- Select para tipo de persona (deshabilitado en edición) -->
                             <div class="form-group">
-                                <label for="edit_folder_name">Nombre del expediente:</label>
-                                <input type="text" name="updateFolder[name_folder]" class="form-control"
-                                    id="edit_folder_name" required autocomplete="off">
+                                <label for="edit_tipo_persona">Tipo de persona:</label>
+                                <select name="updateFolder[tipo_persona]" id="edit_tipo_persona" class="form-control"
+                                    disabled>
+                                    <option value="fisica">Persona Física</option>
+                                    <option value="moral">Persona Moral</option>
+                                    <option value="fideicomiso">Fideicomiso</option>
+                                </select>
+                                <input type="hidden" name="updateFolder[tipo_persona]" id="edit_tipo_persona_hidden">
+                                <small class="text-muted">El tipo de persona no se puede cambiar una vez creado el
+                                    cliente.</small>
                             </div>
 
-                            <div class="row">
-                                <div class="col-12">
-                                    <label>Plazo de vigencia <small style="color:red;">(*Plazo opcional)</small></label>
-                                </div>
-                                <div class="col-lg-6 col-md-6 col-sm-12">
-                                    <div class="form-group">
-                                        <input type="date" class="form-control" name="updateFolder[first_fech_folder]"
-                                            id="edit_first_fech_folder">
+                            <!-- SECCIÓN PERSONA FÍSICA -->
+                            <div id="edit_seccion_fisica" style="display: none;">
+                                <div class="form-section">
+                                    <h6><i class="fas fa-user"></i> Información de la Persona Física</h6>
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="edit_pf_nombre">Nombre: <span
+                                                        style="color: red;">*</span></label>
+                                                <input type="text" name="updateFolder[pf_nombre]" class="form-control"
+                                                    id="edit_pf_nombre">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="edit_pf_apellido_paterno">Apellido Paterno: <span
+                                                        style="color: red;">*</span></label>
+                                                <input type="text" name="updateFolder[pf_apellido_paterno]"
+                                                    class="form-control" id="edit_pf_apellido_paterno">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="edit_pf_apellido_materno">Apellido Materno:</label>
+                                                <input type="text" name="updateFolder[pf_apellido_materno]"
+                                                    class="form-control" id="edit_pf_apellido_materno">
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="col-lg-6 col-md-6 col-sm-12">
-                                    <div class="form-group">
-                                        <input type="date" class="form-control" name="updateFolder[second_fech_folder]"
-                                            id="edit_second_fech_folder">
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="edit_pf_rfc">RFC: <span style="color: red;">*</span></label>
+                                                <input type="text" name="updateFolder[pf_rfc]" class="form-control"
+                                                    id="edit_pf_rfc" maxlength="13">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="edit_pf_curp">CURP:</label>
+                                                <input type="text" name="updateFolder[curp_folder]" class="form-control"
+                                                    id="edit_pf_curp" maxlength="18">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="edit_pf_fecha_nacimiento">Fecha de Nacimiento:</label>
+                                                <input type="date" name="updateFolder[pf_fecha_nacimiento]"
+                                                    class="form-control" id="edit_pf_fecha_nacimiento">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <h6><i class="fas fa-home"></i> Domicilio Nacional</h6>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_pf_estado">Estado:</label>
+                                                <input type="text" name="updateFolder[pf_estado]" class="form-control"
+                                                    id="edit_pf_estado">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_pf_ciudad">Ciudad o Población:</label>
+                                                <input type="text" name="updateFolder[pf_ciudad]" class="form-control"
+                                                    id="edit_pf_ciudad">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_pf_colonia">Colonia:</label>
+                                                <input type="text" name="updateFolder[pf_colonia]" class="form-control"
+                                                    id="edit_pf_colonia">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_pf_codigo_postal">Código Postal:</label>
+                                                <input type="text" name="updateFolder[pf_codigo_postal]"
+                                                    class="form-control" id="edit_pf_codigo_postal" maxlength="5">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="edit_pf_calle">Calle:</label>
+                                                <input type="text" name="updateFolder[pf_calle]" class="form-control"
+                                                    id="edit_pf_calle">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label for="edit_pf_num_exterior">Núm. Exterior:</label>
+                                                <input type="text" name="updateFolder[pf_num_exterior]" class="form-control"
+                                                    id="edit_pf_num_exterior">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label for="edit_pf_num_interior">Núm. Interior:</label>
+                                                <input type="text" name="updateFolder[pf_num_interior]" class="form-control"
+                                                    id="edit_pf_num_interior">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label for="edit_pf_telefono">Teléfono:</label>
+                                                <input type="tel" name="updateFolder[pf_telefono]" class="form-control"
+                                                    id="edit_pf_telefono">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label for="edit_pf_email">Correo Electrónico:</label>
+                                                <input type="email" name="updateFolder[pf_email]" class="form-control"
+                                                    id="edit_pf_email">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="checkbox-section">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="edit_pf_tiene_domicilio_extranjero"
+                                                name="updateFolder[pf_tiene_domicilio_extranjero]" value=1>
+                                            <label class="form-check-label" for="edit_pf_tiene_domicilio_extranjero">
+                                                ¿Tiene domicilio extranjero?
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Domicilio Extranjero PF -->
+                                    <div id="edit_pf_domicilio_extranjero" class="domicilio-extranjero"
+                                        style="display: none;">
+                                        <h6><i class="fas fa-globe"></i> Domicilio Extranjero</h6>
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="edit_pf_pais_origen">País de Origen:</label>
+                                                    <input type="text" name="updateFolder[pf_pais_origen]"
+                                                        class="form-control" id="edit_pf_pais_origen">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="edit_pf_estado_extranjero">Estado o Provincia:</label>
+                                                    <input type="text" name="updateFolder[pf_estado_extranjero]"
+                                                        class="form-control" id="edit_pf_estado_extranjero">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="edit_pf_ciudad_extranjero">Ciudad o Población:</label>
+                                                    <input type="text" name="updateFolder[pf_ciudad_extranjero]"
+                                                        class="form-control" id="edit_pf_ciudad_extranjero">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="edit_pf_colonia_extranjero">Colonia del Extranjero:</label>
+                                                    <input type="text" name="updateFolder[pf_colonia_extranjero]"
+                                                        class="form-control" id="edit_pf_colonia_extranjero">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label for="edit_pf_calle_extranjero">Calle del Extranjero:</label>
+                                                    <input type="text" name="updateFolder[pf_calle_extranjero]"
+                                                        class="form-control" id="edit_pf_calle_extranjero">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group">
+                                                    <label for="edit_pf_num_exterior_ext">Núm. Exterior (Ext):</label>
+                                                    <input type="text" name="updateFolder[pf_num_exterior_ext]"
+                                                        class="form-control" id="edit_pf_num_exterior_ext">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group">
+                                                    <label for="edit_pf_num_interior_ext">Núm. Interior (Ext):</label>
+                                                    <input type="text" name="updateFolder[pf_num_interior_ext]"
+                                                        class="form-control" id="edit_pf_num_interior_ext">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group">
+                                                    <label for="edit_pf_codigo_postal_ext">Código Postal Extranjero:</label>
+                                                    <input type="text" name="updateFolder[pf_codigo_postal_ext]"
+                                                        class="form-control" id="edit_pf_codigo_postal_ext">
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Checkboxes organizados en dos filas -->
-                            <div class="row">
-                                <div class="col-lg-6 col-md-6 col-sm-12">
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" id="edit_chk_alta_fact_folder"
-                                            value="Si" name="updateFolder[chk_alta_fact_folder]">
-                                        <label class="form-check-label" for="edit_chk_alta_fact_folder">Vo.Bo. Alta
-                                            Facturación</label>
+                            <!-- SECCIÓN PERSONA MORAL -->
+                            <div id="edit_seccion_moral" style="display: none;">
+                                <div class="form-section">
+                                    <h6><i class="fas fa-building"></i> Información de la Persona Moral</h6>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="edit_pm_razon_social">Razón Social: <span
+                                                        style="color: red;">*</span></label>
+                                                <input type="text" name="updateFolder[pm_razon_social]" class="form-control"
+                                                    id="edit_pm_razon_social">
+                                            </div>
+                                        </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="edit_pm_rfc">RFC Persona Moral: <span style="color: red;">*</span></label>
+                                                    <input type="text" name="updateFolder[pm_rfc]" class="form-control"
+                                                        id="edit_pm_rfc" maxlength="12">
+                                                </div>
+                                            </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_pm_fecha_constitucion">Fecha de Constitución:</label>
+                                                <input type="date" name="updateFolder[pm_fecha_constitucion]"
+                                                    class="form-control" id="edit_pm_fecha_constitucion">
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="col-lg-6 col-md-6 col-sm-12">
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" id="edit_chk_lib_folder" value="Si"
-                                            name="updateFolder[chk_lib_folder]">
-                                        <label class="form-check-label" for="edit_chk_lib_folder">Vo.Bo. Liberación</label>
+
+                                    <h6><i class="fas fa-user-tie"></i> Apoderado Legal</h6>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_pm_apoderado_nombre">Nombre:</label>
+                                                <input type="text" name="updateFolder[pm_apoderado_nombre]"
+                                                    class="form-control" id="edit_pm_apoderado_nombre">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_pm_apoderado_paterno">Apellido Paterno:</label>
+                                                <input type="text" name="updateFolder[pm_apoderado_paterno]"
+                                                    class="form-control" id="edit_pm_apoderado_paterno">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_pm_apoderado_materno">Apellido Materno:</label>
+                                                <input type="text" name="updateFolder[pm_apoderado_materno]"
+                                                    class="form-control" id="edit_pm_apoderado_materno">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_pm_apoderado_fecha_nacimiento">Fecha de nacimiento:</label>
+                                                <input type="date" name="updateFolder[pm_apoderado_fecha_nacimiento]"
+                                                    class="form-control" id="edit_pm_apoderado_fecha_nacimiento">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="edit_pm_apoderado_rfc">RFC Apoderado Legal:</label>
+                                                <input type="text" name="updateFolder[pm_apoderado_rfc]"
+                                                    class="form-control" id="edit_pm_apoderado_rfc" maxlength="13">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="edit_pm_apoderado_curp">CURP Apoderado Legal:</label>
+                                                <input type="text" name="updateFolder[pm_apoderado_curp]"
+                                                    class="form-control" id="edit_pm_apoderado_curp" maxlength="18">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <h6><i class="fas fa-home"></i> Domicilio Nacional</h6>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_pm_estado">Estado:</label>
+                                                <input type="text" name="updateFolder[pm_estado]" class="form-control"
+                                                    id="edit_pm_estado">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_pm_ciudad">Ciudad o Población:</label>
+                                                <input type="text" name="updateFolder[pm_ciudad]" class="form-control"
+                                                    id="edit_pm_ciudad">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_pm_colonia">Colonia:</label>
+                                                <input type="text" name="updateFolder[pm_colonia]" class="form-control"
+                                                    id="edit_pm_colonia">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_pm_codigo_postal">Código Postal:</label>
+                                                <input type="text" name="updateFolder[pm_codigo_postal]"
+                                                    class="form-control" id="edit_pm_codigo_postal" maxlength="5">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="edit_pm_calle">Calle:</label>
+                                                <input type="text" name="updateFolder[pm_calle]" class="form-control"
+                                                    id="edit_pm_calle">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label for="edit_pm_num_exterior">Núm. Exterior:</label>
+                                                <input type="text" name="updateFolder[pm_num_exterior]" class="form-control"
+                                                    id="edit_pm_num_exterior">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label for="edit_pm_num_interior">Núm. Interior:</label>
+                                                <input type="text" name="updateFolder[pm_num_interior]" class="form-control"
+                                                    id="edit_pm_num_interior">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label for="edit_pm_telefono">Teléfono:</label>
+                                                <input type="tel" name="updateFolder[pm_telefono]" class="form-control"
+                                                    id="edit_pm_telefono">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label for="edit_pm_email">Correo Electrónico:</label>
+                                                <input type="email" name="updateFolder[pm_email]" class="form-control"
+                                                    id="edit_pm_email">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="checkbox-section">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="edit_pm_tiene_domicilio_extranjero"
+                                                name="updateFolder[pm_tiene_domicilio_extranjero]" value=1>
+                                            <label class="form-check-label" for="edit_pm_tiene_domicilio_extranjero">
+                                                ¿Tiene domicilio extranjero?
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Domicilio Extranjero PM -->
+                                    <div id="edit_pm_domicilio_extranjero" class="domicilio-extranjero"
+                                        style="display: none;">
+                                        <h6><i class="fas fa-globe"></i> Domicilio Extranjero</h6>
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="edit_pm_pais_origen">País de Origen:</label>
+                                                    <input type="text" name="updateFolder[pm_pais_origen]"
+                                                        class="form-control" id="edit_pm_pais_origen">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="edit_pm_estado_extranjero">Estado o Provincia:</label>
+                                                    <input type="text" name="updateFolder[pm_estado_extranjero]"
+                                                        class="form-control" id="edit_pm_estado_extranjero">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="edit_pm_ciudad_extranjero">Ciudad o Población:</label>
+                                                    <input type="text" name="updateFolder[pm_ciudad_extranjero]"
+                                                        class="form-control" id="edit_pm_ciudad_extranjero">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="edit_pm_colonia_extranjero">Colonia del Extranjero:</label>
+                                                    <input type="text" name="updateFolder[pm_colonia_extranjero]"
+                                                        class="form-control" id="edit_pm_colonia_extranjero">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label for="edit_pm_calle_extranjero">Calle del Extranjero:</label>
+                                                    <input type="text" name="updateFolder[pm_calle_extranjero]"
+                                                        class="form-control" id="edit_pm_calle_extranjero">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group">
+                                                    <label for="edit_pm_num_exterior_ext">Núm. Exterior (Ext):</label>
+                                                    <input type="text" name="updateFolder[pm_num_exterior_ext]"
+                                                        class="form-control" id="edit_pm_num_exterior_ext">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group">
+                                                    <label for="edit_pm_num_interior_ext">Núm. Interior (Ext):</label>
+                                                    <input type="text" name="updateFolder[pm_num_interior_ext]"
+                                                        class="form-control" id="edit_pm_num_interior_ext">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group">
+                                                    <label for="edit_pm_codigo_postal_ext">Código Postal Extranjero:</label>
+                                                    <input type="text" name="updateFolder[pm_codigo_postal_ext]"
+                                                        class="form-control" id="edit_pm_codigo_postal_ext">
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="row mt-2">
-                                <div class="col-lg-6 col-md-6 col-sm-12">
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" id="edit_chk_orig_recib_folder"
-                                            value="Si" name="updateFolder[chk_orig_recib_folder]">
-                                        <label class="form-check-label" for="edit_chk_orig_recib_folder">Original
-                                            Recibido</label>
+                            <!-- SECCIÓN FIDEICOMISO -->
+                            <div id="edit_seccion_fideicomiso" style="display: none;">
+                                <div class="form-section">
+                                    <h6><i class="fas fa-handshake"></i> Información del Fideicomiso</h6>
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="edit_fid_razon_social">Razón Social del Fiduciario: <span
+                                                        style="color: red;">*</span></label>
+                                                <input type="text" name="updateFolder[fid_razon_social]"
+                                                    class="form-control" id="edit_fid_razon_social">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="edit_fid_rfc">RFC del Fiduciario: <span style="color: red;">*</span></label>
+                                                <input type="text" name="updateFolder[fid_rfc]" class="form-control"
+                                                    id="edit_fid_rfc" maxlength="12">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="edit_fid_numero_referencia">Número / Referencia de
+                                                    Fideicomiso:</label>
+                                                <input type="text" name="updateFolder[fid_numero_referencia]"
+                                                    class="form-control" id="edit_fid_numero_referencia">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <h6><i class="fas fa-user-tie"></i> Apoderado Legal</h6>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_fid_apoderado_nombre">Nombre:</label>
+                                                <input type="text" name="updateFolder[fid_apoderado_nombre]"
+                                                    class="form-control" id="edit_fid_apoderado_nombre">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_fid_apoderado_paterno">Apellido Paterno:</label>
+                                                <input type="text" name="updateFolder[fid_apoderado_paterno]"
+                                                    class="form-control" id="edit_fid_apoderado_paterno">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_fid_apoderado_materno">Apellido Materno:</label>
+                                                <input type="text" name="updateFolder[fid_apoderado_materno]"
+                                                    class="form-control" id="edit_fid_apoderado_materno">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_fid_apoderado_fecha_nacimiento">Fecha de
+                                                    nacimiento:</label>
+                                                <input type="date" name="updateFolder[fid_apoderado_fecha_nacimiento]"
+                                                    class="form-control" id="edit_fid_apoderado_fecha_nacimiento">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="edit_fid_apoderado_rfc">RFC Apoderado Legal:</label>
+                                                <input type="text" name="updateFolder[fid_apoderado_rfc]"
+                                                    class="form-control" id="edit_fid_apoderado_rfc" maxlength="13">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="edit_fid_apoderado_curp">CURP Apoderado Legal:</label>
+                                                <input type="text" name="updateFolder[fid_apoderado_curp]"
+                                                    class="form-control" id="edit_fid_apoderado_curp" maxlength="18">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <h6><i class="fas fa-home"></i> Domicilio Nacional</h6>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_fid_estado">Estado:</label>
+                                                <input type="text" name="updateFolder[fid_estado]" class="form-control"
+                                                    id="edit_fid_estado">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_fid_ciudad">Ciudad o Población:</label>
+                                                <input type="text" name="updateFolder[fid_ciudad]" class="form-control"
+                                                    id="edit_fid_ciudad">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_fid_colonia">Colonia:</label>
+                                                <input type="text" name="updateFolder[fid_colonia]" class="form-control"
+                                                    id="edit_fid_colonia">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label for="edit_fid_codigo_postal">Código Postal:</label>
+                                                <input type="text" name="updateFolder[fid_codigo_postal]"
+                                                    class="form-control" id="edit_fid_codigo_postal" maxlength="5">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="edit_fid_calle">Calle:</label>
+                                                <input type="text" name="updateFolder[fid_calle]" class="form-control"
+                                                    id="edit_fid_calle">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label for="edit_fid_num_exterior">Núm. Exterior:</label>
+                                                <input type="text" name="updateFolder[fid_num_exterior]"
+                                                    class="form-control" id="edit_fid_num_exterior">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label for="edit_fid_num_interior">Núm. Interior:</label>
+                                                <input type="text" name="updateFolder[fid_num_interior]"
+                                                    class="form-control" id="edit_fid_num_interior">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label for="edit_fid_telefono">Teléfono:</label>
+                                                <input type="tel" name="updateFolder[fid_telefono]" class="form-control"
+                                                    id="edit_fid_telefono">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="form-group">
+                                                <label for="edit_fid_email">Correo Electrónico:</label>
+                                                <input type="email" name="updateFolder[fid_email]" class="form-control"
+                                                    id="edit_fid_email">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="checkbox-section">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox"
+                                                id="edit_fid_tiene_domicilio_extranjero"
+                                                name="updateFolder[fid_tiene_domicilio_extranjero]" value=1>
+                                            <label class="form-check-label" for="edit_fid_tiene_domicilio_extranjero">
+                                                ¿Tiene domicilio extranjero?
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Domicilio Extranjero Fideicomiso -->
+                                    <div id="edit_fid_domicilio_extranjero" class="domicilio-extranjero"
+                                        style="display: none;">
+                                        <h6><i class="fas fa-globe"></i> Domicilio Extranjero</h6>
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="edit_fid_pais_origen">País de Origen:</label>
+                                                    <input type="text" name="updateFolder[fid_pais_origen]"
+                                                        class="form-control" id="edit_fid_pais_origen">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="edit_fid_estado_extranjero">Estado o Provincia:</label>
+                                                    <input type="text" name="updateFolder[fid_estado_extranjero]"
+                                                        class="form-control" id="edit_fid_estado_extranjero">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="edit_fid_ciudad_extranjero">Ciudad o Población:</label>
+                                                    <input type="text" name="updateFolder[fid_ciudad_extranjero]"
+                                                        class="form-control" id="edit_fid_ciudad_extranjero">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <div class="form-group">
+                                                    <label for="edit_fid_colonia_extranjero">Colonia del Extranjero:</label>
+                                                    <input type="text" name="updateFolder[fid_colonia_extranjero]"
+                                                        class="form-control" id="edit_fid_colonia_extranjero">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label for="edit_fid_calle_extranjero">Calle del Extranjero:</label>
+                                                    <input type="text" name="updateFolder[fid_calle_extranjero]"
+                                                        class="form-control" id="edit_fid_calle_extranjero">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group">
+                                                    <label for="edit_fid_num_exterior_ext">Núm. Exterior (Ext):</label>
+                                                    <input type="text" name="updateFolder[fid_num_exterior_ext]"
+                                                        class="form-control" id="edit_fid_num_exterior_ext">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group">
+                                                    <label for="edit_fid_num_interior_ext">Núm. Interior (Ext):</label>
+                                                    <input type="text" name="updateFolder[fid_num_interior_ext]"
+                                                        class="form-control" id="edit_fid_num_interior_ext">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <div class="form-group">
+                                                    <label for="edit_fid_codigo_postal_ext">Código Postal
+                                                        Extranjero:</label>
+                                                    <input type="text" name="updateFolder[fid_codigo_postal_ext]"
+                                                        class="form-control" id="edit_fid_codigo_postal_ext">
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div id="edit-fecha-original-recibido" class="form-group" style="margin-top:15px;">
-                                <label for="edit_fech_orig_recib_folder">Fecha de original recibido:</label>
-                                <input type="date" class="form-control" name="updateFolder[fech_orig_recib_folder]"
-                                    id="edit_fech_orig_recib_folder">
+                            <!-- CAMPOS GENERALES PARA TODOS LOS TIPOS -->
+                            <div class="form-section mt-3">
+                                <h6><i class="fas fa-calendar-alt"></i> Información General</h6>
+
+                                <div class="row">
+                                    <div class="col-12">
+                                        <label>Plazo de vigencia <small style="color:red;">(*Plazo opcional)</small></label>
+                                    </div>
+                                    <div class="col-lg-6 col-md-6 col-sm-12">
+                                        <div class="form-group">
+                                            <input type="date" class="form-control" name="updateFolder[first_fech_folder]"
+                                                id="edit_first_fech_folder">
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6 col-md-6 col-sm-12">
+                                        <div class="form-group">
+                                            <input type="date" class="form-control" name="updateFolder[second_fech_folder]"
+                                                id="edit_second_fech_folder">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Checkboxes organizados en dos filas -->
+                                <div class="row">
+                                    <div class="col-lg-6 col-md-6 col-sm-12">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="edit_chk_alta_fact_folder"
+                                                value="Si" name="updateFolder[chk_alta_fact_folder]">
+                                            <label class="form-check-label" for="edit_chk_alta_fact_folder">Vo.Bo. Alta
+                                                Facturación</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-6 col-md-6 col-sm-12">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="edit_chk_lib_folder"
+                                                value="Si" name="updateFolder[chk_lib_folder]">
+                                            <label class="form-check-label" for="edit_chk_lib_folder">Vo.Bo.
+                                                Liberación</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-2">
+                                    <div class="col-lg-6 col-md-6 col-sm-12">
+                                        <div class="form-check">
+                                            <input type="checkbox" class="form-check-input" id="edit_chk_orig_recib_folder"
+                                                value="Si" name="updateFolder[chk_orig_recib_folder]">
+                                            <label class="form-check-label" for="edit_chk_orig_recib_folder">Original
+                                                Recibido</label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="edit-fecha-original-recibido" class="form-group"
+                                    style="margin-top:15px; display:none;">
+                                    <label for="edit_fech_orig_recib_folder">Fecha de original recibido:</label>
+                                    <input type="date" class="form-control" name="updateFolder[fech_orig_recib_folder]"
+                                        id="edit_fech_orig_recib_folder">
+                                </div>
                             </div>
 
-                            <button type="submit" class="btn btn-lg btn-block"
-                                style="background-color: #37424A; color: #ffffff;" name="action"
-                                value="updateFolder">Actualizar</button>
+                            <!-- Botones del formulario -->
+                            <div class="form-group mt-4">
+                                <button type="submit" name="action" value="updateFolder" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Actualizar Cliente
+                                </button>
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </button>
+                            </div>
                         </form>
                     <?php } ?>
                 </div>
             </div>
         </div>
     </div>
+
+
+
+
+
 
     <!-- ESTE MODAL SI FUNCIONA PERO AHORITA PARA EL SISTEMA NO SE ESTA USANDO, Modal para agregar nuevos documentos -->
     <div class="modal fade" id="modalAgregarDocuments" tabindex="-1" aria-labelledby="modalAgregarDocumentsLabel"
@@ -1724,18 +2555,18 @@ $clave = substr(str_shuffle($permitted_chars), 0, 6);
                         </div>
 
                         <?php /*
-             <div class="form-group">
-                 <label>
-                     ¿Enviar notificación por correo electrónico?
-                     <!--
-                     <small class="text-muted d-block mt-1" style="text-align:justify; color: 000000;">
-                         Marca esta casilla si deseas enviar una notificación a los correos de los empleados seleccionados. Deja sin marcar si no quieres enviar la notificación.
-                     </small>
-                     -->
-                 </label>
-                 <input type="checkbox" id="send_notification" class="form-control">
-             </div>
-             */ ?>
+<div class="form-group">
+<label>
+ ¿Enviar notificación por correo electrónico?
+ <!--
+ <small class="text-muted d-block mt-1" style="text-align:justify; color: 000000;">
+     Marca esta casilla si deseas enviar una notificación a los correos de los empleados seleccionados. Deja sin marcar si no quieres enviar la notificación.
+ </small>
+ -->
+</label>
+<input type="checkbox" id="send_notification" class="form-control">
+</div>
+*/ ?>
 
                         <button type="submit" class="btn btn-lg btn-block"
                             style="background-color: #37424A; color: #ffffff;" name="action" value="create"
@@ -1959,14 +2790,17 @@ $clave = substr(str_shuffle($permitted_chars), 0, 6);
             window.history.back();
         }
     </script>
+
+
+
     <script>
         $(document).ready(function () {
             // Acción de clic en editar carpeta
             $('.dropdown-item[data-folder-id]').click(function (e) {
                 e.preventDefault();
                 var folderId = $(this).data('folder-id');
-                // Obtener el nombre de la carpeta directamente de la consulta
                 var folderName = $(this).closest('.folder').find('.title').text().trim();
+
                 $.ajax({
                     type: "GET",
                     url: "../../app/webservice.php",
@@ -1976,17 +2810,151 @@ $clave = substr(str_shuffle($permitted_chars), 0, 6);
                     }
                 }).done(function (response) {
                     var parsedResponse = JSON.parse(response);
-                    //console.log(parsedResponse);
-                    // Llenar el formulario de edición con los datos de la carpeta
-                    $('#edit_folder_id ').val(parsedResponse.id_folder);
-                    $('#edit_folder_name').val(parsedResponse.name_folder);
+
+                    // Llenar el formulario de edición con los datos de la subcarpeta
+                    $('#edit_folder_id').val(parsedResponse.id_folder);
+                    $('#edit_tipo_persona_hidden').val(parsedResponse.tipo_persona);
+
+                    // PRIMERO: Ocultar todas las secciones
+                    $('#edit_seccion_fisica').hide();
+                    $('#edit_seccion_moral').hide();
+                    $('#edit_seccion_fideicomiso').hide();
+
+                    // SEGUNDO: Llenar campos según el tipo de persona
+                    if (parsedResponse.tipo_persona === 'fisica') {
+                        $('#edit_seccion_fisica').show();
+
+                        // Llenar campos básicos
+                        $('#edit_pf_nombre').val(parsedResponse.pf_nombre);
+                        $('#edit_pf_apellido_paterno').val(parsedResponse.pf_apellido_paterno);
+                        $('#edit_pf_apellido_materno').val(parsedResponse.pf_apellido_materno);
+                        $('#edit_pf_rfc').val(parsedResponse.rfc_folder);
+                        $('#edit_pf_curp').val(parsedResponse.curp_folder);
+                        $('#edit_pf_fecha_nacimiento').val(parsedResponse.pf_fecha_nacimiento);
+                        $('#edit_pf_estado').val(parsedResponse.pf_estado);
+                        $('#edit_pf_ciudad').val(parsedResponse.pf_ciudad);
+                        $('#edit_pf_colonia').val(parsedResponse.pf_colonia);
+                        $('#edit_pf_codigo_postal').val(parsedResponse.pf_codigo_postal);
+                        $('#edit_pf_calle').val(parsedResponse.pf_calle);
+                        $('#edit_pf_num_exterior').val(parsedResponse.pf_num_exterior);
+                        $('#edit_pf_num_interior').val(parsedResponse.pf_num_interior);
+                        $('#edit_pf_telefono').val(parsedResponse.pf_telefono);
+                        $('#edit_pf_email').val(parsedResponse.pf_email);
+
+                        // CORREGIR: Manejar domicilio extranjero
+                        var tieneDomicilioExt = parsedResponse.pf_tiene_domicilio_extranjero == 1;
+                        $('#edit_pf_tiene_domicilio_extranjero').prop('checked', tieneDomicilioExt);
+
+                        if (tieneDomicilioExt) {
+                            $('#edit_pf_domicilio_extranjero').show();
+                            // Llenar datos de domicilio extranjero
+                            $('#edit_pf_pais_origen').val(parsedResponse.pf_pais_origen);
+                            $('#edit_pf_estado_extranjero').val(parsedResponse.pf_estado_extranjero);
+                            $('#edit_pf_ciudad_extranjero').val(parsedResponse.pf_ciudad_extranjero);
+                            $('#edit_pf_colonia_extranjero').val(parsedResponse.pf_colonia_extranjero);
+                            $('#edit_pf_calle_extranjero').val(parsedResponse.pf_calle_extranjero);
+                            $('#edit_pf_num_exterior_ext').val(parsedResponse.pf_num_exterior_ext);
+                            $('#edit_pf_num_interior_ext').val(parsedResponse.pf_num_interior_ext);
+                            $('#edit_pf_codigo_postal_ext').val(parsedResponse.pf_codigo_postal_ext);
+                        } else {
+                            $('#edit_pf_domicilio_extranjero').hide();
+                        }
+
+                    } else if (parsedResponse.tipo_persona === 'moral') {
+                        $('#edit_seccion_moral').show();
+
+                        // Llenar campos básicos
+                        $('#edit_pm_razon_social').val(parsedResponse.pm_razon_social);
+                        $('#edit_pm_rfc').val(parsedResponse.rfc_folder);
+                        $('#edit_pm_fecha_constitucion').val(parsedResponse.pm_fecha_constitucion);
+                        $('#edit_pm_apoderado_nombre').val(parsedResponse.pm_apoderado_nombre);
+                        $('#edit_pm_apoderado_paterno').val(parsedResponse.pm_apoderado_paterno);
+                        $('#edit_pm_apoderado_materno').val(parsedResponse.pm_apoderado_materno);
+                        $('#edit_pm_apoderado_fecha_nacimiento').val(parsedResponse.pm_apoderado_fecha_nacimiento);
+                        $('#edit_pm_apoderado_rfc').val(parsedResponse.pm_apoderado_rfc);
+                        $('#edit_pm_apoderado_curp').val(parsedResponse.pm_apoderado_curp);
+                        $('#edit_pm_estado').val(parsedResponse.pm_estado);
+                        $('#edit_pm_ciudad').val(parsedResponse.pm_ciudad);
+                        $('#edit_pm_colonia').val(parsedResponse.pm_colonia);
+                        $('#edit_pm_codigo_postal').val(parsedResponse.pm_codigo_postal);
+                        $('#edit_pm_calle').val(parsedResponse.pm_calle);
+                        $('#edit_pm_num_exterior').val(parsedResponse.pm_num_exterior);
+                        $('#edit_pm_num_interior').val(parsedResponse.pm_num_interior);
+                        $('#edit_pm_telefono').val(parsedResponse.pm_telefono);
+                        $('#edit_pm_email').val(parsedResponse.pm_email);
+
+                        // CORREGIR: Manejar domicilio extranjero
+                        var tieneDomicilioExt = parsedResponse.pm_tiene_domicilio_extranjero == 1;
+                        $('#edit_pm_tiene_domicilio_extranjero').prop('checked', tieneDomicilioExt);
+
+                        if (tieneDomicilioExt) {
+                            $('#edit_pm_domicilio_extranjero').show();
+                            // Llenar datos de domicilio extranjero
+                            $('#edit_pm_pais_origen').val(parsedResponse.pm_pais_origen);
+                            $('#edit_pm_estado_extranjero').val(parsedResponse.pm_estado_extranjero);
+                            $('#edit_pm_ciudad_extranjero').val(parsedResponse.pm_ciudad_extranjero);
+                            $('#edit_pm_colonia_extranjero').val(parsedResponse.pm_colonia_extranjero);
+                            $('#edit_pm_calle_extranjero').val(parsedResponse.pm_calle_extranjero);
+                            $('#edit_pm_num_exterior_ext').val(parsedResponse.pm_num_exterior_ext);
+                            $('#edit_pm_num_interior_ext').val(parsedResponse.pm_num_interior_ext);
+                            $('#edit_pm_codigo_postal_ext').val(parsedResponse.pm_codigo_postal_ext);
+                        } else {
+                            $('#edit_pm_domicilio_extranjero').hide();
+                        }
+
+                    } else if (parsedResponse.tipo_persona === 'fideicomiso') {
+                        $('#edit_seccion_fideicomiso').show();
+
+                        // Llenar campos básicos
+                        $('#edit_fid_razon_social').val(parsedResponse.fid_razon_social);
+                        $('#edit_fid_rfc').val(parsedResponse.rfc_folder);
+                        $('#edit_fid_numero_referencia').val(parsedResponse.fid_numero_referencia);
+                        $('#edit_fid_apoderado_nombre').val(parsedResponse.fid_apoderado_nombre);
+                        $('#edit_fid_apoderado_paterno').val(parsedResponse.fid_apoderado_paterno);
+                        $('#edit_fid_apoderado_materno').val(parsedResponse.fid_apoderado_materno);
+                        $('#edit_fid_apoderado_fecha_nacimiento').val(parsedResponse.fid_apoderado_fecha_nacimiento);
+                        $('#edit_fid_apoderado_rfc').val(parsedResponse.fid_apoderado_rfc);
+                        $('#edit_fid_apoderado_curp').val(parsedResponse.fid_apoderado_curp);
+                        $('#edit_fid_estado').val(parsedResponse.fid_estado);
+                        $('#edit_fid_ciudad').val(parsedResponse.fid_ciudad);
+                        $('#edit_fid_colonia').val(parsedResponse.fid_colonia);
+                        $('#edit_fid_codigo_postal').val(parsedResponse.fid_codigo_postal);
+                        $('#edit_fid_calle').val(parsedResponse.fid_calle);
+                        $('#edit_fid_num_exterior').val(parsedResponse.fid_num_exterior);
+                        $('#edit_fid_num_interior').val(parsedResponse.fid_num_interior);
+                        $('#edit_fid_telefono').val(parsedResponse.fid_telefono);
+                        $('#edit_fid_email').val(parsedResponse.fid_email);
+
+                        // CORREGIR: Manejar domicilio extranjero
+                        var tieneDomicilioExt = parsedResponse.fid_tiene_domicilio_extranjero == 1;
+                        $('#edit_fid_tiene_domicilio_extranjero').prop('checked', tieneDomicilioExt);
+
+                        if (tieneDomicilioExt) {
+                            $('#edit_fid_domicilio_extranjero').show();
+                            // Llenar datos de domicilio extranjero
+                            $('#edit_fid_pais_origen').val(parsedResponse.fid_pais_origen);
+                            $('#edit_fid_estado_extranjero').val(parsedResponse.fid_estado_extranjero);
+                            $('#edit_fid_ciudad_extranjero').val(parsedResponse.fid_ciudad_extranjero);
+                            $('#edit_fid_colonia_extranjero').val(parsedResponse.fid_colonia_extranjero);
+                            $('#edit_fid_calle_extranjero').val(parsedResponse.fid_calle_extranjero);
+                            $('#edit_fid_num_exterior_ext').val(parsedResponse.fid_num_exterior_ext);
+                            $('#edit_fid_num_interior_ext').val(parsedResponse.fid_num_interior_ext);
+                            $('#edit_fid_codigo_postal_ext').val(parsedResponse.fid_codigo_postal_ext);
+                        } else {
+                            $('#edit_fid_domicilio_extranjero').hide();
+                        }
+                    }
+
+                    // Llenar campos generales
                     $('#edit_first_fech_folder').val(parsedResponse.first_fech_folder);
                     $('#edit_second_fech_folder').val(parsedResponse.second_fech_folder);
+
                     // Marcar los checkboxes si el valor es "Si" o diferente de null
                     $('#edit_chk_alta_fact_folder').prop('checked', parsedResponse.chk_alta_fact_folder === "Si");
                     $('#edit_chk_lib_folder').prop('checked', parsedResponse.chk_lib_folder === "Si");
                     $('#edit_chk_orig_recib_folder').prop('checked', parsedResponse.chk_orig_recib_folder === "Si");
-                    // Mostrar/ocultar el div y agregar/quitar el atributo required según el estado del checkbox de "Original Recibido"
+
+                    // Mostrar/ocultar fecha de original recibido
                     if (parsedResponse.chk_orig_recib_folder === "Si") {
                         $('#edit-fecha-original-recibido').show();
                         $('input[name="updateFolder[fech_orig_recib_folder]"]').attr('required', 'required').val(parsedResponse.fech_orig_recib_folder);
@@ -1994,10 +2962,48 @@ $clave = substr(str_shuffle($permitted_chars), 0, 6);
                         $('#edit-fecha-original-recibido').hide();
                         $('input[name="updateFolder[fech_orig_recib_folder]"]').removeAttr('required').val('');
                     }
-                    // Mostrar el modal de edición de carpetas
+
+                    // Mostrar el modal de edición
                     $('#modalEditarCarpeta').modal('show');
                 });
             });
+
+            // AGREGAR: Event handlers para los checkboxes de domicilio extranjero
+            $('#edit_pf_tiene_domicilio_extranjero').change(function () {
+                if ($(this).is(':checked')) {
+                    $('#edit_pf_domicilio_extranjero').show();
+                } else {
+                    $('#edit_pf_domicilio_extranjero').hide();
+                    // Limpiar campos cuando se desmarca
+                    $('#edit_pf_domicilio_extranjero input').val('');
+                }
+            });
+
+            $('#edit_pm_tiene_domicilio_extranjero').change(function () {
+                if ($(this).is(':checked')) {
+                    $('#edit_pm_domicilio_extranjero').show();
+                } else {
+                    $('#edit_pm_domicilio_extranjero').hide();
+                    // Limpiar campos cuando se desmarca
+                    $('#edit_pm_domicilio_extranjero input').val('');
+                }
+            });
+
+            $('#edit_fid_tiene_domicilio_extranjero').change(function () {
+                if ($(this).is(':checked')) {
+                    $('#edit_fid_domicilio_extranjero').show();
+                } else {
+                    $('#edit_fid_domicilio_extranjero').hide();
+                    // Limpiar campos cuando se desmarca
+                    $('#edit_fid_domicilio_extranjero input').val('');
+                }
+            });
+
+
+
+
+
+
             // Acción de búsqueda de carpetas
             $("#searchInputFolders").on("keyup", function () {
                 var searchText = $(this).val().toLowerCase();
@@ -2087,8 +3093,6 @@ $clave = substr(str_shuffle($permitted_chars), 0, 6);
                     $('#modalEditarCarpeta').modal('show');
                 });
             });
-
-
 
             $(document).on('click', '.edit-button-tracing', function (e) {
                 e.preventDefault(); // Detiene el envío del formulario
@@ -2582,7 +3586,7 @@ $clave = substr(str_shuffle($permitted_chars), 0, 6);
                             var dataresponse = JSON.parse(response);
                             if (dataresponse.success) {
                                 loadTracingsFolderUser();
-                            } else {∫
+                            } else {
                                 console.error(dataresponse.message);
                             }
                         } catch (error) {
