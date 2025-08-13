@@ -2459,5 +2459,102 @@ public function updateNameFolder($data)
   }
 
 
+
+
+// Función para obtener clientes por tipo de persona
+public function getClientsByType($tipoPersona = null, $companyId = null) {
+    $where_clause = "WHERE f.status_folder = 1 AND f.key_folder LIKE 'CLI-%' AND f.eliminated_at_folder IS NULL";
+    $params = array();
+    
+    // Filtrar por tipo de persona si se especifica
+    if ($tipoPersona) {
+        $where_clause .= " AND f.tipo_persona = ?";
+        $params[] = $tipoPersona;
+    }
+    
+    // Filtrar por empresa si se especifica (para usuarios de empresa)
+    if ($companyId) {
+        $where_clause .= " AND f.company_id = ?";
+        $params[] = $companyId;
+    }
+    
+    $query = "SELECT 
+        f.id_folder,
+        f.key_folder,
+        f.tipo_persona,
+        f.rfc_folder,
+        f.curp_folder,
+        CASE 
+            WHEN f.tipo_persona = 'fisica' THEN CONCAT(f.pf_nombre, ' ', f.pf_apellido_paterno, ' ', IFNULL(f.pf_apellido_materno, ''))
+            WHEN f.tipo_persona = 'moral' THEN f.pm_razon_social
+            WHEN f.tipo_persona = 'fideicomiso' THEN f.fid_razon_social
+            ELSE f.name_folder
+        END as nombre_completo,
+        f.pf_nombre,
+        f.pf_apellido_paterno,
+        f.pf_apellido_materno,
+        f.pf_fecha_nacimiento,
+        f.pf_estado,
+        f.pf_ciudad,
+        f.pf_colonia,
+        f.pf_calle,
+        f.pf_num_exterior,
+        f.pf_num_interior,
+        f.pf_codigo_postal,
+        f.pf_telefono,
+        f.pf_email,
+        f.pm_razon_social,
+        f.pm_fecha_constitucion,
+        f.pm_apoderado_nombre,
+        f.pm_apoderado_paterno,
+        f.pm_apoderado_materno,
+        f.pm_apoderado_rfc,
+        f.pm_apoderado_curp,
+        f.pm_estado,
+        f.pm_ciudad,
+        f.pm_colonia,
+        f.pm_calle,
+        f.pm_num_exterior,
+        f.pm_num_interior,
+        f.pm_codigo_postal,
+        f.pm_telefono,
+        f.pm_email,
+        f.fid_razon_social,
+        f.fid_numero_referencia,
+        f.fid_estado,
+        f.fid_ciudad,
+        f.fid_colonia,
+        f.fid_calle,
+        f.fid_num_exterior,
+        f.fid_num_interior,
+        f.fid_codigo_postal,
+        f.fid_telefono,
+        f.fid_email,
+        c.name_company,
+        c.id_company
+    FROM folders f 
+    LEFT JOIN companies c ON f.company_id = c.id_company
+    {$where_clause}
+    ORDER BY nombre_completo ASC";
+    
+    return $this->consult($query, $params);
+}
+
+// Función para obtener un cliente específico por ID
+public function getClientById($idFolder) {
+    $query = "SELECT 
+        f.*,
+        c.name_company,
+        c.id_company
+    FROM folders f 
+    LEFT JOIN companies c ON f.company_id = c.id_company
+    WHERE f.id_folder = ? AND f.status_folder = 1 AND f.eliminated_at_folder IS NULL";
+    
+    $params = array($idFolder);
+    return $this->consult($query, $params, true);
+}
+
+
+
 }
 ?>

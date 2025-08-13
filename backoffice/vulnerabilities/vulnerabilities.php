@@ -396,6 +396,60 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                 padding: 8px;
             }
         }
+
+
+
+        /* El contenedor no debe cortar los dropdowns */
+        .custom-table-container {
+            overflow: visible;
+            /* antes estaba hidden */
+        }
+
+        /* Wrapper para hacer la tabla scrollable en móvil */
+        .table-responsive-fix {
+            overflow-x: auto;
+            overflow-y: visible;
+            /* importante para que los dropdowns no se corten */
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Asegura ancho mínimo de la tabla para forzar el scroll en móvil */
+        .custom-table {
+            min-width: 920px;
+            /* ajusta según columnas que tengas */
+        }
+
+        /* Columna Acciones con ancho mínimo razonable */
+        .custom-table th:last-child,
+        .custom-table td:last-child {
+            min-width: 150px;
+            white-space: nowrap;
+        }
+
+        /* El dropdown dentro de tablas responsivas necesita esto en Bootstrap 4 */
+        .table-responsive-fix .dropdown-menu {
+            position: absolute;
+            /* ayuda a que no quede “empujando” filas */
+            will-change: transform;
+            z-index: 1050;
+            /* sobre la tabla */
+        }
+
+        /* Si usas sticky header, manténlo arriba aunque haya scroll horiz. */
+        .custom-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            /* > que celdas */
+            background: #fff;
+        }
+
+
+        /* Más columnas ⇒ más ancho mínimo para forzar scroll en móvil */
+        .custom-table {
+            min-width: 1400px;
+            /* súbelo a 1600px si aún se aprieta */
+        }
     </style>
 </head>
 
@@ -522,7 +576,7 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                         </div>
 
                         <!-- Tabla Personas Físicas -->
-                        <div id="tabla-personas-fisicas" class="tabla-container active">
+                        <div id="tabla-personas-fisicas" class="tabla-container active table-responsive-fix">
                             <table class="custom-table" id="tblPersonasFisicas">
                                 <thead>
                                     <tr>
@@ -530,22 +584,25 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                                         <th>Empresa</th>
                                         <th>Cliente</th>
                                         <th>Fecha Operación</th>
-                                        <th>Tipo Propiedad</th>
-                                        <th>Folio Escritura</th>
+                                        <th>Tipo de Propiedad</th>
+                                        <th>Uso del Inmueble</th>
+                                        <th>Dirección del Inmueble</th>
                                         <th>Código Postal</th>
+                                        <th>Folio de Escritura</th>
+                                        <th>Propietario Anterior</th>
                                         <th>Semáforo</th>
-                                        <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1) -->
                                         <?php if ($_SESSION['user']['id_type_user'] == 1 || $_SESSION['user']['id_type_user'] == 3) { ?>
                                             <th>Acciones</th>
                                         <?php } ?>
                                     </tr>
                                 </thead>
+
                                 <tbody id="dataPersonasFisicas"></tbody>
                             </table>
                         </div>
 
                         <!-- Tabla Personas Morales -->
-                        <div id="tabla-personas-morales" class="tabla-container">
+                        <div id="tabla-personas-morales" class="tabla-container table-responsive-fix">
                             <table class="custom-table" id="tblPersonasMorales">
                                 <thead>
                                     <tr>
@@ -553,22 +610,25 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                                         <th>Empresa</th>
                                         <th>Cliente</th>
                                         <th>Fecha Operación</th>
-                                        <th>Tipo Propiedad</th>
-                                        <th>Folio Escritura</th>
+                                        <th>Tipo de Propiedad</th>
+                                        <th>Uso del Inmueble</th>
+                                        <th>Dirección del Inmueble</th>
                                         <th>Código Postal</th>
+                                        <th>Folio de Escritura</th>
+                                        <th>Propietario Anterior</th>
                                         <th>Semáforo</th>
-                                        <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1) -->
                                         <?php if ($_SESSION['user']['id_type_user'] == 1 || $_SESSION['user']['id_type_user'] == 3) { ?>
                                             <th>Acciones</th>
                                         <?php } ?>
                                     </tr>
                                 </thead>
+
                                 <tbody id="dataPersonasMorales"></tbody>
                             </table>
                         </div>
 
                         <!-- Tabla Fideicomisos -->
-                        <div id="tabla-fideicomisos" class="tabla-container">
+                        <div id="tabla-fideicomisos" class="tabla-container table-responsive-fix">
                             <table class="custom-table" id="tblFideicomisos">
                                 <thead>
                                     <tr>
@@ -576,16 +636,19 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                                         <th>Empresa</th>
                                         <th>Cliente</th>
                                         <th>Fecha Operación</th>
-                                        <th>Tipo Propiedad</th>
-                                        <th>Folio Escritura</th>
+                                        <th>Tipo de Propiedad</th>
+                                        <th>Uso del Inmueble</th>
+                                        <th>Dirección del Inmueble</th>
                                         <th>Código Postal</th>
+                                        <th>Folio de Escritura</th>
+                                        <th>Propietario Anterior</th>
                                         <th>Semáforo</th>
-                                        <!-- COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1) -->
                                         <?php if ($_SESSION['user']['id_type_user'] == 1 || $_SESSION['user']['id_type_user'] == 3) { ?>
                                             <th>Acciones</th>
                                         <?php } ?>
                                     </tr>
                                 </thead>
+
                                 <tbody id="dataFideicomisos"></tbody>
                             </table>
                         </div>
@@ -744,6 +807,7 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                                     <h6 class="mb-0"><i class="fas fa-info-circle"></i> Tipo de Cliente</h6>
                                 </div>
                                 <div class="card-body">
+
                                     <div class="form-group">
                                         <label>Tipo de Cliente:</label>
                                         <input type="text" class="form-control" id="tipo_cliente_display" readonly>
@@ -936,6 +1000,24 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                                     <h6 class="mb-0"><i class="fas fa-user"></i> Información de la Persona Física</h6>
                                 </div>
                                 <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            <div class="form-group">
+                                                <label for="select_cliente_pf">Seleccionar Cliente Existente
+                                                    (Opcional):</label>
+                                                <select class="form-control" id="select_cliente_pf"
+                                                    name="id_cliente_existente_pf">
+                                                    <option value="">-- Seleccionar cliente existente --</option>
+                                                </select>
+                                                <small class="form-text text-muted">
+
+
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr>
                                     <div class="row">
                                         <div class="col-lg-4">
                                             <div class="form-group">
@@ -1156,6 +1238,24 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                                     </h6>
                                 </div>
                                 <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            <div class="form-group">
+                                                <label for="select_cliente_pm">Seleccionar Cliente Existente
+                                                    (Opcional):</label>
+                                                <select class="form-control" id="select_cliente_pm"
+                                                    name="id_cliente_existente_pm">
+                                                    <option value="">-- Seleccionar cliente existente --</option>
+                                                </select>
+                                                <small class="form-text text-muted">
+
+
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr>
                                     <div class="row">
                                         <div class="col-lg-8">
                                             <div class="form-group">
@@ -1421,6 +1521,24 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                                     <h6 class="mb-0"><i class="fas fa-handshake"></i> Información del Fideicomiso</h6>
                                 </div>
                                 <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            <div class="form-group">
+                                                <label for="select_cliente_fid">Seleccionar Cliente Existente
+                                                    (Opcional):</label>
+                                                <select class="form-control" id="select_cliente_fid"
+                                                    name="id_cliente_existente_fid">
+                                                    <option value="">-- Seleccionar cliente existente --</option>
+                                                </select>
+                                                <small class="form-text text-muted">
+
+
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr>
                                     <div class="row">
                                         <div class="col-lg-8">
                                             <div class="form-group">
@@ -2367,7 +2485,7 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
         // ✅ DATOS REALES DE LA BASE DE DATOS
         var operacionesData = <?php echo json_encode($operacionesData, JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
-        
+
         // Variable para saber qué pestaña está activa
         var tabActiva = "personas-fisicas";
         var userType = <?php echo $_SESSION['user']['id_type_user']; ?>;
@@ -2501,75 +2619,79 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
             var tableId = '';
 
             switch (tipoCliente) {
-                case 'personas-fisicas':
-                    tableId = '#dataPersonasFisicas';
-                    break;
-                case 'personas-morales':
-                    tableId = '#dataPersonasMorales';
-                    break;
-                case 'fideicomisos':
-                    tableId = '#dataFideicomisos';
-                    break;
+                case 'personas-fisicas': tableId = '#dataPersonasFisicas'; break;
+                case 'personas-morales': tableId = '#dataPersonasMorales'; break;
+                case 'fideicomisos': tableId = '#dataFideicomisos'; break;
             }
+
+            var esAdmin = (userType === 1 || userType === 3);
 
             if (data && data.length > 0) {
                 for (var i = 0; i < data.length; i++) {
-                    var item = data[i];
-                    var semaforoClass = 'semaforo-' + item.semaforo;
-                    var fechaFormateada = formatDate(item.fecha_operacion);
-
-                    // Determinar si los campos son clickeables y tienen información faltante
+                    var item = data[i] || {};
+                    var semaforoClass = 'semaforo-' + (item.semaforo || 'verde');
+                    var fechaFormateada = formatDate(item.fecha_operacion || new Date());
                     var empresaClass = item.empresa_missing_info ? 'missing-info clickeable-field' : 'clickeable-field';
                     var clienteClass = item.cliente_missing_info ? 'missing-info clickeable-field' : 'clickeable-field';
 
+                    // Valores con fallback
+                    var tipoPropiedad = item.tipo_propiedad || '-';
+                    var usoInmueble = item.uso_inmueble || '-';
+                    var direccion = item.direccion_inmueble || '-';
+                    var cp = item.codigo_postal || '-';
+                    var folio = item.folio_escritura || '-';
+                    var propietario = item.propietario_anterior || '-';
+
                     tbody += "<tr>";
                     tbody += "<td style='text-align:center;'>" + (i + 1) + "</td>";
-                    tbody += "<td style='text-align:left;'><span class='" + empresaClass + "' onclick='editarCampo(" + item.id + ", \"empresa\")'>" + item.empresa + "</span></td>";
-                    tbody += "<td style='text-align:left;'><span class='" + clienteClass + "' onclick='editarCampo(" + item.id + ", \"cliente\")'>" + item.cliente + "</span></td>";
+                    tbody += "<td style='text-align:left;'><span class='" + empresaClass + "' onclick='editarCampo(" + item.id + ', "empresa")' + "'>" + (item.empresa || '-') + "</span></td>";
+                    tbody += "<td style='text-align:left;'><span class='" + clienteClass + "' onclick='editarCampo(" + item.id + ', "cliente")' + "'>" + (item.cliente || '-') + "</span></td>";
                     tbody += "<td style='text-align:center;'>" + fechaFormateada + "</td>";
-                    tbody += "<td style='text-align:left;'>" + item.tipo_propiedad + "</td>";
-                    tbody += "<td style='text-align:center;'>" + item.folio_escritura + "</td>";
-                    tbody += "<td style='text-align:center;'>" + item.codigo_postal + "</td>";
+                    tbody += "<td style='text-align:left;'>" + tipoPropiedad + "</td>";
+                    tbody += "<td style='text-align:left;'>" + usoInmueble + "</td>";
+                    tbody += "<td style='text-align:left;'>" + direccion + "</td>";
+                    tbody += "<td style='text-align:center;'>" + cp + "</td>";
+                    tbody += "<td style='text-align:center;'>" + folio + "</td>";
+                    tbody += "<td style='text-align:left;'>" + propietario + "</td>";
                     tbody += "<td style='text-align:center;'><i class='fas fa-circle " + semaforoClass + "'></i></td>";
 
-                    // COMPROBAMOS QUE EL TIPO DE USUARIO SEA DE TIPO ADMINISTRADOR (1)
-                    if (userType == 1) {
-                        tbody += "<td style='text-align:center;'>" +
-                            "<div class='dropdown'>" +
-                            "<button class='btn btn-primary dropdown-toggle btn-sm' type='button' id='dropdownMenuButton_" + item.id + "' data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>" +
-                            "Acciones" +
-                            "</button>" +
-                            "<div class='dropdown-menu dropdown-menu-right' aria-labelledby='dropdownMenuButton_" + item.id + "'>" +
-                            "<a class='dropdown-item' href='#' onclick='verDetalle(" + item.id + ")'>" +
-                            "<i class='fas fa-eye'></i> Ver detalle" +
-                            "</a>" +
-                            "<a class='dropdown-item' href='#' data-operation-id='" + item.id + "'>" +
-                            "<i class='fas fa-pen'></i> Editar operación" +
-                            "</a>" +
-                            "<hr>" +
-                            "<form action='vulnerabilities.php' method='POST'>" +
-                            "<input name='delOperation[idOperation]' type='hidden' value='" + item.id + "'>" +
-                            "<button class='dropdown-item' type='submit' name='action' value='deleteOperation' onclick='return confirm(\"¿Estás seguro de eliminar la operación?\");'>" +
-                            "<i class='fas fa-trash'></i> Mover a la papelera" +
-                            "</button>" +
-                            "</form>" +
-                            "</div>" +
-                            "</div>" +
-                            "</td>";
+                    if (esAdmin) {
+                        tbody += "<td style='text-align:center;'>"
+                            + "<div class='dropdown position-static'>"
+                            + "<button class='btn btn-primary dropdown-toggle btn-sm' type='button' "
+                            + "id='dropdownMenuButton_" + item.id + "' data-toggle='dropdown' data-boundary='viewport' "
+                            + "aria-haspopup='true' aria-expanded='false'>Acciones</button>"
+                            + "<div class='dropdown-menu dropdown-menu-right' aria-labelledby='dropdownMenuButton_" + item.id + "'>"
+                            + "<a class='dropdown-item' href='#' onclick='verDetalle(" + item.id + ")'><i class='fas fa-eye'></i> Ver detalle</a>"
+                            + "<a class='dropdown-item' href='#' data-operation-id='" + item.id + "'><i class='fas fa-pen'></i> Editar operación</a>"
+                            + "<hr>"
+                            + "<form action='vulnerabilities.php' method='POST' class='m-0'>"
+                            + "<input name='delOperation[idOperation]' type='hidden' value='" + item.id + "'>"
+                            + "<button class='dropdown-item' type='submit' name='action' value='deleteOperation' "
+                            + "onclick='return confirm(\"¿Estás seguro de eliminar la operación?\");'>"
+                            + "<i class='fas fa-trash'></i> Mover a la papelera"
+                            + "</button>"
+                            + "</form>"
+                            + "</div>"
+                            + "</div>"
+                            + "</td>";
                     }
+
                     tbody += "</tr>";
                 }
             } else {
-                var colspan = userType == 1 ? 9 : 8;
-                tbody = "<tr><td colspan='" + colspan + "' class='text-center'>No hay operaciones que coincidan con los filtros seleccionados</td></tr>";
+                // #, Empresa, Cliente, Fecha, Tipo, Uso, Dirección, CP, Folio, Propietario, Semáforo (+ Acciones si admin)
+                var columnas = 11 + (esAdmin ? 1 : 0);
+                tbody = "<tr><td colspan='" + columnas + "' class='text-center'>No hay operaciones que coincidan con los filtros seleccionados</td></tr>";
             }
 
             $(tableId).html(tbody);
 
-            // Actualizar total
-            var total = data ? data.length : 0;
-            $('#totalOperaciones').text(total);
+            // Total
+            $('#totalOperaciones').text(data ? data.length : 0);
         }
+
+
 
         // Función para cambiar entre pestañas
         function cambiarTab(tipoCliente) {
@@ -2641,4 +2763,275 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                 alert('Información completada correctamente. El círculo naranja se ha removido.');
             }
         }
+
+
+
+
+
+
+
+        // Función para cargar clientes según el tipo
+        function cargarClientesPorTipo(tipoPersona, selectId) {
+            const $select = $('#' + selectId);
+
+            // Limpiar select
+            $select.html('<option value="">Cargando...</option>');
+
+            // Determinar el tipo de persona para la consulta
+            let tipoConsulta = '';
+            switch (tipoPersona) {
+                case 'personas-fisicas':
+                    tipoConsulta = 'fisica';
+                    break;
+                case 'personas-morales':
+                    tipoConsulta = 'moral';
+                    break;
+                case 'fideicomisos':
+                    tipoConsulta = 'fideicomiso';
+                    break;
+            }
+
+            // Hacer petición AJAX
+            $.ajax({
+                url: 'get_clients_ajax.php',
+                type: 'GET',
+                data: {
+                    action: 'get_clients_by_type',
+                    tipo_persona: tipoConsulta
+                },
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success) {
+                        // Limpiar y agregar opción por defecto
+                        $select.html('<option value="">-- Seleccionar cliente existente --</option>');
+
+                        // Agregar opciones de clientes
+                        response.clients.forEach(function (client) {
+                            $select.append(
+                                `<option value="${client.id}" data-client='${JSON.stringify(client.data)}'>
+                            ${client.text}
+                        </option>`
+                            );
+                        });
+
+                        console.log(`Clientes cargados para ${tipoPersona}:`, response.clients.length);
+                    } else {
+                        $select.html('<option value="">Error al cargar clientes</option>');
+                        console.error('Error:', response.error);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    $select.html('<option value="">Error al cargar clientes</option>');
+                    console.error('Error AJAX:', error);
+                }
+            });
+        }
+
+        // Función para llenar formulario con datos del cliente seleccionado
+        function llenarFormularioCliente(clientData, tipoPersona) {
+            console.log('Llenando formulario con:', clientData);
+
+            if (tipoPersona === 'personas-fisicas') {
+                // Llenar campos de persona física
+                $('#pf_nombre').val(clientData.pf_nombre || '');
+                $('#pf_apellido_paterno').val(clientData.pf_apellido_paterno || '');
+                $('#pf_apellido_materno').val(clientData.pf_apellido_materno || '');
+                $('#pf_rfc').val(clientData.rfc_folder || '');
+                $('#pf_curp').val(clientData.curp_folder || '');
+                $('#pf_fecha_nacimiento').val(clientData.pf_fecha_nacimiento || '');
+                $('#pf_estado').val(clientData.pf_estado || '');
+                $('#pf_ciudad').val(clientData.pf_ciudad || '');
+                $('#pf_colonia').val(clientData.pf_colonia || '');
+                $('#pf_calle').val(clientData.pf_calle || '');
+                $('#pf_num_exterior').val(clientData.pf_num_exterior || '');
+                $('#pf_num_interior').val(clientData.pf_num_interior || '');
+                $('#pf_codigo_postal').val(clientData.pf_codigo_postal || '');
+                $('#pf_telefono').val(clientData.pf_telefono || '');
+                $('#pf_correo').val(clientData.pf_email || ''); // Nota: campo en form es pf_correo pero en BD es pf_email
+
+            } else if (tipoPersona === 'personas-morales') {
+                // Llenar campos de persona moral
+                $('#pm_razon_social').val(clientData.pm_razon_social || '');
+                $('#pm_rfc').val(clientData.rfc_folder || '');
+                $('#pm_fecha_constitucion').val(clientData.pm_fecha_constitucion || '');
+                $('#pm_apoderado_nombre').val(clientData.pm_apoderado_nombre || '');
+                $('#pm_apoderado_paterno').val(clientData.pm_apoderado_paterno || '');
+                $('#pm_apoderado_materno').val(clientData.pm_apoderado_materno || '');
+                $('#pm_apoderado_rfc').val(clientData.pm_apoderado_rfc || '');
+                $('#pm_apoderado_curp').val(clientData.pm_apoderado_curp || '');
+                $('#pm_estado').val(clientData.pm_estado || '');
+                $('#pm_ciudad').val(clientData.pm_ciudad || '');
+                $('#pm_colonia').val(clientData.pm_colonia || '');
+                $('#pm_calle').val(clientData.pm_calle || '');
+                $('#pm_num_exterior').val(clientData.pm_num_exterior || '');
+                $('#pm_num_interior').val(clientData.pm_num_interior || '');
+                $('#pm_codigo_postal').val(clientData.pm_codigo_postal || '');
+                $('#pm_telefono').val(clientData.pm_telefono || '');
+                $('#pm_correo').val(clientData.pm_email || ''); // Nota: campo en form es pm_correo pero en BD es pm_email
+
+            } else if (tipoPersona === 'fideicomisos') {
+                // Llenar campos de fideicomiso
+                $('#fid_razon_social').val(clientData.fid_razon_social || '');
+                $('#fid_rfc').val(clientData.rfc_folder || '');
+                $('#fid_numero_referencia').val(clientData.fid_numero_referencia || '');
+                $('#fid_estado').val(clientData.fid_estado || '');
+                $('#fid_ciudad').val(clientData.fid_ciudad || '');
+                $('#fid_colonia').val(clientData.fid_colonia || '');
+                $('#fid_calle').val(clientData.fid_calle || '');
+                $('#fid_num_exterior').val(clientData.fid_num_exterior || '');
+                $('#fid_num_interior').val(clientData.fid_num_interior || '');
+                $('#fid_codigo_postal').val(clientData.fid_codigo_postal || '');
+                $('#fid_telefono').val(clientData.fid_telefono || '');
+                $('#fid_correo').val(clientData.fid_email || ''); // Nota: campo en form es fid_correo pero en BD es fid_email
+            }
+        }
+
+        // Función para limpiar formulario cuando se deselecciona cliente
+        function limpiarFormularioCliente(tipoPersona) {
+            if (tipoPersona === 'personas-fisicas') {
+                $('#pf_nombre, #pf_apellido_paterno, #pf_apellido_materno, #pf_rfc, #pf_curp, #pf_fecha_nacimiento, #pf_estado, #pf_ciudad, #pf_colonia, #pf_calle, #pf_num_exterior, #pf_num_interior, #pf_codigo_postal, #pf_telefono, #pf_correo').val('');
+            } else if (tipoPersona === 'personas-morales') {
+                $('#pm_razon_social, #pm_rfc, #pm_fecha_constitucion, #pm_apoderado_nombre, #pm_apoderado_paterno, #pm_apoderado_materno, #pm_apoderado_rfc, #pm_apoderado_curp, #pm_estado, #pm_ciudad, #pm_colonia, #pm_calle, #pm_num_exterior, #pm_num_interior, #pm_codigo_postal, #pm_telefono, #pm_correo').val('');
+            } else if (tipoPersona === 'fideicomisos') {
+                $('#fid_razon_social, #fid_rfc, #fid_numero_referencia, #fid_estado, #fid_ciudad, #fid_colonia, #fid_calle, #fid_num_exterior, #fid_num_interior, #fid_codigo_postal, #fid_telefono, #fid_correo').val('');
+            }
+        }
+
+        // MODIFICAR LA FUNCIÓN configurarModalSegunTipo EXISTENTE
+        function configurarModalSegunTipo(tipoCliente) {
+            console.log('Configurando modal para:', tipoCliente);
+
+            // Ocultar todas las secciones
+            $('#seccion-persona-fisica').hide();
+            $('#seccion-persona-moral').hide();
+            $('#seccion-fideicomiso').hide();
+
+            // Limpiar todos los selects
+            $('#select_cliente_pf, #select_cliente_pm, #select_cliente_fid').html('<option value="">-- Seleccionar cliente existente --</option>');
+
+            switch (tipoCliente) {
+                case 'personas-fisicas':
+                    $('#tipo_cliente_display').val('Persona Física');
+                    $('#hidden_tipo_cliente').val('persona_fisica');
+                    $('#seccion-persona-fisica').show();
+                    $('#pf_nombre, #pf_apellido_paterno, #pf_rfc').attr('required', true);
+
+                    // Cargar clientes de persona física
+                    cargarClientesPorTipo('personas-fisicas', 'select_cliente_pf');
+                    break;
+
+                case 'personas-morales':
+                    $('#tipo_cliente_display').val('Persona Moral');
+                    $('#hidden_tipo_cliente').val('persona_moral');
+                    $('#seccion-persona-moral').show();
+                    $('#pm_razon_social, #pm_rfc').attr('required', true);
+
+                    // Cargar clientes de persona moral
+                    cargarClientesPorTipo('personas-morales', 'select_cliente_pm');
+                    break;
+
+                case 'fideicomisos':
+                    $('#tipo_cliente_display').val('Fideicomiso');
+                    $('#hidden_tipo_cliente').val('fideicomiso');
+                    $('#seccion-fideicomiso').show();
+                    $('#fid_razon_social, #fid_rfc').attr('required', true);
+
+                    // Cargar clientes de fideicomiso
+                    cargarClientesPorTipo('fideicomisos', 'select_cliente_fid');
+                    break;
+
+                default:
+                    $('#tipo_cliente_display').val('Persona Física');
+                    $('#hidden_tipo_cliente').val('persona_fisica');
+                    $('#seccion-persona-fisica').show();
+                    $('#pf_nombre, #pf_apellido_paterno, #pf_rfc').attr('required', true);
+
+                    // Cargar clientes de persona física
+                    cargarClientesPorTipo('personas-fisicas', 'select_cliente_pf');
+                    break;
+            }
+        }
+
+        // MODIFICAR LA FUNCIÓN limpiarFormulario EXISTENTE
+        function limpiarFormulario() {
+            // Guardar tipo de cliente antes de limpiar
+            var tipoClienteDisplay = $('#tipo_cliente_display').val();
+            var hiddenTipoCliente = $('#hidden_tipo_cliente').val();
+
+            // Limpiar formulario
+            $('#formAgregarOperacion')[0].reset();
+
+            // Restaurar tipo de cliente
+            $('#tipo_cliente_display').val(tipoClienteDisplay);
+            $('#hidden_tipo_cliente').val(hiddenTipoCliente);
+
+            // Limpiar selects de clientes
+            $('#select_cliente_pf, #select_cliente_pm, #select_cliente_fid').val('').trigger('change');
+
+            // Limpiar otras secciones
+            $('#pld-alerts-container').html('');
+            $('#cash-amount-section').hide();
+            $('#moneda_otra').hide();
+
+            $('#pf_domicilio_extranjero, #pm_domicilio_extranjero, #fid_domicilio_extranjero').hide();
+            $('#pf_tiene_domicilio_extranjero, #pm_tiene_domicilio_extranjero, #fid_tiene_domicilio_extranjero').prop('checked', false);
+
+            $('#pm_beneficiarios_container').empty();
+            $('#fid_fideicomitente_container, #fid_fiduciario_container, #fid_fideicomisario_container, #fid_control_efectivo_container').empty();
+
+            contadorBeneficiarios = {
+                pm: 0,
+                fid_fideicomitente: 0,
+                fid_fiduciario: 0,
+                fid_fideicomisario: 0,
+                fid_control_efectivo: 0
+            };
+
+            $('#pf_nombre, #pf_apellido_paterno, #pf_rfc').removeAttr('required');
+            $('#pm_razon_social, #pm_rfc').removeAttr('required');
+            $('#fid_razon_social, #fid_rfc').removeAttr('required');
+        }
+
+        // Event listeners para los selects de clientes - AGREGAR AL $(document).ready EXISTENTE
+        $(document).ready(function () {
+
+            // Event listeners existentes...
+
+            // NUEVOS Event listeners para selects de clientes
+
+            // Persona Física
+            $(document).on('change', '#select_cliente_pf', function () {
+                const selectedOption = $(this).find('option:selected');
+                if (selectedOption.val()) {
+                    const clientData = JSON.parse(selectedOption.attr('data-client'));
+                    llenarFormularioCliente(clientData, 'personas-fisicas');
+                } else {
+                    limpiarFormularioCliente('personas-fisicas');
+                }
+            });
+
+            // Persona Moral
+            $(document).on('change', '#select_cliente_pm', function () {
+                const selectedOption = $(this).find('option:selected');
+                if (selectedOption.val()) {
+                    const clientData = JSON.parse(selectedOption.attr('data-client'));
+                    llenarFormularioCliente(clientData, 'personas-morales');
+                } else {
+                    limpiarFormularioCliente('personas-morales');
+                }
+            });
+
+            // Fideicomiso
+            $(document).on('change', '#select_cliente_fid', function () {
+                const selectedOption = $(this).find('option:selected');
+                if (selectedOption.val()) {
+                    const clientData = JSON.parse(selectedOption.attr('data-client'));
+                    llenarFormularioCliente(clientData, 'fideicomisos');
+                } else {
+                    limpiarFormularioCliente('fideicomisos');
+                }
+            });
+
+        });
+
     </script>

@@ -470,83 +470,83 @@ class OperationController
     /**
      * Obtener operaciones para mostrar en tabla
      */
-    public function getOperations($filters = [])
-    {
-        $sql = "SELECT 
-            vo.id_operation,
-            vo.key_operation,
-            vo.fecha_operacion,
-            vo.tipo_operacion,
-            vo.monto_operacion,
-            vo.moneda,
-            vo.tipo_cliente,
-            vo.requiere_aviso_sat,
-            vo.umbral_superado,
-            c.name_company as empresa,
-            CASE 
-                WHEN vo.tipo_cliente = 'persona_fisica' THEN CONCAT(pf.pf_nombre, ' ', pf.pf_apellido_paterno, ' ', IFNULL(pf.pf_apellido_materno, ''))
-                WHEN vo.tipo_cliente = 'persona_moral' THEN pm.pm_razon_social
-                WHEN vo.tipo_cliente = 'fideicomiso' THEN CONCAT('Fideicomiso - ', fid.fid_numero_referencia)
-                ELSE 'Cliente no identificado'
-            END as cliente,
-            vo.tipo_propiedad,
-            vo.folio_escritura,
-            vo.codigo_postal
-        FROM vulnerable_operations vo
-        LEFT JOIN companies c ON vo.id_company_operation = c.id_company
-        LEFT JOIN operation_persona_fisica pf ON vo.id_operation = pf.id_operation
-        LEFT JOIN operation_persona_moral pm ON vo.id_operation = pm.id_operation
-        LEFT JOIN operation_fideicomiso fid ON vo.id_operation = fid.id_operation
-        WHERE vo.status_operation = 1";
+public function getOperations($filters = [])
+{
+    $sql = "SELECT 
+        vo.id_operation,
+        vo.key_operation,
+        vo.fecha_operacion,
+        vo.tipo_operacion,
+        vo.monto_operacion,
+        vo.moneda,
+        vo.tipo_cliente,
+        vo.requiere_aviso_sat,
+        vo.umbral_superado,
+        c.name_company AS empresa,
+        CASE 
+            WHEN vo.tipo_cliente = 'persona_fisica' THEN CONCAT(pf.pf_nombre, ' ', pf.pf_apellido_paterno, ' ', IFNULL(pf.pf_apellido_materno, ''))
+            WHEN vo.tipo_cliente = 'persona_moral' THEN pm.pm_razon_social
+            WHEN vo.tipo_cliente = 'fideicomiso' THEN CONCAT('Fideicomiso - ', fid.fid_numero_referencia)
+            ELSE 'Cliente no identificado'
+        END AS cliente,
+        vo.tipo_propiedad,
+        vo.uso_inmueble,           -- 👈 faltaba
+        vo.direccion_inmueble,     -- 👈 faltaba
+        vo.codigo_postal,
+        vo.folio_escritura,
+        vo.propietario_anterior    -- 👈 faltaba
+    FROM vulnerable_operations vo
+    LEFT JOIN companies c ON vo.id_company_operation = c.id_company
+    LEFT JOIN operation_persona_fisica pf ON vo.id_operation = pf.id_operation
+    LEFT JOIN operation_persona_moral pm ON vo.id_operation = pm.id_operation
+    LEFT JOIN operation_fideicomiso fid ON vo.id_operation = fid.id_operation
+    WHERE vo.status_operation = 1";
 
-        // Aplicar filtros
-        $params = [];
-        if (!empty($filters['tipo_cliente'])) {
-            $sql .= " AND vo.tipo_cliente = :tipo_cliente";
-            $params[':tipo_cliente'] = $filters['tipo_cliente'];
-        }
+    $params = [];
 
-        if (!empty($filters['year'])) {
-            $sql .= " AND YEAR(vo.fecha_operacion) = :year";
-            $params[':year'] = $filters['year'];
-        }
-
-        if (!empty($filters['month'])) {
-            $sql .= " AND MONTH(vo.fecha_operacion) = :month";
-            $params[':month'] = $filters['month'];
-        }
-
-        $sql .= " ORDER BY vo.fecha_operacion DESC";
-
-        $stmt = $this->connection->prepare($sql);
-        $stmt->execute($params);
-
-        $operations = [];
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            // Determinar color del semáforo
-            $semaforo = 'verde';
-            if ($row['requiere_aviso_sat']) {
-                $semaforo = 'rojo';
-            } elseif ($row['monto_operacion'] > 1000000) {
-                $semaforo = 'amarillo';
-            }
-
-            $operations[] = [
-                'id' => $row['id_operation'],
-                'empresa' => $row['empresa'],
-                'cliente' => $row['cliente'],
-                'fecha_operacion' => $row['fecha_operacion'],
-                'tipo_propiedad' => $row['tipo_propiedad'],
-                'folio_escritura' => $row['folio_escritura'] ?? 'N/A',
-                'codigo_postal' => $row['codigo_postal'],
-                'semaforo' => $semaforo,
-                'empresa_missing_info' => false,
-                'cliente_missing_info' => false
-            ];
-        }
-
-        return $operations;
+    // Mapear filtro a formato de BD
+    if (!empty($filters['tipo_cliente'])) {
+        $sql .= " AND vo.tipo_cliente = :tipo_cliente";
+        $params[':tipo_cliente'] = $this->mapTipoCliente($filters['tipo_cliente']);
     }
+    if (!empty($filters['year'])) {
+        $sql .= " AND YEAR(vo.fecha_operacion) = :year";
+        $params[':year'] = $filters['year'];
+    }
+    if (!empty($filters['month'])) {
+        $sql .= " AND MONTH(vo.fecha_operacion) = :month";
+        $params[':month'] = $filters['month'];
+    }
+
+    $sql .= " ORDER BY vo.fecha_operacion DESC";
+
+    $stmt = $this->connection->prepare($sql);
+    $stmt->execute($params);
+
+    $operations = [];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $semaforo = $row['requiere_aviso_sat'] ? 'rojo' : ($row['monto_operacion'] > 1000000 ? 'amarillo' : 'verde');
+
+        $operations[] = [
+            'id' => $row['id_operation'],
+            'empresa' => $row['empresa'],
+            'cliente' => $row['cliente'],
+            'fecha_operacion' => $row['fecha_operacion'],
+            'tipo_propiedad' => $row['tipo_propiedad'],
+            'uso_inmueble' => $row['uso_inmueble'],
+            'direccion_inmueble' => $row['direccion_inmueble'],
+            'folio_escritura' => $row['folio_escritura'] ?? 'N/A',
+            'codigo_postal' => $row['codigo_postal'],
+            'propietario_anterior' => $row['propietario_anterior'],
+            'semaforo' => $semaforo,
+            'empresa_missing_info' => false,
+            'cliente_missing_info' => false
+        ];
+    }
+
+    return $operations;
+}
+
 
 
     /**
@@ -610,4 +610,111 @@ class OperationController
             return 1; // Fallback
         }
     }
+
+
+
+    public function getOperationDetail($idOperation)
+{
+    // Operación + empresa + joins a tablas específicas
+    $sql = "SELECT 
+              vo.*,
+              c.name_company,
+              pf.id_operation IS NOT NULL AS has_pf,
+              pm.id_operation IS NOT NULL AS has_pm,
+              fid.id_operation IS NOT NULL AS has_fid,
+
+              -- PF
+              pf.pf_nombre, pf.pf_apellido_paterno, pf.pf_apellido_materno, pf.pf_rfc, pf.pf_curp,
+              pf.pf_fecha_nacimiento, pf.pf_telefono, pf.pf_email, pf.pf_estado, pf.pf_ciudad, pf.pf_colonia,
+              pf.pf_calle, pf.pf_num_exterior, pf.pf_num_interior, pf.pf_codigo_postal,
+              pf.pf_tiene_domicilio_extranjero, pf.pf_pais_extranjero, pf.pf_estado_extranjero,
+              pf.pf_ciudad_extranjero, pf.pf_direccion_extranjero, pf.pf_codigo_postal_extranjero,
+
+              -- PM
+              pm.pm_razon_social, pm.pm_rfc, pm.pm_fecha_constitucion,
+              pm.pm_estado, pm.pm_ciudad, pm.pm_colonia, pm.pm_calle,
+              pm.pm_num_exterior, pm.pm_num_interior, pm.pm_codigo_postal,
+              pm.pm_tiene_domicilio_extranjero, pm.pm_pais_extranjero, pm.pm_estado_extranjero,
+              pm.pm_ciudad_extranjero, pm.pm_direccion_extranjero, pm.pm_codigo_postal_extranjero,
+              pm.pm_representante_nombre, pm.pm_representante_paterno, pm.pm_representante_materno,
+              pm.pm_representante_rfc, pm.pm_representante_curp, pm.pm_telefono, pm.pm_email,
+
+              -- FID
+              fid.fid_numero_contrato, fid.fid_fecha_contrato, fid.fid_tipo_fideicomiso,
+              fid.fid_proposito, fid.fid_numero_referencia, fid.fid_estado, fid.fid_ciudad, fid.fid_colonia,
+              fid.fid_calle, fid.fid_num_exterior, fid.fid_num_interior, fid.fid_codigo_postal,
+              fid.fid_tiene_domicilio_extranjero, fid.fid_pais_extranjero, fid.fid_estado_extranjero,
+              fid.fid_ciudad_extranjero, fid.fid_direccion_extranjero, fid.fid_codigo_postal_extranjero,
+              fid.fid_apoderado_nombre, fid.fid_apoderado_paterno, fid.fid_apoderado_materno,
+              fid.fid_telefono, fid.fid_email, fid.fid_razon_social, fid.fid_rfc
+
+            FROM vulnerable_operations vo
+            LEFT JOIN companies c ON vo.id_company_operation = c.id_company
+            LEFT JOIN operation_persona_fisica pf ON vo.id_operation = pf.id_operation
+            LEFT JOIN operation_persona_moral pm ON vo.id_operation = pm.id_operation
+            LEFT JOIN operation_fideicomiso fid ON vo.id_operation = fid.id_operation
+            WHERE vo.id_operation = :id AND vo.status_operation = 1";
+
+    $stmt = $this->connection->prepare($sql);
+    $stmt->execute([':id' => $idOperation]);
+    $main = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$main) {
+        throw new Exception('Operación no encontrada.');
+    }
+
+    // Beneficiarios (solo si es PM)
+    $beneficiarios = [];
+    if (!empty($main['has_pm'])) {
+        // Obtener id_pm
+        $stmtPm = $this->connection->prepare("SELECT id_pm FROM operation_persona_moral WHERE id_operation = :id");
+        $stmtPm->execute([':id' => $idOperation]);
+        $idPm = $stmtPm->fetchColumn();
+
+        if ($idPm) {
+            $stmtB = $this->connection->prepare("SELECT * FROM operation_beneficiarios WHERE id_pm = :id_pm ORDER BY beneficiario_nombre ASC");
+            $stmtB->execute([':id_pm' => $idPm]);
+            $beneficiarios = $stmtB->fetchAll(PDO::FETCH_ASSOC);
+        }
+    }
+
+    // Roles de fideicomiso (si aplica)
+    $roles = [
+        'fideicomitentes' => [],
+        'fiduciarios' => [],
+        'fideicomisarios' => [],
+        'control_efectivo' => []
+    ];
+    if (!empty($main['has_fid'])) {
+        // Obtener id_fid
+        $stmtF = $this->connection->prepare("SELECT id_fid FROM operation_fideicomiso WHERE id_operation = :id");
+        $stmtF->execute([':id' => $idOperation]);
+        $idFid = $stmtF->fetchColumn();
+
+        if ($idFid) {
+            foreach (['fideicomitentes','fiduciarios','fideicomisarios','control_efectivo'] as $tabla) {
+                $table = $tabla === 'control_efectivo' ? 'operation_control_efectivo' : "operation_{$tabla}";
+                $stmtR = $this->connection->prepare("SELECT * FROM {$table} WHERE id_fid = :id_fid ORDER BY 1");
+                $stmtR->execute([':id_fid' => $idFid]);
+                $roles[$tabla] = $stmtR->fetchAll(PDO::FETCH_ASSOC);
+            }
+        }
+    }
+
+    // Normaliza tipo_cliente a etiqueta de UI
+    $mapBackToUi = [
+        'persona_fisica' => 'Persona Física',
+        'persona_moral'  => 'Persona Moral',
+        'fideicomiso'    => 'Fideicomiso'
+    ];
+
+    $main['tipo_cliente_ui'] = $mapBackToUi[$main['tipo_cliente']] ?? 'Persona Física';
+
+    return [
+        'main' => $main,
+        'beneficiarios' => $beneficiarios,
+        'roles' => $roles
+    ];
+}
+
 }
