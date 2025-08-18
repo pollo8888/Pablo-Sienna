@@ -914,4 +914,289 @@ class OperationController
         ];
     }
 
+
+    /**
+ * Actualizar operación existente (CORREGIDO PARA OperationController)
+ */
+public function updateOperation($data)
+{
+    try {
+        $this->connection->beginTransaction();
+        
+        // Validar que exista el ID de operación
+        if (empty($data['operation']['id_operation'])) {
+            throw new Exception('ID de operación no proporcionado');
+        }
+        
+        $operationId = intval($data['operation']['id_operation']);
+        
+        // Obtener IDs correctos
+        $id_company = $this->getCorrectCompanyIdForUpdate($data['operation']);
+        $id_client = $this->getCorrectClientIdForUpdate($data['operation']);
+        
+        // Actualizar operación principal
+        $this->updateMainOperationData($operationId, $data['operation'], $id_company, $id_client);
+        
+        // Actualizar beneficiarios controladores si existen
+        if (isset($data['beneficiarios']) && !empty($data['beneficiarios'])) {
+            $this->updateBeneficiariosControladores($operationId, $data['beneficiarios']);
+        }
+        
+        $this->connection->commit();
+        
+        return [
+            'success' => true,
+            'message' => 'Operación actualizada exitosamente',
+            'operation_id' => $operationId
+        ];
+        
+    } catch (Exception $e) {
+        $this->connection->rollback();
+        error_log("Error en updateOperation: " . $e->getMessage());
+        
+        return [
+            'success' => false,
+            'error' => $e->getMessage()
+        ];
+    }
+}
+
+/**
+ * Actualizar datos principales de la operación (CORREGIDO PARA PDO)
+ */
+private function updateMainOperationData($operationId, $data, $id_company, $id_client)
+{
+    $sql = "UPDATE vulnerable_operations SET 
+                id_company_operation = :id_company,
+                id_client_operation = :id_client,
+                tipo_cliente = :tipo_cliente,
+                tipo_operacion = :tipo_operacion,
+                fecha_operacion = :fecha_operacion,
+                monto_operacion = :monto_operacion,
+                moneda = :moneda,
+                moneda_otra = :moneda_otra,
+                forma_pago = :forma_pago,
+                monto_efectivo = :monto_efectivo,
+                tipo_propiedad = :tipo_propiedad,
+                uso_inmueble = :uso_inmueble,
+                direccion_inmueble = :direccion_inmueble,
+                codigo_postal = :codigo_postal,
+                folio_escritura = :folio_escritura,
+                propietario_anterior = :propietario_anterior,
+                requiere_aviso_sat = :requiere_aviso_sat,
+                umbral_superado = :umbral_superado,
+                observaciones = :observaciones,
+                updated_at_operation = NOW()
+            WHERE id_operation = :operation_id";
+    
+    $stmt = $this->connection->prepare($sql);
+    
+    $result = $stmt->execute([
+        ':id_company' => $id_company,
+        ':id_client' => $id_client,
+        ':tipo_cliente' => $this->mapTipoClienteToDb($data['tipo_cliente']),
+        ':tipo_operacion' => $data['tipo_operacion'] ?? null,
+        ':fecha_operacion' => $data['fecha_operacion'] ?? null,
+        ':monto_operacion' => $this->cleanDecimal($data['monto_operacion']),
+        ':moneda' => $data['moneda'] ?? null,
+        ':moneda_otra' => $data['moneda_otra'] ?? null,
+        ':forma_pago' => $data['forma_pago'] ?? null,
+        ':monto_efectivo' => $this->cleanDecimal($data['monto_efectivo']),
+        ':tipo_propiedad' => $data['tipo_propiedad'] ?? null,
+        ':uso_inmueble' => $data['uso_inmueble'] ?? null,
+        ':direccion_inmueble' => $data['direccion_inmueble'] ?? null,
+        ':codigo_postal' => $data['codigo_postal'] ?? null,
+        ':folio_escritura' => $data['folio_escritura'] ?? null,
+        ':propietario_anterior' => $data['propietario_anterior'] ?? null,
+        ':requiere_aviso_sat' => isset($data['requiere_aviso_sat']) ? 1 : 0,
+        ':umbral_superado' => isset($data['umbral_superado']) ? 1 : 0,
+        ':observaciones' => $data['observaciones'] ?? null,
+        ':operation_id' => $operationId
+    ]);
+    
+    if (!$result) {
+        throw new Exception('No se pudo actualizar la operación principal');
+    }
+}
+
+/**
+ * Actualizar beneficiarios controladores (CORREGIDO PARA PDO)
+ */
+private function updateBeneficiariosControladores($operationId, $beneficiarios)
+{
+    // Primero eliminar beneficiarios existentes (soft delete)
+    $deleteQuery = "UPDATE beneficiarios_controladores 
+                   SET status_beneficiario = 0, updated_at = NOW() 
+                   WHERE id_operation = :operation_id";
+    $deleteStmt = $this->connection->prepare($deleteQuery);
+    $deleteStmt->execute([':operation_id' => $operationId]);
+    
+    // Insertar nuevos beneficiarios
+    foreach ($beneficiarios as $tipo => $listaBeneficiarios) {
+        if (is_array($listaBeneficiarios)) {
+            foreach ($listaBeneficiarios as $beneficiario) {
+                if (!empty($beneficiario['nombre']) && !empty($beneficiario['apellido_paterno'])) {
+                    $this->insertBeneficiarioControlador($operationId, $tipo, $beneficiario);
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Insertar un beneficiario controlador (CORREGIDO PARA PDO)
+ */
+private function insertBeneficiarioControlador($operationId, $tipo, $beneficiario)
+{
+    $sql = "INSERT INTO beneficiarios_controladores (
+                id_operation, 
+                tipo_beneficiario, 
+                nombre, 
+                apellido_paterno, 
+                apellido_materno, 
+                rfc, 
+                porcentaje, 
+                status_beneficiario, 
+                created_at, 
+                updated_at
+            ) VALUES (
+                :id_operation, 
+                :tipo_beneficiario, 
+                :nombre, 
+                :apellido_paterno, 
+                :apellido_materno, 
+                :rfc, 
+                :porcentaje, 
+                1, 
+                NOW(), 
+                NOW()
+            )";
+    
+    $stmt = $this->connection->prepare($sql);
+    
+    $stmt->execute([
+        ':id_operation' => $operationId,
+        ':tipo_beneficiario' => $tipo,
+        ':nombre' => $beneficiario['nombre'],
+        ':apellido_paterno' => $beneficiario['apellido_paterno'],
+        ':apellido_materno' => $beneficiario['apellido_materno'] ?? null,
+        ':rfc' => $beneficiario['rfc'] ?? null,
+        ':porcentaje' => $beneficiario['porcentaje'] ?? null
+    ]);
+}
+
+/**
+ * Obtener ID correcto de empresa desde el formulario de edición
+ */
+private function getCorrectCompanyIdForUpdate($data)
+{
+    // Primero intentar obtener desde el campo empresa_id_general del modal de edición
+    if (!empty($data['empresa_id_general'])) {
+        return intval($data['empresa_id_general']);
+    }
+    
+    // Si no está, intentar desde otros campos
+    if (!empty($data['id_company'])) {
+        return intval($data['id_company']);
+    }
+    
+    return $this->getCorrectCompanyId($data);
+}
+
+/**
+ * Obtener ID correcto de cliente desde el formulario de edición
+ */
+private function getCorrectClientIdForUpdate($data)
+{
+    // Primero intentar obtener desde el campo id_cliente_existente_general del modal de edición
+    if (!empty($data['id_cliente_existente_general'])) {
+        return intval($data['id_cliente_existente_general']);
+    }
+    
+    // Si no está, intentar desde otros campos
+    if (!empty($data['id_client'])) {
+        return intval($data['id_client']);
+    }
+    
+    return $this->getCorrectClientId($data);
+}
+
+/**
+ * Obtener detalle de operación para edición (CORREGIDO PARA PDO)
+ */
+public function getOperationDetailForEdit($operationId)
+{
+    $sql = "SELECT 
+                vo.*,
+                c.name_company,
+                c.rfc_company,
+                f.id_folder as cliente_id_folder,
+                f.key_folder as cliente_key_folder,
+                f.name_folder as cliente_name,
+                f.tipo_persona as cliente_tipo_persona,
+                f.rfc_folder as cliente_rfc,
+                f.curp_folder as cliente_curp,
+                f.pf_nombre,
+                f.pf_apellido_paterno,
+                f.pf_apellido_materno,
+                f.pm_razon_social,
+                f.fid_razon_social
+              FROM vulnerable_operations vo
+              LEFT JOIN companies c ON vo.id_company_operation = c.id_company
+              LEFT JOIN folders f ON vo.id_client_operation = f.id_folder
+              WHERE vo.id_operation = :operation_id AND vo.status_operation = 1";
+    
+    $stmt = $this->connection->prepare($sql);
+    $stmt->execute([':operation_id' => $operationId]);
+    $operationData = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($operationData) {
+        // Obtener beneficiarios controladores si es persona moral o fideicomiso
+        $beneficiarios = [];
+        if (in_array($operationData['tipo_cliente'], ['persona_moral', 'fideicomiso'])) {
+            $beneficiariosQuery = "SELECT * FROM beneficiarios_controladores 
+                                 WHERE id_operation = :operation_id AND status_beneficiario = 1";
+            $beneficiariosStmt = $this->connection->prepare($beneficiariosQuery);
+            $beneficiariosStmt->execute([':operation_id' => $operationId]);
+            $beneficiariosResult = $beneficiariosStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            foreach ($beneficiariosResult as $beneficiario) {
+                $beneficiarios[$beneficiario['tipo_beneficiario']][] = $beneficiario;
+            }
+        }
+        
+        // Preparar datos del cliente
+        $clienteData = [
+            'id_folder' => $operationData['cliente_id_folder'],
+            'nombre' => $operationData['pf_nombre'],
+            'apellido_paterno' => $operationData['pf_apellido_paterno'],
+            'apellido_materno' => $operationData['pf_apellido_materno'],
+            'razon_social' => $operationData['pm_razon_social'] ?: $operationData['fid_razon_social'],
+            'rfc' => $operationData['cliente_rfc'],
+            'curp' => $operationData['cliente_curp'],
+            'tipo_persona' => $operationData['cliente_tipo_persona']
+        ];
+        
+        // Agregar beneficiarios a los datos
+        $operationData['cliente_data'] = $clienteData;
+        $operationData['beneficiarios_controladores'] = $beneficiarios['pm'] ?? [];
+        $operationData['beneficiarios_fideicomiso'] = [
+            'fideicomitente' => $beneficiarios['fideicomitente'] ?? [],
+            'fiduciario' => $beneficiarios['fiduciario'] ?? [],
+            'fideicomisario' => $beneficiarios['fideicomisario'] ?? [],
+            'control_efectivo' => $beneficiarios['control_efectivo'] ?? []
+        ];
+        
+        return [
+            'success' => true,
+            'data' => $operationData
+        ];
+    } else {
+        return [
+            'success' => false,
+            'error' => 'Operación no encontrada'
+        ];
+    }
+}
+
 }

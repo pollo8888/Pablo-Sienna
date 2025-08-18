@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 header("Location: vulnerabilities.php?error=1&message=" . urlencode("Error interno del servidor"));
                 exit();
             }
-            break;
+        
     }
 }
 
