@@ -906,6 +906,209 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                             <div id="accordion-formulario"></div>
                             <input name="operation[key_operation]" type="hidden" value="<?php echo $clave; ?>">
                             <input name="operation[tipo_cliente]" type="hidden" id="hidden_tipo_cliente">
+                            <!-- NUEVOS CAMPOS OCULTOS PARA IDs CORRECTOS -->
+                            <input name="operation[empresa_id_general]" type="hidden" id="hidden_empresa_id">
+                            <input name="operation[id_cliente_existente_general]" type="hidden" id="hidden_cliente_id">
+
+
+                            <!-- Sección 0: Información de la Empresa Seleccionada -->
+                            <div class="card mb-3 collapsible-card">
+                                <div class="card-header bg-info text-white" data-toggle="collapse"
+                                    data-target="#collapse-info-empresa" aria-expanded="true"
+                                    aria-controls="collapse-info-empresa">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-building"></i> Información de la Empresa
+                                        <i class="fas fa-chevron-down collapse-icon"></i>
+                                    </h6>
+                                </div>
+                                <div id="collapse-info-empresa" class="collapse show"
+                                    data-parent="#accordion-formulario">
+                                    <div class="card-body bg-light">
+                                        <div class="alert alert-info">
+                                            <small><i class="fas fa-info-circle mr-1"></i>
+                                                Esta información se obtiene automáticamente de la empresa seleccionada y
+                                                no se puede modificar</small>
+                                        </div>
+
+                                        <!-- Información General -->
+                                        <div class="company-info-section mb-4">
+                                            <h6 class="border-bottom pb-2 mb-3"><i
+                                                    class="fas fa-info-circle text-info mr-2"></i>Información General
+                                            </h6>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="font-weight-bold">Nombre:</label>
+                                                        <input type="text"
+                                                            class="form-control-plaintext bg-white border"
+                                                            id="empresa_nombre_display" readonly
+                                                            style="border-color: #dee2e6 !important;">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="font-weight-bold">RFC:</label>
+                                                        <input type="text"
+                                                            class="form-control-plaintext bg-white border"
+                                                            id="empresa_rfc_display" readonly
+                                                            style="border-color: #dee2e6 !important;">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="font-weight-bold">Razón Social:</label>
+                                                        <input type="text"
+                                                            class="form-control-plaintext bg-white border"
+                                                            id="empresa_razon_social_display" readonly
+                                                            style="border-color: #dee2e6 !important;">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="form-group">
+                                                        <label class="font-weight-bold">Tipo:</label>
+                                                        <input type="text"
+                                                            class="form-control-plaintext bg-white border"
+                                                            id="empresa_tipo_display" readonly
+                                                            style="border-color: #dee2e6 !important;">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="form-group">
+                                                        <label class="font-weight-bold">Fecha Constitución:</label>
+                                                        <input type="text"
+                                                            class="form-control-plaintext bg-white border"
+                                                            id="empresa_fecha_constitucion_display" readonly
+                                                            style="border-color: #dee2e6 !important;">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Contacto -->
+                                        <div class="company-info-section mb-4">
+                                            <h6 class="border-bottom pb-2 mb-3"><i
+                                                    class="fas fa-phone text-success mr-2"></i>Contacto</h6>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="font-weight-bold">Teléfono:</label>
+                                                        <input type="text"
+                                                            class="form-control-plaintext bg-white border"
+                                                            id="empresa_telefono_display" readonly
+                                                            style="border-color: #dee2e6 !important;">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="font-weight-bold">Email:</label>
+                                                        <input type="text"
+                                                            class="form-control-plaintext bg-white border"
+                                                            id="empresa_email_display" readonly
+                                                            style="border-color: #dee2e6 !important;">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Ubicación -->
+                                        <div class="company-info-section mb-4">
+                                            <h6 class="border-bottom pb-2 mb-3"><i
+                                                    class="fas fa-map-marker-alt text-danger mr-2"></i>Ubicación</h6>
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label class="font-weight-bold">Estado:</label>
+                                                        <input type="text"
+                                                            class="form-control-plaintext bg-white border"
+                                                            id="empresa_estado_display" readonly
+                                                            style="border-color: #dee2e6 !important;">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label class="font-weight-bold">Ciudad:</label>
+                                                        <input type="text"
+                                                            class="form-control-plaintext bg-white border"
+                                                            id="empresa_ciudad_display" readonly
+                                                            style="border-color: #dee2e6 !important;">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label class="font-weight-bold">Colonia:</label>
+                                                        <input type="text"
+                                                            class="form-control-plaintext bg-white border"
+                                                            id="empresa_colonia_display" readonly
+                                                            style="border-color: #dee2e6 !important;">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="font-weight-bold">Dirección:</label>
+                                                        <input type="text"
+                                                            class="form-control-plaintext bg-white border"
+                                                            id="empresa_direccion_display" readonly
+                                                            style="border-color: #dee2e6 !important;">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="font-weight-bold">C.P.:</label>
+                                                        <input type="text"
+                                                            class="form-control-plaintext bg-white border"
+                                                            id="empresa_cp_display" readonly
+                                                            style="border-color: #dee2e6 !important;">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Representante Legal -->
+                                        <div class="company-info-section">
+                                            <h6 class="border-bottom pb-2 mb-3"><i
+                                                    class="fas fa-user-tie text-warning mr-2"></i>Representante Legal
+                                            </h6>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="font-weight-bold">Nombre:</label>
+                                                        <input type="text"
+                                                            class="form-control-plaintext bg-white border"
+                                                            id="empresa_representante_nombre_display" readonly
+                                                            style="border-color: #dee2e6 !important;">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="form-group">
+                                                        <label class="font-weight-bold">RFC:</label>
+                                                        <input type="text"
+                                                            class="form-control-plaintext bg-white border"
+                                                            id="empresa_representante_rfc_display" readonly
+                                                            style="border-color: #dee2e6 !important;">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="form-group">
+                                                        <label class="font-weight-bold">CURP:</label>
+                                                        <input type="text"
+                                                            class="form-control-plaintext bg-white border"
+                                                            id="empresa_representante_curp_display" readonly
+                                                            style="border-color: #dee2e6 !important;">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+
+
 
                             <!-- Sección 1: Tipo de Cliente -->
                             <div class="card mb-3 collapsible-card">
@@ -989,6 +1192,9 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                                     </div>
                                 </div>
                             </div>
+
+
+
 
                             <!-- Sección 2: Información de la Operación -->
                             <div class="card mb-3 collapsible-card card-required">
@@ -2938,35 +3144,66 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
         }
 
         // Función para editar campo clickeable
+        // Función para editar campo clickeable (VERSIÓN MEJORADA)
         function editarCampo(id, campo) {
-            var tipoInfo = '';
-            if (campo === 'empresa') {
-                tipoInfo = 'información de la empresa (dirección, teléfono, contacto, etc.)';
-            } else if (campo === 'cliente') {
-                tipoInfo = 'información del cliente (domicilio, teléfono, RFC, etc.)';
-            }
+            console.log('editarCampo called with:', id, campo);
 
-            var confirmar = confirm('¿Desea agregar/completar ' + tipoInfo + '?');
-            if (confirmar) {
-                // Buscar la operación en todas las categorías
-                for (var categoria in operacionesData) {
-                    var operaciones = operacionesData[categoria];
-                    for (var i = 0; i < operaciones.length; i++) {
-                        if (operaciones[i].id === id) {
-                            // Marcar como información completa
-                            operaciones[i][campo + '_missing_info'] = false;
-                            break;
+            // Mostrar loading
+            var loadingMsg = campo === 'empresa' ? 'Buscando carpeta de la empresa...' : 'Buscando carpeta del cliente...';
+
+            // Crear un elemento de loading temporal
+            var loadingElement = $('<div id="loading-redirect" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; z-index: 9999;">' +
+                '<i class="fas fa-spinner fa-spin"></i> ' + loadingMsg +
+                '</div>');
+            $('body').append(loadingElement);
+
+            // Realizar petición AJAX para obtener la información de la carpeta
+            $.ajax({
+                url: 'get_folder_info.php',
+                type: 'POST',
+                data: {
+                    action: 'getFolderInfo',
+                    operation_id: id,
+                    campo: campo
+                },
+                dataType: 'json',
+                success: function (response) {
+                    $('#loading-redirect').remove();
+
+                    if (response.success && response.folder_info) {
+                        var folderInfo = response.folder_info;
+                        console.log('Folder info received:', folderInfo);
+
+                        if (campo === 'empresa') {
+                            // Para empresa, redirigir a la carpeta principal de la empresa
+                            if (folderInfo.empresa_folder_id && folderInfo.empresa_key) {
+                                var url = '../folders/subfolder.php?id=' + folderInfo.empresa_folder_id + '&key=' + folderInfo.empresa_key;
+                                console.log('Redirecting to empresa folder:', url);
+                                window.location.href = url;
+                            } else {
+                                alert('No se encontró la carpeta de la empresa.');
+                            }
+                        } else if (campo === 'cliente') {
+                            // Para cliente, redirigir a la subcarpeta del cliente
+                            if (folderInfo.cliente_folder_id && folderInfo.cliente_key) {
+                                var url = '../folders/subfolder.php?id=' + folderInfo.cliente_folder_id + '&key=' + folderInfo.cliente_key;
+                                console.log('Redirecting to cliente folder:', url);
+                                window.location.href = url;
+                            } else {
+                                alert('No se encontró la carpeta del cliente.');
+                            }
                         }
+                    } else {
+                        alert('Error: ' + (response.error || 'No se pudo obtener la información de la carpeta'));
                     }
+                },
+                error: function (xhr, status, error) {
+                    $('#loading-redirect').remove();
+                    console.error('Error AJAX:', error);
+                    alert('Error al buscar la información de la carpeta. Intente nuevamente.');
                 }
-
-                // Recargar la tabla actual
-                aplicarFiltros();
-
-                alert('Información completada correctamente. El círculo naranja se ha removido.');
-            }
+            });
         }
-
         // =====================================================================
         // SECCIÓN 2: NUEVAS FUNCIONES PARA EMPRESAS Y CLIENTES CENTRALIZADOS
         // =====================================================================
@@ -3714,8 +3951,278 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
 
 
 
+        // =====================================================================
+        // FUNCIONES PARA MANEJAR LA INFORMACIÓN DE LA EMPRESA
+        // =====================================================================
+
+        /**
+         * Función para poblar los campos de información de la empresa
+         * Se llama cuando se selecciona una empresa en el select
+         */
+        function poblarInformacionEmpresa(empresaData) {
+            console.log('Poblando información de empresa:', empresaData);
+
+            if (!empresaData) {
+                limpiarInformacionEmpresa();
+                return;
+            }
+
+            // Información General
+            $('#empresa_nombre_display').val(empresaData.name_company || '');
+            $('#empresa_rfc_display').val(empresaData.rfc_company || '');
+            $('#empresa_razon_social_display').val(empresaData.razon_social || empresaData.name_company || '');
+            $('#empresa_tipo_display').val(formatearTipoPersona(empresaData.tipo_persona) || '');
+            $('#empresa_fecha_constitucion_display').val(formatearFecha(empresaData.fecha_constitucion) || '');
+
+            // Contacto
+            $('#empresa_telefono_display').val(empresaData.telefono || '');
+            $('#empresa_email_display').val(empresaData.email || '');
+
+            // Ubicación
+            $('#empresa_estado_display').val(empresaData.estado || '');
+            $('#empresa_ciudad_display').val(empresaData.ciudad || '');
+            $('#empresa_colonia_display').val(empresaData.colonia || '');
+
+            // Construir dirección completa
+            let direccion = construirDireccionCompleta(empresaData);
+            $('#empresa_direccion_display').val(direccion);
+            $('#empresa_cp_display').val(empresaData.codigo_postal || '');
+
+            // Representante Legal
+            let nombreRepresentante = construirNombreRepresentante(empresaData);
+            $('#empresa_representante_nombre_display').val(nombreRepresentante);
+            $('#empresa_representante_rfc_display').val(empresaData.apoderado_rfc || '');
+            $('#empresa_representante_curp_display').val(empresaData.apoderado_curp || '');
+        }
+
+        /**
+         * Función para limpiar todos los campos de información de empresa
+         */
+        function limpiarInformacionEmpresa() {
+            console.log('Limpiando información de empresa');
+
+            // Información General
+            $('#empresa_nombre_display').val('');
+            $('#empresa_rfc_display').val('');
+            $('#empresa_razon_social_display').val('');
+            $('#empresa_tipo_display').val('');
+            $('#empresa_fecha_constitucion_display').val('');
+
+            // Contacto
+            $('#empresa_telefono_display').val('');
+            $('#empresa_email_display').val('');
+
+            // Ubicación
+            $('#empresa_estado_display').val('');
+            $('#empresa_ciudad_display').val('');
+            $('#empresa_colonia_display').val('');
+            $('#empresa_direccion_display').val('');
+            $('#empresa_cp_display').val('');
+
+            // Representante Legal
+            $('#empresa_representante_nombre_display').val('');
+            $('#empresa_representante_rfc_display').val('');
+            $('#empresa_representante_curp_display').val('');
+        }
+
+        /**
+         * Función auxiliar para formatear el tipo de persona
+         */
+        function formatearTipoPersona(tipo) {
+            if (!tipo) return '';
+
+            switch (tipo.toLowerCase()) {
+                case 'fisica':
+                    return 'Persona Física';
+                case 'moral':
+                    return 'Persona Moral';
+                case 'fideicomiso':
+                    return 'Fideicomiso';
+                default:
+                    return tipo;
+            }
+        }
+
+        /**
+         * Función auxiliar para formatear fechas
+         */
+        function formatearFecha(fecha) {
+            if (!fecha) return '';
+
+            try {
+                // Si la fecha viene en formato YYYY-MM-DD, convertir a DD/MM/YYYY
+                if (fecha.includes('-')) {
+                    let partes = fecha.split('-');
+                    if (partes.length === 3) {
+                        return `${partes[2]}/${partes[1]}/${partes[0]}`;
+                    }
+                }
+                return fecha;
+            } catch (e) {
+                console.error('Error al formatear fecha:', e);
+                return fecha;
+            }
+        }
+
+        /**
+         * Función auxiliar para construir la dirección completa
+         */
+        function construirDireccionCompleta(empresaData) {
+            let direccion = '';
+
+            if (empresaData.calle) {
+                direccion += empresaData.calle;
+
+                if (empresaData.num_exterior) {
+                    direccion += ' ' + empresaData.num_exterior;
+                }
+
+                if (empresaData.num_interior) {
+                    direccion += ' Int. ' + empresaData.num_interior;
+                }
+            }
+
+            return direccion;
+        }
+
+        /**
+         * Función auxiliar para construir el nombre completo del representante
+         */
+        function construirNombreRepresentante(empresaData) {
+            let nombre = '';
+
+            if (empresaData.apoderado_nombre) {
+                nombre += empresaData.apoderado_nombre;
+
+                if (empresaData.apoderado_apellido_paterno) {
+                    nombre += ' ' + empresaData.apoderado_apellido_paterno;
+                }
+
+                if (empresaData.apoderado_apellido_materno) {
+                    nombre += ' ' + empresaData.apoderado_apellido_materno;
+                }
+            }
+
+            return nombre;
+        }
+
+        /**
+         * Función para obtener los datos de empresa por ID
+         * Esta función debe llamarse cuando se selecciona una empresa
+         */
+        function obtenerDatosEmpresa(empresaId, callback) {
+            if (!empresaId) {
+                limpiarInformacionEmpresa();
+                if (callback) callback(null);
+                return;
+            }
+
+            console.log('Obteniendo datos de empresa ID:', empresaId);
+
+            // Realizar petición AJAX para obtener los datos completos de la empresa
+            $.ajax({
+                url: 'get_company_data.php', // Necesitarás crear este archivo
+                type: 'POST',
+                data: {
+                    action: 'getCompanyData',
+                    company_id: empresaId
+                },
+                dataType: 'json',
+                success: function (response) {
+                    console.log('Respuesta del servidor:', response);
+
+                    if (response.success && response.data) {
+                        poblarInformacionEmpresa(response.data);
+                        if (callback) callback(response.data);
+                    } else {
+                        console.error('Error al obtener datos de empresa:', response.error || 'Respuesta inválida');
+                        limpiarInformacionEmpresa();
+                        if (callback) callback(null);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error AJAX al obtener datos de empresa:', error);
+                    limpiarInformacionEmpresa();
+                    if (callback) callback(null);
+                }
+            });
+        }
+
+        /**
+         * Función para integrar con el select de empresa existente
+         * Modifica la función existente de cambio de empresa
+         */
+        function integrarConSelectEmpresa() {
+            // Interceptar el evento change del select de empresa
+            $(document).on('change', '#select_empresa_general', function () {
+                let empresaId = $(this).val();
+                console.log('Empresa seleccionada:', empresaId);
+
+                if (empresaId) {
+                    // Obtener datos de la empresa y poblar los campos
+                    obtenerDatosEmpresa(empresaId, function (empresaData) {
+                        if (empresaData) {
+                            console.log('Información de empresa cargada exitosamente');
+                        } else {
+                            console.warn('No se pudieron cargar los datos de la empresa');
+                        }
+                    });
+                } else {
+                    limpiarInformacionEmpresa();
+                }
+            });
+        }
+
+        // =====================================================================
+        // INICIALIZACIÓN
+        // =====================================================================
+
+        $(document).ready(function () {
+            // Integrar las funciones con el select existente
+            integrarConSelectEmpresa();
+
+            console.log('Sistema de información de empresa inicializado');
+        });
 
 
 
 
+
+
+
+
+    </script>
+
+    <script>
+        $(document).ready(function () {
+            // Sincronizar el ID de empresa cuando cambie el select
+            $('#select_empresa_general').on('change', function () {
+                var empresaId = $(this).val();
+                $('#hidden_empresa_id').val(empresaId);
+                console.log('ID de empresa sincronizado:', empresaId);
+            });
+
+            // Sincronizar el ID de cliente cuando cambie el select
+            $('#select_cliente_general').on('change', function () {
+                var clienteId = $(this).val();
+                $('#hidden_cliente_id').val(clienteId);
+                console.log('ID de cliente sincronizado:', clienteId);
+            });
+
+            // Debug: Ver qué datos se envían al hacer submit
+            $('#formAgregarOperacion').on('submit', function () {
+                console.log('=== DATOS DEL FORMULARIO ===');
+                console.log('Empresa ID:', $('#hidden_empresa_id').val());
+                console.log('Cliente ID:', $('#hidden_cliente_id').val());
+                console.log('Tipo Cliente:', $('#hidden_tipo_cliente').val());
+
+                // Validar que se haya seleccionado empresa
+                if (!$('#hidden_empresa_id').val()) {
+                    alert('Debe seleccionar una empresa antes de registrar la operación');
+                    return false;
+                }
+
+                return true;
+            });
+        });
     </script>

@@ -19,41 +19,248 @@ class OperationController
     /**
      * Crear nueva operación vulnerable
      */
+
     public function createOperation($operationData)
     {
         try {
+            // DEBUG: Ver exactamente qué datos llegan
+            error_log("=== DEBUG OPERATION DATA ===");
+            error_log("Datos recibidos: " . print_r($operationData, true));
+            error_log("POST completo: " . print_r($_POST, true));
+            error_log("Empresa ID del formulario: " . ($operationData['empresa_id_general'] ?? 'NO DEFINIDO'));
+            error_log("Cliente ID del formulario: " . ($operationData['id_cliente_existente_general'] ?? 'NO DEFINIDO'));
+            error_log("Tipo cliente: " . ($operationData['tipo_cliente'] ?? 'NO DEFINIDO'));
+            error_log("============================");
+
             $this->connection->beginTransaction();
 
             // 1. INSERTAR OPERACIÓN PRINCIPAL
             $operationId = $this->insertMainOperation($operationData);
 
+            error_log("Operation ID creado: " . $operationId);
+
             // 2. INSERTAR DATOS ESPECÍFICOS SEGÚN TIPO DE CLIENTE
-            switch ($operationData['tipo_cliente']) {
-                case 'Persona Física':
+            $tipoCliente = $this->mapTipoClienteToDb($operationData['tipo_cliente']);
+
+            switch ($tipoCliente) {
+                case 'persona_fisica':
+                    error_log("Insertando datos de Persona Física");
                     $this->insertPersonaFisica($operationId, $operationData);
                     break;
-                case 'Persona Moral':
+                case 'persona_moral':
+                    error_log("Insertando datos de Persona Moral");
                     $pmId = $this->insertPersonaMoral($operationId, $operationData);
                     $this->insertBeneficiarios($pmId, $operationData);
                     break;
-                case 'Fideicomiso':
+                case 'fideicomiso':
+                    error_log("Insertando datos de Fideicomiso");
                     $fidId = $this->insertFideicomiso($operationId, $operationData);
                     $this->insertFideicomisoRoles($fidId, $operationData);
+                    break;
+                default:
+                    error_log("Tipo de cliente no reconocido, usando Persona Física por defecto");
+                    $this->insertPersonaFisica($operationId, $operationData);
                     break;
             }
 
             $this->connection->commit();
+
+            error_log("Operación creada exitosamente con ID: " . $operationId);
             return ['success' => true, 'operation_id' => $operationId];
 
         } catch (Exception $e) {
             $this->connection->rollback();
+            error_log("ERROR en createOperation: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
             return ['success' => false, 'error' => $e->getMessage()];
         }
     }
 
+
+
+
     /**
-     * Insertar operación principal
+     * Determinar si requiere aviso al SAT
      */
+    private function determineAvisoSat($data)
+    {
+        $monto = $this->cleanDecimal($data['monto_operacion']);
+        $tipoOperacion = $data['tipo_operacion'] ?? 'compraventa';
+
+        if (!$monto) {
+            return 0;
+        }
+
+        // Obtener umbral desde la tabla pld_thresholds
+        try {
+            $sql = "SELECT monto_minimo FROM pld_thresholds 
+                WHERE tipo_operacion = :tipo AND activo = 1 
+                ORDER BY monto_minimo ASC LIMIT 1";
+            $stmt = $this->connection->prepare($sql);
+            $stmt->execute([':tipo' => $tipoOperacion]);
+            $umbral = $stmt->fetchColumn();
+
+            // Si no hay umbral específico, usar el umbral por defecto
+            if (!$umbral) {
+                $umbral = 1605000; // Umbral por defecto del SAT para 2024-2025
+            }
+
+            return ($monto >= $umbral) ? 1 : 0;
+
+        } catch (Exception $e) {
+            // Si hay error con la consulta, usar umbral por defecto
+            error_log("Error al obtener umbral SAT: " . $e->getMessage());
+            return ($monto >= 1605000) ? 1 : 0;
+        }
+    }
+
+    /**
+     * Determinar si el umbral fue superado
+     */
+    private function determineUmbralSuperado($data)
+    {
+        $monto = $this->cleanDecimal($data['monto_operacion']);
+        $tipoOperacion = $data['tipo_operacion'] ?? 'compraventa';
+
+        if (!$monto) {
+            return 0;
+        }
+
+        // Obtener umbral desde la tabla pld_thresholds
+        try {
+            $sql = "SELECT monto_minimo FROM pld_thresholds 
+                WHERE tipo_operacion = :tipo AND activo = 1 
+                ORDER BY monto_minimo ASC LIMIT 1";
+            $stmt = $this->connection->prepare($sql);
+            $stmt->execute([':tipo' => $tipoOperacion]);
+            $umbral = $stmt->fetchColumn();
+
+            // Si no hay umbral específico, usar el umbral por defecto
+            if (!$umbral) {
+                $umbral = 1605000; // Umbral por defecto del SAT
+            }
+
+            return ($monto >= $umbral) ? 1 : 0;
+
+        } catch (Exception $e) {
+            // Si hay error con la consulta, usar umbral por defecto
+            error_log("Error al obtener umbral: " . $e->getMessage());
+            return ($monto >= 1605000) ? 1 : 0;
+        }
+    }
+
+    /**
+     * Método alternativo más simple si no tienes tabla de umbrales
+     */
+    private function determineAvisoSatSimple($data)
+    {
+        $monto = $this->cleanDecimal($data['monto_operacion']);
+
+        if (!$monto) {
+            return 0;
+        }
+
+        // Umbral fijo para operaciones inmobiliarias (actualizado para 2024-2025)
+        $umbralSAT = 1605000; // Pesos mexicanos
+
+        return ($monto >= $umbralSAT) ? 1 : 0;
+    }
+
+    /**
+     * Método alternativo más simple si no tienes tabla de umbrales
+     */
+    private function determineUmbralSuperadoSimple($data)
+    {
+        $monto = $this->cleanDecimal($data['monto_operacion']);
+
+        if (!$monto) {
+            return 0;
+        }
+
+        // Umbral fijo para operaciones inmobiliarias
+        $umbralSAT = 1605000; // Pesos mexicanos
+
+        return ($monto >= $umbralSAT) ? 1 : 0;
+    }
+
+
+
+
+    /**
+     * Obtener el ID correcto de la empresa desde el formulario
+     */
+    private function getCorrectCompanyId($data)
+    {
+        // 1. Primero intentar obtener desde el campo empresa_id_general del modal
+        if (!empty($data['empresa_id_general'])) {
+            return intval($data['empresa_id_general']);
+        }
+
+        // 2. Si no está, intentar desde otros campos
+        if (!empty($data['id_company'])) {
+            return intval($data['id_company']);
+        }
+
+        // 3. Como último recurso, usar la empresa por defecto del usuario
+        if (isset($_SESSION['user']['id_company']) && !empty($_SESSION['user']['id_company'])) {
+            return intval($_SESSION['user']['id_company']);
+        }
+
+        // 4. Si todo falla, obtener la primera empresa disponible
+        try {
+            $sql = "SELECT id_company FROM companies WHERE status_company = 1 LIMIT 1";
+            $stmt = $this->connection->prepare($sql);
+            $stmt->execute();
+            $result = $stmt->fetchColumn();
+            return $result ? intval($result) : 1;
+        } catch (Exception $e) {
+            return 1; // Fallback
+        }
+    }
+
+
+
+    /**
+     * Obtener el ID correcto del cliente desde el formulario
+     */
+    private function getCorrectClientId($data)
+    {
+        // 1. Primero intentar obtener desde el campo id_cliente_existente_general del modal
+        if (!empty($data['id_cliente_existente_general'])) {
+            return intval($data['id_cliente_existente_general']);
+        }
+
+        // 2. Si no está, intentar desde otros campos
+        if (!empty($data['id_client'])) {
+            return intval($data['id_client']);
+        }
+
+        // 3. Si no hay cliente seleccionado, podría ser un cliente nuevo
+        // En este caso, deberías crear primero el cliente y luego devolver su ID
+        return null; // O crear el cliente nuevo aquí
+    }
+
+    /**
+     * Mapear tipo de cliente del formulario al formato de la base de datos
+     */
+    private function mapTipoClienteToDb($tipo)
+    {
+        switch (strtolower($tipo)) {
+            case 'persona_fisica':
+            case 'personas-fisicas':
+                return 'persona_fisica';
+            case 'persona_moral':
+            case 'personas-morales':
+                return 'persona_moral';
+            case 'fideicomiso':
+            case 'fideicomisos':
+                return 'fideicomiso';
+            default:
+                return 'persona_fisica';
+        }
+    }
+
+
 
     /**
      * Insertar operación principal (VERSIÓN CORREGIDA)
@@ -61,67 +268,57 @@ class OperationController
     private function insertMainOperation($data)
     {
         $sql = "INSERT INTO vulnerable_operations (
-            id_user_operation, id_company_operation, id_client_operation, key_operation,
-            tipo_cliente, tipo_operacion, fecha_operacion, monto_operacion, moneda, moneda_otra,
-            forma_pago, monto_efectivo, tipo_propiedad, uso_inmueble, direccion_inmueble,
-            codigo_postal, folio_escritura, propietario_anterior, requiere_aviso_sat,
-            umbral_superado, observaciones, status_operation, created_at_operation, updated_at_operation
-        ) VALUES (
-            :id_user, :id_company, :id_client, :key_operation,
-            :tipo_cliente, :tipo_operacion, :fecha_operacion, :monto_operacion, :moneda, :moneda_otra,
-            :forma_pago, :monto_efectivo, :tipo_propiedad, :uso_inmueble, :direccion_inmueble,
-            :codigo_postal, :folio_escritura, :propietario_anterior, :requiere_aviso_sat,
-            :umbral_superado, :observaciones, 1, NOW(), NOW()
-        )";
+        id_user_operation, id_company_operation, id_client_operation, key_operation,
+        tipo_cliente, tipo_operacion, fecha_operacion, monto_operacion, moneda, moneda_otra,
+        forma_pago, monto_efectivo, tipo_propiedad, uso_inmueble, direccion_inmueble,
+        codigo_postal, folio_escritura, propietario_anterior, requiere_aviso_sat,
+        umbral_superado, observaciones, status_operation, created_at_operation, updated_at_operation
+    ) VALUES (
+        :id_user, :id_company, :id_client, :key_operation,
+        :tipo_cliente, :tipo_operacion, :fecha_operacion, :monto_operacion, :moneda, :moneda_otra,
+        :forma_pago, :monto_efectivo, :tipo_propiedad, :uso_inmueble, :direccion_inmueble,
+        :codigo_postal, :folio_escritura, :propietario_anterior, :requiere_aviso_sat,
+        :umbral_superado, :observaciones, :status_operation, NOW(), NOW()
+    )";
 
         $stmt = $this->connection->prepare($sql);
 
-        // Calcular si requiere aviso SAT
-        $requiereAviso = $this->calcularAvisoSAT($data['tipo_operacion'], $data['monto_operacion']);
+        // OBTENER IDs CORRECTOS DEL FORMULARIO
+        $id_user = $_SESSION['user']['id_user']; // ID del usuario que registra
 
-        // ✅ FUNCIÓN PARA LIMPIAR VALORES DECIMALES
-        $cleanDecimal = function ($value) {
-            if (empty($value) || $value === '' || $value === null) {
-                return null;
-            }
-            return floatval($value);
-        };
+        // ID de la empresa seleccionada en el modal
+        $id_company = $this->getCorrectCompanyId($data);
 
-        // ✅ FUNCIÓN PARA LIMPIAR STRINGS
-        $cleanString = function ($value) {
-            if (empty($value) || $value === '') {
-                return null;
-            }
-            return trim($value);
-        };
+        // ID del cliente seleccionado en el modal  
+        $id_client = $this->getCorrectClientId($data);
 
         $stmt->execute([
-            ':id_user' => $_SESSION['user']['id_user'],
-            ':id_company' => $this->getCompanyId($data),
-            ':id_client' => $this->getClientId($data),
+            ':id_user' => $id_user,
+            ':id_company' => $id_company,
+            ':id_client' => $id_client,
             ':key_operation' => $data['key_operation'],
-            ':tipo_cliente' => $this->mapTipoCliente($data['tipo_cliente']),
-            ':tipo_operacion' => $data['tipo_operacion'],
-            ':fecha_operacion' => $data['fecha_operacion'],
-            ':monto_operacion' => $cleanDecimal($data['monto_operacion']), // ✅ Limpiar decimal
-            ':moneda' => $data['moneda'],
-            ':moneda_otra' => $cleanString($data['moneda_otra']), // ✅ Limpiar string
-            ':forma_pago' => $data['forma_pago'],
-            ':monto_efectivo' => $cleanDecimal($data['monto_efectivo']), // ✅ AQUÍ ESTABA EL PROBLEMA
-            ':tipo_propiedad' => $data['tipo_propiedad'],
-            ':uso_inmueble' => $cleanString($data['uso_inmueble']),
-            ':direccion_inmueble' => $cleanString($data['direccion_inmueble']),
-            ':codigo_postal' => $cleanString($data['codigo_postal']),
-            ':folio_escritura' => $cleanString($data['folio_escritura']),
-            ':propietario_anterior' => $cleanString($data['propietario_anterior']),
-            ':requiere_aviso_sat' => $requiereAviso['requiere'],
-            ':umbral_superado' => $requiereAviso['umbral_superado'],
-            ':observaciones' => $cleanString($data['observaciones'])
+            ':tipo_cliente' => $this->mapTipoClienteToDb($data['tipo_cliente']),
+            ':tipo_operacion' => $data['tipo_operacion'] ?? null,
+            ':fecha_operacion' => $data['fecha_operacion'] ?? null,
+            ':monto_operacion' => $this->cleanDecimal($data['monto_operacion']),
+            ':moneda' => $data['moneda'] ?? 'MXN',
+            ':moneda_otra' => $data['moneda_otra'] ?? null,
+            ':forma_pago' => $data['forma_pago'] ?? null,
+            ':monto_efectivo' => $this->cleanDecimal($data['monto_efectivo']),
+            ':tipo_propiedad' => $data['tipo_propiedad'] ?? null,
+            ':uso_inmueble' => $data['uso_inmueble'] ?? null,
+            ':direccion_inmueble' => $data['direccion_inmueble'] ?? null,
+            ':codigo_postal' => $data['codigo_postal'] ?? null,
+            ':folio_escritura' => $data['folio_escritura'] ?? null,
+            ':propietario_anterior' => $data['propietario_anterior'] ?? null,
+            ':requiere_aviso_sat' => $this->determineAvisoSat($data),
+            ':umbral_superado' => $this->determineUmbralSuperado($data),
+            ':observaciones' => $data['observaciones'] ?? null,
+            ':status_operation' => 1
         ]);
 
         return $this->connection->lastInsertId();
     }
-
     /**
      * Insertar datos de Persona Física
      */
@@ -470,9 +667,9 @@ class OperationController
     /**
      * Obtener operaciones para mostrar en tabla
      */
-public function getOperations($filters = [])
-{
-    $sql = "SELECT 
+    public function getOperations($filters = [])
+    {
+        $sql = "SELECT 
         vo.id_operation,
         vo.key_operation,
         vo.fecha_operacion,
@@ -502,50 +699,50 @@ public function getOperations($filters = [])
     LEFT JOIN operation_fideicomiso fid ON vo.id_operation = fid.id_operation
     WHERE vo.status_operation = 1";
 
-    $params = [];
+        $params = [];
 
-    // Mapear filtro a formato de BD
-    if (!empty($filters['tipo_cliente'])) {
-        $sql .= " AND vo.tipo_cliente = :tipo_cliente";
-        $params[':tipo_cliente'] = $this->mapTipoCliente($filters['tipo_cliente']);
+        // Mapear filtro a formato de BD
+        if (!empty($filters['tipo_cliente'])) {
+            $sql .= " AND vo.tipo_cliente = :tipo_cliente";
+            $params[':tipo_cliente'] = $this->mapTipoCliente($filters['tipo_cliente']);
+        }
+        if (!empty($filters['year'])) {
+            $sql .= " AND YEAR(vo.fecha_operacion) = :year";
+            $params[':year'] = $filters['year'];
+        }
+        if (!empty($filters['month'])) {
+            $sql .= " AND MONTH(vo.fecha_operacion) = :month";
+            $params[':month'] = $filters['month'];
+        }
+
+        $sql .= " ORDER BY vo.fecha_operacion DESC";
+
+        $stmt = $this->connection->prepare($sql);
+        $stmt->execute($params);
+
+        $operations = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $semaforo = $row['requiere_aviso_sat'] ? 'rojo' : ($row['monto_operacion'] > 1000000 ? 'amarillo' : 'verde');
+
+            $operations[] = [
+                'id' => $row['id_operation'],
+                'empresa' => $row['empresa'],
+                'cliente' => $row['cliente'],
+                'fecha_operacion' => $row['fecha_operacion'],
+                'tipo_propiedad' => $row['tipo_propiedad'],
+                'uso_inmueble' => $row['uso_inmueble'],
+                'direccion_inmueble' => $row['direccion_inmueble'],
+                'folio_escritura' => $row['folio_escritura'] ?? 'N/A',
+                'codigo_postal' => $row['codigo_postal'],
+                'propietario_anterior' => $row['propietario_anterior'],
+                'semaforo' => $semaforo,
+                'empresa_missing_info' => false,
+                'cliente_missing_info' => false
+            ];
+        }
+
+        return $operations;
     }
-    if (!empty($filters['year'])) {
-        $sql .= " AND YEAR(vo.fecha_operacion) = :year";
-        $params[':year'] = $filters['year'];
-    }
-    if (!empty($filters['month'])) {
-        $sql .= " AND MONTH(vo.fecha_operacion) = :month";
-        $params[':month'] = $filters['month'];
-    }
-
-    $sql .= " ORDER BY vo.fecha_operacion DESC";
-
-    $stmt = $this->connection->prepare($sql);
-    $stmt->execute($params);
-
-    $operations = [];
-    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        $semaforo = $row['requiere_aviso_sat'] ? 'rojo' : ($row['monto_operacion'] > 1000000 ? 'amarillo' : 'verde');
-
-        $operations[] = [
-            'id' => $row['id_operation'],
-            'empresa' => $row['empresa'],
-            'cliente' => $row['cliente'],
-            'fecha_operacion' => $row['fecha_operacion'],
-            'tipo_propiedad' => $row['tipo_propiedad'],
-            'uso_inmueble' => $row['uso_inmueble'],
-            'direccion_inmueble' => $row['direccion_inmueble'],
-            'folio_escritura' => $row['folio_escritura'] ?? 'N/A',
-            'codigo_postal' => $row['codigo_postal'],
-            'propietario_anterior' => $row['propietario_anterior'],
-            'semaforo' => $semaforo,
-            'empresa_missing_info' => false,
-            'cliente_missing_info' => false
-        ];
-    }
-
-    return $operations;
-}
 
 
 
@@ -614,9 +811,9 @@ public function getOperations($filters = [])
 
 
     public function getOperationDetail($idOperation)
-{
-    // Operación + empresa + joins a tablas específicas
-    $sql = "SELECT 
+    {
+        // Operación + empresa + joins a tablas específicas
+        $sql = "SELECT 
               vo.*,
               c.name_company,
               pf.id_operation IS NOT NULL AS has_pf,
@@ -655,66 +852,66 @@ public function getOperations($filters = [])
             LEFT JOIN operation_fideicomiso fid ON vo.id_operation = fid.id_operation
             WHERE vo.id_operation = :id AND vo.status_operation = 1";
 
-    $stmt = $this->connection->prepare($sql);
-    $stmt->execute([':id' => $idOperation]);
-    $main = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt = $this->connection->prepare($sql);
+        $stmt->execute([':id' => $idOperation]);
+        $main = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$main) {
-        throw new Exception('Operación no encontrada.');
-    }
-
-    // Beneficiarios (solo si es PM)
-    $beneficiarios = [];
-    if (!empty($main['has_pm'])) {
-        // Obtener id_pm
-        $stmtPm = $this->connection->prepare("SELECT id_pm FROM operation_persona_moral WHERE id_operation = :id");
-        $stmtPm->execute([':id' => $idOperation]);
-        $idPm = $stmtPm->fetchColumn();
-
-        if ($idPm) {
-            $stmtB = $this->connection->prepare("SELECT * FROM operation_beneficiarios WHERE id_pm = :id_pm ORDER BY beneficiario_nombre ASC");
-            $stmtB->execute([':id_pm' => $idPm]);
-            $beneficiarios = $stmtB->fetchAll(PDO::FETCH_ASSOC);
+        if (!$main) {
+            throw new Exception('Operación no encontrada.');
         }
-    }
 
-    // Roles de fideicomiso (si aplica)
-    $roles = [
-        'fideicomitentes' => [],
-        'fiduciarios' => [],
-        'fideicomisarios' => [],
-        'control_efectivo' => []
-    ];
-    if (!empty($main['has_fid'])) {
-        // Obtener id_fid
-        $stmtF = $this->connection->prepare("SELECT id_fid FROM operation_fideicomiso WHERE id_operation = :id");
-        $stmtF->execute([':id' => $idOperation]);
-        $idFid = $stmtF->fetchColumn();
+        // Beneficiarios (solo si es PM)
+        $beneficiarios = [];
+        if (!empty($main['has_pm'])) {
+            // Obtener id_pm
+            $stmtPm = $this->connection->prepare("SELECT id_pm FROM operation_persona_moral WHERE id_operation = :id");
+            $stmtPm->execute([':id' => $idOperation]);
+            $idPm = $stmtPm->fetchColumn();
 
-        if ($idFid) {
-            foreach (['fideicomitentes','fiduciarios','fideicomisarios','control_efectivo'] as $tabla) {
-                $table = $tabla === 'control_efectivo' ? 'operation_control_efectivo' : "operation_{$tabla}";
-                $stmtR = $this->connection->prepare("SELECT * FROM {$table} WHERE id_fid = :id_fid ORDER BY 1");
-                $stmtR->execute([':id_fid' => $idFid]);
-                $roles[$tabla] = $stmtR->fetchAll(PDO::FETCH_ASSOC);
+            if ($idPm) {
+                $stmtB = $this->connection->prepare("SELECT * FROM operation_beneficiarios WHERE id_pm = :id_pm ORDER BY beneficiario_nombre ASC");
+                $stmtB->execute([':id_pm' => $idPm]);
+                $beneficiarios = $stmtB->fetchAll(PDO::FETCH_ASSOC);
             }
         }
+
+        // Roles de fideicomiso (si aplica)
+        $roles = [
+            'fideicomitentes' => [],
+            'fiduciarios' => [],
+            'fideicomisarios' => [],
+            'control_efectivo' => []
+        ];
+        if (!empty($main['has_fid'])) {
+            // Obtener id_fid
+            $stmtF = $this->connection->prepare("SELECT id_fid FROM operation_fideicomiso WHERE id_operation = :id");
+            $stmtF->execute([':id' => $idOperation]);
+            $idFid = $stmtF->fetchColumn();
+
+            if ($idFid) {
+                foreach (['fideicomitentes', 'fiduciarios', 'fideicomisarios', 'control_efectivo'] as $tabla) {
+                    $table = $tabla === 'control_efectivo' ? 'operation_control_efectivo' : "operation_{$tabla}";
+                    $stmtR = $this->connection->prepare("SELECT * FROM {$table} WHERE id_fid = :id_fid ORDER BY 1");
+                    $stmtR->execute([':id_fid' => $idFid]);
+                    $roles[$tabla] = $stmtR->fetchAll(PDO::FETCH_ASSOC);
+                }
+            }
+        }
+
+        // Normaliza tipo_cliente a etiqueta de UI
+        $mapBackToUi = [
+            'persona_fisica' => 'Persona Física',
+            'persona_moral' => 'Persona Moral',
+            'fideicomiso' => 'Fideicomiso'
+        ];
+
+        $main['tipo_cliente_ui'] = $mapBackToUi[$main['tipo_cliente']] ?? 'Persona Física';
+
+        return [
+            'main' => $main,
+            'beneficiarios' => $beneficiarios,
+            'roles' => $roles
+        ];
     }
-
-    // Normaliza tipo_cliente a etiqueta de UI
-    $mapBackToUi = [
-        'persona_fisica' => 'Persona Física',
-        'persona_moral'  => 'Persona Moral',
-        'fideicomiso'    => 'Fideicomiso'
-    ];
-
-    $main['tipo_cliente_ui'] = $mapBackToUi[$main['tipo_cliente']] ?? 'Persona Física';
-
-    return [
-        'main' => $main,
-        'beneficiarios' => $beneficiarios,
-        'roles' => $roles
-    ];
-}
 
 }
