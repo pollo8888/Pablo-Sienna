@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 header("Location: vulnerabilities.php?error=1&message=" . urlencode("Error interno del servidor"));
                 exit();
             }
-        
+
     }
 }
 
@@ -4883,12 +4883,11 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
             // Llenar formulario con datos existentes (con un delay para que carguen los selects)
             setTimeout(function () {
                 llenarFormularioEdicion();
-            }, 500);
+            }, 800); // Aumentar el delay un poco
 
             // Mostrar el modal
             $('#modalEditarOperacion').modal('show');
         }
-
 
         function editarOperacion(operationId) {
             console.log('Iniciando edición de operación:', operationId);
@@ -4903,14 +4902,21 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                 },
                 dataType: 'json'
             }).done(function (response) {
+                console.log('Respuesta completa del servidor:', response); // Para debugging
+
                 if (response.success) {
-                    operacionAEditar = response.data;
+                    // CORRECCIÓN: Los datos están en response.data.main
+                    operacionAEditar = response.data.main; // ← AQUÍ ESTABA EL PROBLEMA
+
+                    console.log('Datos de operación a editar:', operacionAEditar); // Para verificar
+
                     abrirModalEdicionOperacion();
                 } else {
                     mostrarAlerta('Error al cargar los datos de la operación', 'error');
                 }
-            }).fail(function () {
-                mostrarAlerta('Error de conexión al servidor', 'error');
+            }).fail(function (xhr, status, error) {
+                console.error('Error en la petición AJAX:', error);
+                mostrarAlerta('Error de conexión al cargar los datos', 'error');
             });
         }
 
@@ -5020,7 +5026,15 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
         /**
          * Llenar el formulario con los datos de la operación a editar
          */
+
         function llenarFormularioEdicion() {
+            if (!operacionAEditar) {
+                console.error('No hay datos de operación para editar');
+                return;
+            }
+
+            console.log('Llenando formulario con datos:', operacionAEditar);
+
             // Campos ocultos
             $('#edit_operation_id').val(operacionAEditar.id_operation);
             $('#hidden_empresa_id_edit').val(operacionAEditar.id_company_operation);
@@ -5050,56 +5064,148 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
             // Observaciones
             $('#observaciones_edit').val(operacionAEditar.observaciones);
 
+            // Selects con valores
+            $('#select_empresa_general_edit').val(operacionAEditar.id_company_operation);
+            $('#select_cliente_general_edit').val(operacionAEditar.id_client_operation);
+
             // Mostrar/ocultar campos condicionales
             if (operacionAEditar.moneda === 'Otra') {
                 $('#div_moneda_otra_edit').show();
+            } else {
+                $('#div_moneda_otra_edit').hide();
             }
 
             if (operacionAEditar.forma_pago === 'Efectivo' || operacionAEditar.forma_pago === 'Mixto') {
                 $('#div_monto_efectivo_edit').show();
+            } else {
+                $('#div_monto_efectivo_edit').hide();
             }
 
             // Llenar datos específicos del cliente según el tipo
-            llenarDatosClienteEdicion();
+            llenarDatosClienteEdicionCorregido();
+
+            console.log('Formulario llenado completamente');
         }
 
         /**
          * Llenar los datos específicos del cliente en el formulario de edición
          */
-        function llenarDatosClienteEdicion() {
-            if (operacionAEditar.cliente_data) {
-                const clienteData = operacionAEditar.cliente_data;
+        function llenarDatosClienteEdicionCorregido() {
+            console.log('Llenando datos del cliente, tipo:', operacionAEditar.tipo_cliente);
 
-                switch (operacionAEditar.tipo_cliente) {
-                    case 'persona_fisica':
-                        $('#pf_nombre_edit').val(clienteData.nombre);
-                        $('#pf_apellido_paterno_edit').val(clienteData.apellido_paterno);
-                        $('#pf_apellido_materno_edit').val(clienteData.apellido_materno);
-                        $('#pf_rfc_edit').val(clienteData.rfc);
-                        $('#pf_curp_edit').val(clienteData.curp);
-                        break;
+            switch (operacionAEditar.tipo_cliente) {
+                case 'persona_fisica':
+                    // Los datos de persona física vienen directamente en el objeto main con prefijo pf_
+                    $('#pf_nombre_edit').val(operacionAEditar.pf_nombre || '');
+                    $('#pf_apellido_paterno_edit').val(operacionAEditar.pf_apellido_paterno || '');
+                    $('#pf_apellido_materno_edit').val(operacionAEditar.pf_apellido_materno || '');
+                    $('#pf_rfc_edit').val(operacionAEditar.pf_rfc || '');
+                    $('#pf_curp_edit').val(operacionAEditar.pf_curp || '');
+                    $('#pf_fecha_nacimiento_edit').val(operacionAEditar.pf_fecha_nacimiento || '');
+                    $('#pf_telefono_edit').val(operacionAEditar.pf_telefono || '');
+                    $('#pf_email_edit').val(operacionAEditar.pf_email || '');
 
-                    case 'persona_moral':
-                        $('#pm_razon_social_edit').val(clienteData.razon_social);
-                        $('#pm_rfc_edit').val(clienteData.rfc);
-                        // Cargar beneficiarios controladores si existen
-                        if (operacionAEditar.beneficiarios_controladores) {
-                            cargarBeneficiariosControladores('pm_edit', operacionAEditar.beneficiarios_controladores);
-                        }
-                        break;
+                    // Dirección nacional
+                    $('#pf_estado_edit').val(operacionAEditar.pf_estado || '');
+                    $('#pf_ciudad_edit').val(operacionAEditar.pf_ciudad || '');
+                    $('#pf_colonia_edit').val(operacionAEditar.pf_colonia || '');
+                    $('#pf_calle_edit').val(operacionAEditar.pf_calle || '');
+                    $('#pf_num_exterior_edit').val(operacionAEditar.pf_num_exterior || '');
+                    $('#pf_num_interior_edit').val(operacionAEditar.pf_num_interior || '');
+                    $('#pf_codigo_postal_edit').val(operacionAEditar.pf_codigo_postal || '');
 
-                    case 'fideicomiso':
-                        $('#fid_razon_social_edit').val(clienteData.razon_social);
-                        $('#fid_rfc_edit').val(clienteData.rfc);
-                        // Cargar beneficiarios de fideicomiso si existen
-                        if (operacionAEditar.beneficiarios_fideicomiso) {
-                            cargarBeneficiariosFideicomiso(operacionAEditar.beneficiarios_fideicomiso);
-                        }
-                        break;
-                }
+                    // Checkbox domicilio extranjero
+                    $('#pf_tiene_domicilio_extranjero_edit').prop('checked', operacionAEditar.pf_tiene_domicilio_extranjero == 1);
+
+                    // Dirección extranjera
+                    $('#pf_pais_extranjero_edit').val(operacionAEditar.pf_pais_extranjero || '');
+                    $('#pf_estado_extranjero_edit').val(operacionAEditar.pf_estado_extranjero || '');
+                    $('#pf_ciudad_extranjero_edit').val(operacionAEditar.pf_ciudad_extranjero || '');
+                    $('#pf_direccion_extranjero_edit').val(operacionAEditar.pf_direccion_extranjero || '');
+                    $('#pf_codigo_postal_extranjero_edit').val(operacionAEditar.pf_codigo_postal_extranjero || '');
+                    break;
+
+                case 'persona_moral':
+                    // Los datos de persona moral vienen directamente en el objeto main con prefijo pm_
+                    $('#pm_razon_social_edit').val(operacionAEditar.pm_razon_social || '');
+                    $('#pm_rfc_edit').val(operacionAEditar.pm_rfc || '');
+                    $('#pm_fecha_constitucion_edit').val(operacionAEditar.pm_fecha_constitucion || '');
+                    $('#pm_telefono_edit').val(operacionAEditar.pm_telefono || '');
+                    $('#pm_email_edit').val(operacionAEditar.pm_email || '');
+
+                    // Dirección nacional
+                    $('#pm_estado_edit').val(operacionAEditar.pm_estado || '');
+                    $('#pm_ciudad_edit').val(operacionAEditar.pm_ciudad || '');
+                    $('#pm_colonia_edit').val(operacionAEditar.pm_colonia || '');
+                    $('#pm_calle_edit').val(operacionAEditar.pm_calle || '');
+                    $('#pm_num_exterior_edit').val(operacionAEditar.pm_num_exterior || '');
+                    $('#pm_num_interior_edit').val(operacionAEditar.pm_num_interior || '');
+                    $('#pm_codigo_postal_edit').val(operacionAEditar.pm_codigo_postal || '');
+
+                    // Checkbox domicilio extranjero
+                    $('#pm_tiene_domicilio_extranjero_edit').prop('checked', operacionAEditar.pm_tiene_domicilio_extranjero == 1);
+
+                    // Dirección extranjera
+                    $('#pm_pais_extranjero_edit').val(operacionAEditar.pm_pais_extranjero || '');
+                    $('#pm_estado_extranjero_edit').val(operacionAEditar.pm_estado_extranjero || '');
+                    $('#pm_ciudad_extranjero_edit').val(operacionAEditar.pm_ciudad_extranjero || '');
+                    $('#pm_direccion_extranjero_edit').val(operacionAEditar.pm_direccion_extranjero || '');
+                    $('#pm_codigo_postal_extranjero_edit').val(operacionAEditar.pm_codigo_postal_extranjero || '');
+
+                    // Representante legal
+                    $('#pm_representante_nombre_edit').val(operacionAEditar.pm_representante_nombre || '');
+                    $('#pm_representante_paterno_edit').val(operacionAEditar.pm_representante_paterno || '');
+                    $('#pm_representante_materno_edit').val(operacionAEditar.pm_representante_materno || '');
+                    $('#pm_representante_rfc_edit').val(operacionAEditar.pm_representante_rfc || '');
+                    $('#pm_representante_curp_edit').val(operacionAEditar.pm_representante_curp || '');
+                    break;
+
+                case 'fideicomiso':
+                    // Los datos de fideicomiso vienen directamente en el objeto main con prefijo fid_
+                    $('#fid_numero_contrato_edit').val(operacionAEditar.fid_numero_contrato || '');
+                    $('#fid_fecha_contrato_edit').val(operacionAEditar.fid_fecha_contrato || '');
+                    $('#fid_tipo_fideicomiso_edit').val(operacionAEditar.fid_tipo_fideicomiso || '');
+                    $('#fid_proposito_edit').val(operacionAEditar.fid_proposito || '');
+                    $('#fid_numero_referencia_edit').val(operacionAEditar.fid_numero_referencia || '');
+                    $('#fid_telefono_edit').val(operacionAEditar.fid_telefono || '');
+                    $('#fid_email_edit').val(operacionAEditar.fid_email || '');
+
+                    // Dirección nacional
+                    $('#fid_estado_edit').val(operacionAEditar.fid_estado || '');
+                    $('#fid_ciudad_edit').val(operacionAEditar.fid_ciudad || '');
+                    $('#fid_colonia_edit').val(operacionAEditar.fid_colonia || '');
+                    $('#fid_calle_edit').val(operacionAEditar.fid_calle || '');
+                    $('#fid_num_exterior_edit').val(operacionAEditar.fid_num_exterior || '');
+                    $('#fid_num_interior_edit').val(operacionAEditar.fid_num_interior || '');
+                    $('#fid_codigo_postal_edit').val(operacionAEditar.fid_codigo_postal || '');
+
+                    // Checkbox domicilio extranjero
+                    $('#fid_tiene_domicilio_extranjero_edit').prop('checked', operacionAEditar.fid_tiene_domicilio_extranjero == 1);
+
+                    // Dirección extranjera
+                    $('#fid_pais_extranjero_edit').val(operacionAEditar.fid_pais_extranjero || '');
+                    $('#fid_estado_extranjero_edit').val(operacionAEditar.fid_estado_extranjero || '');
+                    $('#fid_ciudad_extranjero_edit').val(operacionAEditar.fid_ciudad_extranjero || '');
+                    $('#fid_direccion_extranjero_edit').val(operacionAEditar.fid_direccion_extranjero || '');
+                    $('#fid_codigo_postal_extranjero_edit').val(operacionAEditar.fid_codigo_postal_extranjero || '');
+
+                    // Apoderado
+                    $('#fid_apoderado_nombre_edit').val(operacionAEditar.fid_apoderado_nombre || '');
+                    $('#fid_apoderado_paterno_edit').val(operacionAEditar.fid_apoderado_paterno || '');
+                    $('#fid_apoderado_materno_edit').val(operacionAEditar.fid_apoderado_materno || '');
+
+                    // Fiduciaria
+                    $('#fid_razon_social_edit').val(operacionAEditar.fid_razon_social || '');
+                    $('#fid_rfc_edit').val(operacionAEditar.fid_rfc || '');
+                    break;
+
+                default:
+                    console.warn('Tipo de cliente no reconocido:', operacionAEditar.tipo_cliente);
+                    break;
             }
-        }
 
+            console.log('Datos del cliente llenados para tipo:', operacionAEditar.tipo_cliente);
+        }
         /**
          * Cargar beneficiarios controladores existentes para persona moral
          */
