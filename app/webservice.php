@@ -184,6 +184,95 @@ if (!empty($_GET['action'])) {
       );
       break;
 
+
+
+    case 'getOperationDetail':
+      if (isset($_GET['operationId'])) {
+        $operationId = intval($_GET['operationId']);
+
+        try {
+          // Consulta principal para obtener los datos de la operación
+          $query = "SELECT 
+                  vo.*,
+                  c.name_company,
+                  c.rfc_company,
+                  cl.nombre,
+                  cl.apellido_paterno, 
+                  cl.apellido_materno,
+                  cl.razon_social,
+                  cl.rfc as cliente_rfc,
+                  cl.curp,
+                  cl.tipo_persona as cliente_tipo_persona
+                FROM vulnerable_operations vo
+                LEFT JOIN companies c ON vo.id_company_operation = c.id_company
+                LEFT JOIN clients cl ON vo.id_client_operation = cl.id_client
+                WHERE vo.id_operation = ? AND vo.status_operation = 1";
+
+          $stmt = $connection->prepare($query);
+          $stmt->execute([$operationId]);
+          $operationData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+          if ($operationData) {
+            // Obtener beneficiarios controladores si es persona moral o fideicomiso
+            $beneficiarios = [];
+            if (in_array($operationData['tipo_cliente'], ['persona_moral', 'fideicomiso'])) {
+              $beneficiariosQuery = "SELECT * FROM beneficiarios_controladores 
+                               WHERE id_operation = ? AND status_beneficiario = 1";
+              $beneficiariosStmt = $connection->prepare($beneficiariosQuery);
+              $beneficiariosStmt->execute([$operationId]);
+              $beneficiariosResult = $beneficiariosStmt->fetchAll(PDO::FETCH_ASSOC);
+
+              foreach ($beneficiariosResult as $beneficiario) {
+                $beneficiarios[$beneficiario['tipo_beneficiario']][] = $beneficiario;
+              }
+            }
+
+            // Preparar datos del cliente
+            $clienteData = [
+              'nombre' => $operationData['nombre'],
+              'apellido_paterno' => $operationData['apellido_paterno'],
+              'apellido_materno' => $operationData['apellido_materno'],
+              'razon_social' => $operationData['razon_social'],
+              'rfc' => $operationData['cliente_rfc'],
+              'curp' => $operationData['curp'],
+              'tipo_persona' => $operationData['cliente_tipo_persona']
+            ];
+
+            // Agregar beneficiarios a los datos
+            $operationData['cliente_data'] = $clienteData;
+            $operationData['beneficiarios_controladores'] = $beneficiarios['pm'] ?? [];
+            $operationData['beneficiarios_fideicomiso'] = [
+              'fideicomitente' => $beneficiarios['fideicomitente'] ?? [],
+              'fiduciario' => $beneficiarios['fiduciario'] ?? [],
+              'fideicomisario' => $beneficiarios['fideicomisario'] ?? [],
+              'control_efectivo' => $beneficiarios['control_efectivo'] ?? []
+            ];
+
+            echo json_encode([
+              'success' => true,
+              'data' => $operationData
+            ]);
+          } else {
+            echo json_encode([
+              'success' => false,
+              'error' => 'Operación no encontrada'
+            ]);
+          }
+        } catch (Exception $e) {
+          echo json_encode([
+            'success' => false,
+            'error' => 'Error en la consulta: ' . $e->getMessage()
+          ]);
+        }
+      } else {
+        echo json_encode([
+          'success' => false,
+          'error' => 'ID de operación no proporcionado'
+        ]);
+      }
+      break;
+
+
   }
 } else if (!empty($_POST['action'])) {
   switch ($_POST['action']) {
@@ -331,92 +420,6 @@ if (!empty($_GET['action'])) {
       break;
 
 
-    case 'getOperationDetail':
-      if (isset($_GET['operationId'])) {
-        $operationId = intval($_GET['operationId']);
-
-        try {
-          // Consulta principal para obtener los datos de la operación
-          $query = "SELECT 
-                  vo.*,
-                  c.name_company,
-                  c.rfc_company,
-                  cl.nombre,
-                  cl.apellido_paterno, 
-                  cl.apellido_materno,
-                  cl.razon_social,
-                  cl.rfc as cliente_rfc,
-                  cl.curp,
-                  cl.tipo_persona as cliente_tipo_persona
-                FROM vulnerable_operations vo
-                LEFT JOIN companies c ON vo.id_company_operation = c.id_company
-                LEFT JOIN clients cl ON vo.id_client_operation = cl.id_client
-                WHERE vo.id_operation = ? AND vo.status_operation = 1";
-
-          $stmt = $connection->prepare($query);
-          $stmt->execute([$operationId]);
-          $operationData = $stmt->fetch(PDO::FETCH_ASSOC);
-
-          if ($operationData) {
-            // Obtener beneficiarios controladores si es persona moral o fideicomiso
-            $beneficiarios = [];
-            if (in_array($operationData['tipo_cliente'], ['persona_moral', 'fideicomiso'])) {
-              $beneficiariosQuery = "SELECT * FROM beneficiarios_controladores 
-                               WHERE id_operation = ? AND status_beneficiario = 1";
-              $beneficiariosStmt = $connection->prepare($beneficiariosQuery);
-              $beneficiariosStmt->execute([$operationId]);
-              $beneficiariosResult = $beneficiariosStmt->fetchAll(PDO::FETCH_ASSOC);
-
-              foreach ($beneficiariosResult as $beneficiario) {
-                $beneficiarios[$beneficiario['tipo_beneficiario']][] = $beneficiario;
-              }
-            }
-
-            // Preparar datos del cliente
-            $clienteData = [
-              'nombre' => $operationData['nombre'],
-              'apellido_paterno' => $operationData['apellido_paterno'],
-              'apellido_materno' => $operationData['apellido_materno'],
-              'razon_social' => $operationData['razon_social'],
-              'rfc' => $operationData['cliente_rfc'],
-              'curp' => $operationData['curp'],
-              'tipo_persona' => $operationData['cliente_tipo_persona']
-            ];
-
-            // Agregar beneficiarios a los datos
-            $operationData['cliente_data'] = $clienteData;
-            $operationData['beneficiarios_controladores'] = $beneficiarios['pm'] ?? [];
-            $operationData['beneficiarios_fideicomiso'] = [
-              'fideicomitente' => $beneficiarios['fideicomitente'] ?? [],
-              'fiduciario' => $beneficiarios['fiduciario'] ?? [],
-              'fideicomisario' => $beneficiarios['fideicomisario'] ?? [],
-              'control_efectivo' => $beneficiarios['control_efectivo'] ?? []
-            ];
-
-            echo json_encode([
-              'success' => true,
-              'data' => $operationData
-            ]);
-          } else {
-            echo json_encode([
-              'success' => false,
-              'error' => 'Operación no encontrada'
-            ]);
-          }
-        } catch (Exception $e) {
-          echo json_encode([
-            'success' => false,
-            'error' => 'Error en la consulta: ' . $e->getMessage()
-          ]);
-        }
-      } else {
-        echo json_encode([
-          'success' => false,
-          'error' => 'ID de operación no proporcionado'
-        ]);
-      }
-      break;
-
   }
 }
 
@@ -466,6 +469,29 @@ function ws_getFoldersAll($fecha1, $fecha2, $status)
   $data = $controller->ws_getFoldersAll($fecha1, $fecha2, $status);
   echo json_encode($data);
   return $data;
+}
+
+function ws_getOperationDetail($operationId)
+{
+  global $controller;
+  try {
+    // Usar el OperationController para obtener los datos
+    require_once 'OperationController.php';
+    $operationController = new OperationController();
+    $data = $operationController->getOperationDetail($operationId);
+    
+    echo json_encode([
+      'success' => true,
+      'data' => $data
+    ]);
+    return $data;
+  } catch (Exception $e) {
+    echo json_encode([
+      'success' => false,
+      'error' => 'Error al obtener la operación: ' . $e->getMessage()
+    ]);
+    return false;
+  }
 }
 
 /**
