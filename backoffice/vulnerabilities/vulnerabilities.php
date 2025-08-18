@@ -124,6 +124,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
             header('Location: vulnerabilities.php');
             exit;
+
+
+        case 'update':
+            try {
+                $operationController = new OperationController();
+                $result = $operationController->updateOperation($_POST);
+
+                if ($result['success']) {
+                    // Redirigir con mensaje de éxito
+                    header("Location: vulnerabilities.php?success=update&message=" . urlencode("Operación actualizada exitosamente"));
+                    exit();
+                } else {
+                    // Mostrar error
+                    $error_message = $result['error'] ?? 'Error al actualizar la operación';
+                    header("Location: vulnerabilities.php?error=1&message=" . urlencode($error_message));
+                    exit();
+                }
+            } catch (Exception $e) {
+                error_log("Error al actualizar operación: " . $e->getMessage());
+                header("Location: vulnerabilities.php?error=1&message=" . urlencode("Error interno del servidor"));
+                exit();
+            }
+            break;
     }
 }
 
@@ -2878,6 +2901,584 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                 });
             });
         </script>
+
+
+
+        <!-- Modal IDÉNTICO para editar operación vulnerable - LFPIORPI -->
+        <div class="modal fade" id="modalEditarOperacion" tabindex="-1" aria-labelledby="modalEditarOperacionLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalEditarOperacionLabel">
+                            <i class="fas fa-edit"></i> Editar operación vulnerable
+                        </h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+                        <form id="formEditarOperacion" action="vulnerabilities.php" method="POST">
+                            <div id="accordion-formulario-edit"></div>
+                            <input name="operation[key_operation]" type="hidden" value="<?php echo $clave; ?>">
+                            <input name="operation[tipo_cliente]" type="hidden" id="hidden_tipo_cliente_edit">
+                            <input name="operation[id_operation]" type="hidden" id="edit_operation_id">
+                            <!-- NUEVOS CAMPOS OCULTOS PARA IDs CORRECTOS -->
+                            <input name="operation[empresa_id_general]" type="hidden" id="hidden_empresa_id_edit">
+                            <input name="operation[id_cliente_existente_general]" type="hidden"
+                                id="hidden_cliente_id_edit">
+
+                            <!-- Sección 0: Información de la Empresa Seleccionada -->
+                            <div class="card mb-3 collapsible-card">
+                                <div class="card-header bg-info text-white" data-toggle="collapse"
+                                    data-target="#collapse-info-empresa-edit" aria-expanded="true"
+                                    aria-controls="collapse-info-empresa-edit">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-building"></i> Información de la Empresa
+                                        <i class="fas fa-chevron-down collapse-icon"></i>
+                                    </h6>
+                                </div>
+                                <div id="collapse-info-empresa-edit" class="collapse show"
+                                    data-parent="#accordion-formulario-edit">
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            <label for="select_empresa_general_edit">
+                                                <i class="fas fa-building"></i> Empresa:
+                                                <span class="text-danger">*</span>
+                                            </label>
+                                            <select class="form-control" id="select_empresa_general_edit"
+                                                name="select_empresa_general" required>
+                                                <option value="">-- Seleccionar empresa --</option>
+                                            </select>
+                                        </div>
+
+                                        <div id="info-empresa-seleccionada-edit" style="display: none;">
+                                            <div class="alert alert-info">
+                                                <h6><i class="fas fa-info-circle"></i> Información de la empresa:</h6>
+                                                <div id="detalle-empresa-edit"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sección 1: Información del Cliente -->
+                            <div class="card mb-3 collapsible-card">
+                                <div class="card-header bg-primary text-white" data-toggle="collapse"
+                                    data-target="#collapse-info-cliente-edit" aria-expanded="true"
+                                    aria-controls="collapse-info-cliente-edit">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-user"></i> Información del Cliente
+                                        <i class="fas fa-chevron-down collapse-icon"></i>
+                                    </h6>
+                                </div>
+                                <div id="collapse-info-cliente-edit" class="collapse show"
+                                    data-parent="#accordion-formulario-edit">
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            <label for="tipo_cliente_display_edit">
+                                                <i class="fas fa-user-tag"></i> Tipo de Cliente:
+                                            </label>
+                                            <input type="text" class="form-control" id="tipo_cliente_display_edit"
+                                                readonly>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="select_cliente_general_edit">
+                                                <i class="fas fa-users"></i> Cliente Existente:
+                                            </label>
+                                            <select class="form-control" id="select_cliente_general_edit"
+                                                name="select_cliente_general">
+                                                <option value="">-- Seleccionar cliente existente --</option>
+                                            </select>
+                                        </div>
+
+                                        <div id="info-cliente-seleccionado-edit" style="display: none;">
+                                            <div class="alert alert-success">
+                                                <h6><i class="fas fa-info-circle"></i> Información del cliente:</h6>
+                                                <div id="detalle-cliente-edit"></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Secciones dinámicas para cada tipo de cliente -->
+                                        <!-- Persona Física -->
+                                        <div id="seccion-persona-fisica-edit" style="display: none;">
+                                            <h6><i class="fas fa-user"></i> Datos de Persona Física</h6>
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="pf_nombre_edit">Nombre(s):</label>
+                                                        <input type="text" class="form-control" id="pf_nombre_edit"
+                                                            name="pf_nombre">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="pf_apellido_paterno_edit">Apellido Paterno:</label>
+                                                        <input type="text" class="form-control"
+                                                            id="pf_apellido_paterno_edit" name="pf_apellido_paterno">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="pf_apellido_materno_edit">Apellido Materno:</label>
+                                                        <input type="text" class="form-control"
+                                                            id="pf_apellido_materno_edit" name="pf_apellido_materno">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label for="pf_rfc_edit">RFC:</label>
+                                                        <input type="text" class="form-control" id="pf_rfc_edit"
+                                                            name="pf_rfc" maxlength="13">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label for="pf_curp_edit">CURP:</label>
+                                                        <input type="text" class="form-control" id="pf_curp_edit"
+                                                            name="pf_curp" maxlength="18">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Persona Moral -->
+                                        <div id="seccion-persona-moral-edit" style="display: none;">
+                                            <h6><i class="fas fa-building"></i> Datos de Persona Moral</h6>
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <div class="form-group">
+                                                        <label for="pm_razon_social_edit">Razón Social:</label>
+                                                        <input type="text" class="form-control"
+                                                            id="pm_razon_social_edit" name="pm_razon_social">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="pm_rfc_edit">RFC:</label>
+                                                        <input type="text" class="form-control" id="pm_rfc_edit"
+                                                            name="pm_rfc" maxlength="12">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Beneficiarios Controladores para Persona Moral -->
+                                            <div class="card mt-3">
+                                                <div class="card-header bg-secondary text-white">
+                                                    <h6 class="mb-0">
+                                                        <i class="fas fa-users-cog"></i> Beneficiarios Controladores
+                                                        <button type="button" class="btn btn-sm btn-light float-right"
+                                                            onclick="agregarBeneficiarioControlador('pm_edit')">
+                                                            <i class="fas fa-plus"></i> Agregar
+                                                        </button>
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div id="beneficiarios-pm-edit">
+                                                        <!-- Los beneficiarios se agregarán dinámicamente aquí -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Fideicomiso -->
+                                        <div id="seccion-fideicomiso-edit" style="display: none;">
+                                            <h6><i class="fas fa-handshake"></i> Datos del Fideicomiso</h6>
+                                            <div class="row">
+                                                <div class="col-md-8">
+                                                    <div class="form-group">
+                                                        <label for="fid_razon_social_edit">Razón Social:</label>
+                                                        <input type="text" class="form-control"
+                                                            id="fid_razon_social_edit" name="fid_razon_social">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label for="fid_rfc_edit">RFC:</label>
+                                                        <input type="text" class="form-control" id="fid_rfc_edit"
+                                                            name="fid_rfc" maxlength="12">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Secciones de beneficiarios para fideicomiso -->
+                                            <!-- Fideicomitente -->
+                                            <div class="card mt-3">
+                                                <div class="card-header bg-info text-white">
+                                                    <h6 class="mb-0">
+                                                        <i class="fas fa-user-tie"></i> Fideicomitente
+                                                        <button type="button" class="btn btn-sm btn-light float-right"
+                                                            onclick="agregarBeneficiarioControlador('fid_fideicomitente_edit')">
+                                                            <i class="fas fa-plus"></i> Agregar
+                                                        </button>
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div id="beneficiarios-fid-fideicomitente-edit">
+                                                        <!-- Los fideicomitentes se agregarán dinámicamente aquí -->
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Fiduciario -->
+                                            <div class="card mt-3">
+                                                <div class="card-header bg-warning text-dark">
+                                                    <h6 class="mb-0">
+                                                        <i class="fas fa-user-shield"></i> Fiduciario
+                                                        <button type="button" class="btn btn-sm btn-dark float-right"
+                                                            onclick="agregarBeneficiarioControlador('fid_fiduciario_edit')">
+                                                            <i class="fas fa-plus"></i> Agregar
+                                                        </button>
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div id="beneficiarios-fid-fiduciario-edit">
+                                                        <!-- Los fiduciarios se agregarán dinámicamente aquí -->
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Fideicomisario -->
+                                            <div class="card mt-3">
+                                                <div class="card-header bg-success text-white">
+                                                    <h6 class="mb-0">
+                                                        <i class="fas fa-user-check"></i> Fideicomisario
+                                                        <button type="button" class="btn btn-sm btn-light float-right"
+                                                            onclick="agregarBeneficiarioControlador('fid_fideicomisario_edit')">
+                                                            <i class="fas fa-plus"></i> Agregar
+                                                        </button>
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div id="beneficiarios-fid-fideicomisario-edit">
+                                                        <!-- Los fideicomisarios se agregarán dinámicamente aquí -->
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Control Efectivo -->
+                                            <div class="card mt-3">
+                                                <div class="card-header bg-danger text-white">
+                                                    <h6 class="mb-0">
+                                                        <i class="fas fa-crown"></i> Control Efectivo
+                                                        <button type="button" class="btn btn-sm btn-light float-right"
+                                                            onclick="agregarBeneficiarioControlador('fid_control_efectivo_edit')">
+                                                            <i class="fas fa-plus"></i> Agregar
+                                                        </button>
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div id="beneficiarios-fid-control-efectivo-edit">
+                                                        <!-- Los de control efectivo se agregarán dinámicamente aquí -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sección 2: Información de la Operación -->
+                            <div class="card mb-3 collapsible-card">
+                                <div class="card-header bg-warning text-dark" data-toggle="collapse"
+                                    data-target="#collapse-operacion-edit" aria-expanded="true"
+                                    aria-controls="collapse-operacion-edit">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-exchange-alt"></i> Información de la Operación
+                                        <i class="fas fa-chevron-down collapse-icon"></i>
+                                    </h6>
+                                </div>
+                                <div id="collapse-operacion-edit" class="collapse show"
+                                    data-parent="#accordion-formulario-edit">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="tipo_operacion_edit">
+                                                        <i class="fas fa-tags"></i> Tipo de Operación:
+                                                        <span class="text-danger">*</span>
+                                                    </label>
+                                                    <select class="form-control" id="tipo_operacion_edit"
+                                                        name="operation[tipo_operacion]" required>
+                                                        <option value="">-- Seleccionar --</option>
+                                                        <option value="Compraventa">Compraventa</option>
+                                                        <option value="Donación">Donación</option>
+                                                        <option value="Adjudicación">Adjudicación</option>
+                                                        <option value="Dación en Pago">Dación en Pago</option>
+                                                        <option value="Permuta">Permuta</option>
+                                                        <option value="Constitución de Usufructo">Constitución de
+                                                            Usufructo</option>
+                                                        <option value="Transmisión de Usufructo">Transmisión de
+                                                            Usufructo</option>
+                                                        <option value="Constitución de Fideicomiso">Constitución de
+                                                            Fideicomiso</option>
+                                                        <option value="Aportación a Sociedad">Aportación a Sociedad
+                                                        </option>
+                                                        <option value="Fusión">Fusión</option>
+                                                        <option value="Escisión">Escisión</option>
+                                                        <option value="Liquidación">Liquidación</option>
+                                                        <option value="Otro">Otro</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="fecha_operacion_edit">
+                                                        <i class="fas fa-calendar"></i> Fecha de la Operación:
+                                                        <span class="text-danger">*</span>
+                                                    </label>
+                                                    <input type="date" class="form-control" id="fecha_operacion_edit"
+                                                        name="operation[fecha_operacion]" required>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label for="monto_operacion_edit">
+                                                        <i class="fas fa-dollar-sign"></i> Monto de la Operación:
+                                                        <span class="text-danger">*</span>
+                                                    </label>
+                                                    <input type="number" class="form-control" id="monto_operacion_edit"
+                                                        name="operation[monto_operacion]" step="0.01" min="0" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label for="moneda_edit">
+                                                        <i class="fas fa-coins"></i> Moneda:
+                                                        <span class="text-danger">*</span>
+                                                    </label>
+                                                    <select class="form-control" id="moneda_edit"
+                                                        name="operation[moneda]" required>
+                                                        <option value="">-- Seleccionar --</option>
+                                                        <option value="MXN">Peso Mexicano (MXN)</option>
+                                                        <option value="USD">Dólar Estadounidense (USD)</option>
+                                                        <option value="EUR">Euro (EUR)</option>
+                                                        <option value="Otra">Otra</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group" id="div_moneda_otra_edit"
+                                                    style="display: none;">
+                                                    <label for="moneda_otra_edit">Especificar Moneda:</label>
+                                                    <input type="text" class="form-control" id="moneda_otra_edit"
+                                                        name="operation[moneda_otra]">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="forma_pago_edit">
+                                                        <i class="fas fa-credit-card"></i> Forma de Pago:
+                                                        <span class="text-danger">*</span>
+                                                    </label>
+                                                    <select class="form-control" id="forma_pago_edit"
+                                                        name="operation[forma_pago]" required>
+                                                        <option value="">-- Seleccionar --</option>
+                                                        <option value="Efectivo">Efectivo</option>
+                                                        <option value="Transferencia">Transferencia Electrónica</option>
+                                                        <option value="Cheque">Cheque</option>
+                                                        <option value="Mixto">Mixto (Efectivo + Otro)</option>
+                                                        <option value="Crédito">Crédito/Financiamiento</option>
+                                                        <option value="Otro">Otro</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group" id="div_monto_efectivo_edit"
+                                                    style="display: none;">
+                                                    <label for="monto_efectivo_edit">
+                                                        <i class="fas fa-money-bill-wave"></i> Monto en Efectivo:
+                                                    </label>
+                                                    <input type="number" class="form-control" id="monto_efectivo_edit"
+                                                        name="operation[monto_efectivo]" step="0.01" min="0">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sección 3: Información del Inmueble -->
+                            <div class="card mb-3 collapsible-card">
+                                <div class="card-header bg-success text-white" data-toggle="collapse"
+                                    data-target="#collapse-inmueble-edit" aria-expanded="true"
+                                    aria-controls="collapse-inmueble-edit">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-home"></i> Información del Inmueble
+                                        <i class="fas fa-chevron-down collapse-icon"></i>
+                                    </h6>
+                                </div>
+                                <div id="collapse-inmueble-edit" class="collapse show"
+                                    data-parent="#accordion-formulario-edit">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="tipo_propiedad_edit">
+                                                        <i class="fas fa-building"></i> Tipo de Propiedad:
+                                                        <span class="text-danger">*</span>
+                                                    </label>
+                                                    <select class="form-control" id="tipo_propiedad_edit"
+                                                        name="operation[tipo_propiedad]" required>
+                                                        <option value="">-- Seleccionar --</option>
+                                                        <option value="Casa">Casa</option>
+                                                        <option value="Departamento">Departamento</option>
+                                                        <option value="Terreno">Terreno</option>
+                                                        <option value="Local Comercial">Local Comercial</option>
+                                                        <option value="Oficina">Oficina</option>
+                                                        <option value="Bodega">Bodega</option>
+                                                        <option value="Nave Industrial">Nave Industrial</option>
+                                                        <option value="Rancho">Rancho</option>
+                                                        <option value="Otro">Otro</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="uso_inmueble_edit">
+                                                        <i class="fas fa-home"></i> Uso del Inmueble:
+                                                        <span class="text-danger">*</span>
+                                                    </label>
+                                                    <select class="form-control" id="uso_inmueble_edit"
+                                                        name="operation[uso_inmueble]" required>
+                                                        <option value="">-- Seleccionar --</option>
+                                                        <option value="Habitacional">Habitacional</option>
+                                                        <option value="Comercial">Comercial</option>
+                                                        <option value="Industrial">Industrial</option>
+                                                        <option value="Mixto">Mixto</option>
+                                                        <option value="Recreativo">Recreativo</option>
+                                                        <option value="Agrícola">Agrícola</option>
+                                                        <option value="Otro">Otro</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="direccion_inmueble_edit">
+                                                <i class="fas fa-map-marker-alt"></i> Dirección del Inmueble:
+                                                <span class="text-danger">*</span>
+                                            </label>
+                                            <textarea class="form-control" id="direccion_inmueble_edit"
+                                                name="operation[direccion_inmueble]" rows="3" required
+                                                placeholder="Calle, número, colonia, ciudad, estado..."></textarea>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label for="codigo_postal_edit">
+                                                        <i class="fas fa-mail-bulk"></i> Código Postal:
+                                                        <span class="text-danger">*</span>
+                                                    </label>
+                                                    <input type="text" class="form-control" id="codigo_postal_edit"
+                                                        name="operation[codigo_postal]" maxlength="5" required>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label for="folio_escritura_edit">
+                                                        <i class="fas fa-file-contract"></i> Folio de Escritura:
+                                                    </label>
+                                                    <input type="text" class="form-control" id="folio_escritura_edit"
+                                                        name="operation[folio_escritura]">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label for="propietario_anterior_edit">
+                                                        <i class="fas fa-user-clock"></i> Propietario Anterior:
+                                                    </label>
+                                                    <input type="text" class="form-control"
+                                                        id="propietario_anterior_edit"
+                                                        name="operation[propietario_anterior]">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sección 4: Información Adicional -->
+                            <div class="card mb-3 collapsible-card">
+                                <div class="card-header bg-secondary text-white" data-toggle="collapse"
+                                    data-target="#collapse-adicional-edit" aria-expanded="true"
+                                    aria-controls="collapse-adicional-edit">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-info-circle"></i> Información Adicional
+                                        <i class="fas fa-chevron-down collapse-icon"></i>
+                                    </h6>
+                                </div>
+                                <div id="collapse-adicional-edit" class="collapse show"
+                                    data-parent="#accordion-formulario-edit">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox"
+                                                            id="requiere_aviso_sat_edit"
+                                                            name="operation[requiere_aviso_sat]" value="1">
+                                                        <label class="form-check-label" for="requiere_aviso_sat_edit">
+                                                            <i class="fas fa-bell"></i> Requiere Aviso al SAT
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox"
+                                                            id="umbral_superado_edit" name="operation[umbral_superado]"
+                                                            value="1">
+                                                        <label class="form-check-label" for="umbral_superado_edit">
+                                                            <i class="fas fa-exclamation-triangle"></i> Umbral Superado
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="observaciones_edit">
+                                                <i class="fas fa-sticky-note"></i> Observaciones:
+                                            </label>
+                                            <textarea class="form-control" id="observaciones_edit"
+                                                name="operation[observaciones]" rows="4"
+                                                placeholder="Observaciones adicionales sobre la operación..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Botones del formulario -->
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </button>
+                                <button type="submit" class="btn btn-primary" name="action" value="update">
+                                    <i class="fas fa-save"></i> Actualizar Operación
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
     </div>
 
     <script src="../../resources/plugins/jquery/jquery.min.js"></script>
@@ -4225,4 +4826,687 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                 return true;
             });
         });
+    </script>
+
+
+
+
+
+
+
+
+
+
+    <!-- JavaScript para el modal de edición -->
+    <script>
+        // Variable global para almacenar los datos de la operación a editar
+        let operacionAEditar = null;
+
+        // Contadores para beneficiarios controladores en edición
+        let contadorBeneficiariosEdit = {
+            pm: 0,
+            fid_fideicomitente: 0,
+            fid_fiduciario: 0,
+            fid_fideicomisario: 0,
+            fid_control_efectivo: 0
+        };
+
+        /**
+         * Función principal para abrir el modal de edición de operación
+         * @param {number} operationId - ID de la operación a editar
+         */
+
+
+        // Event listener para los botones "Editar operación" en la tabla
+        $(document).on('click', '.dropdown-item[data-operation-id]', function (e) {
+            e.preventDefault();
+            const operationId = $(this).data('operation-id');
+            console.log('Iniciando edición de operación desde tabla:', operationId);
+            editarOperacion(operationId);
+        });
+
+        /**
+        * Configurar y abrir el modal de edición
+        */
+        function abrirModalEdicionOperacion() {
+            console.log('Abriendo modal de edición para operación:', operacionAEditar.id_operation);
+
+            // Limpiar formulario antes de llenar
+            $('#formEditarOperacion')[0].reset();
+
+            // Configurar el modal según el tipo de cliente
+            configurarModalSegunTipoEdit(operacionAEditar.tipo_cliente);
+
+            // Cargar empresas y clientes
+            cargarEmpresasClientesEdit();
+
+            // Llenar formulario con datos existentes (con un delay para que carguen los selects)
+            setTimeout(function () {
+                llenarFormularioEdicion();
+            }, 500);
+
+            // Mostrar el modal
+            $('#modalEditarOperacion').modal('show');
+        }
+
+
+        function editarOperacion(operationId) {
+            console.log('Iniciando edición de operación:', operationId);
+
+            // Obtener los datos de la operación desde el servidor
+            $.ajax({
+                type: "GET",
+                url: "../../app/webservice.php",
+                data: {
+                    action: "getOperationDetail",
+                    operationId: operationId
+                },
+                dataType: 'json'
+            }).done(function (response) {
+                if (response.success) {
+                    operacionAEditar = response.data;
+                    abrirModalEdicionOperacion();
+                } else {
+                    mostrarAlerta('Error al cargar los datos de la operación', 'error');
+                }
+            }).fail(function () {
+                mostrarAlerta('Error de conexión al servidor', 'error');
+            });
+        }
+
+        /**
+         * Configurar y abrir el modal de edición
+         */
+
+
+        /**
+         * Cargar empresas y clientes para el modal de edición
+         */
+        function cargarEmpresasClientesEdit() {
+            // Cargar empresas
+            $.ajax({
+                type: "GET",
+                url: "../../app/webservice.php",
+                data: { action: "getCompanies" },
+                dataType: 'json'
+            }).done(function (response) {
+                let options = '<option value="">-- Seleccionar empresa --</option>';
+                if (response.success && response.data) {
+                    response.data.forEach(function (empresa) {
+                        options += `<option value="${empresa.id_company}" data-company='${JSON.stringify(empresa)}'>${empresa.name_company}</option>`;
+                    });
+                }
+                $('#select_empresa_general_edit').html(options);
+
+                // Seleccionar la empresa de la operación
+                if (operacionAEditar && operacionAEditar.id_company_operation) {
+                    $('#select_empresa_general_edit').val(operacionAEditar.id_company_operation).trigger('change');
+                }
+            });
+
+            // Cargar todos los clientes
+            cargarTodosLosClientesEdit();
+        }
+
+        /**
+         * Cargar todos los clientes para el modal de edición
+         */
+        function cargarTodosLosClientesEdit() {
+            $.ajax({
+                type: "GET",
+                url: "../../app/webservice.php",
+                data: { action: "getAllClients" },
+                dataType: 'json'
+            }).done(function (response) {
+                let options = '<option value="">-- Seleccionar cliente existente --</option>';
+                if (response.success && response.data) {
+                    response.data.forEach(function (cliente) {
+                        let nombreCompleto = '';
+                        if (cliente.tipo_persona === 'persona_fisica') {
+                            nombreCompleto = `${cliente.nombre || ''} ${cliente.apellido_paterno || ''} ${cliente.apellido_materno || ''}`.trim();
+                        } else {
+                            nombreCompleto = cliente.razon_social || '';
+                        }
+                        options += `<option value="${cliente.id_client}" data-client='${JSON.stringify(cliente)}'>${nombreCompleto} (${cliente.rfc || 'Sin RFC'})</option>`;
+                    });
+                }
+                $('#select_cliente_general_edit').html(options);
+
+                // Seleccionar el cliente de la operación
+                if (operacionAEditar && operacionAEditar.id_client_operation) {
+                    $('#select_cliente_general_edit').val(operacionAEditar.id_client_operation).trigger('change');
+                }
+            });
+        }
+
+        /**
+         * Configurar el modal según el tipo de cliente para edición
+         */
+        function configurarModalSegunTipoEdit(tipoCliente) {
+            console.log('Configurando modal de edición para:', tipoCliente);
+
+            // Ocultar todas las secciones
+            $('#seccion-persona-fisica-edit').hide();
+            $('#seccion-persona-moral-edit').hide();
+            $('#seccion-fideicomiso-edit').hide();
+
+            switch (tipoCliente) {
+                case 'persona_fisica':
+                    $('#hidden_tipo_cliente_edit').val('persona_fisica');
+                    $('#tipo_cliente_display_edit').val('Persona Física');
+                    $('#seccion-persona-fisica-edit').show();
+                    break;
+
+                case 'persona_moral':
+                    $('#hidden_tipo_cliente_edit').val('persona_moral');
+                    $('#tipo_cliente_display_edit').val('Persona Moral');
+                    $('#seccion-persona-moral-edit').show();
+                    break;
+
+                case 'fideicomiso':
+                    $('#hidden_tipo_cliente_edit').val('fideicomiso');
+                    $('#tipo_cliente_display_edit').val('Fideicomiso');
+                    $('#seccion-fideicomiso-edit').show();
+                    break;
+
+                default:
+                    $('#hidden_tipo_cliente_edit').val('persona_fisica');
+                    $('#tipo_cliente_display_edit').val('Persona Física');
+                    $('#seccion-persona-fisica-edit').show();
+                    break;
+            }
+        }
+
+        /**
+         * Llenar el formulario con los datos de la operación a editar
+         */
+        function llenarFormularioEdicion() {
+            // Campos ocultos
+            $('#edit_operation_id').val(operacionAEditar.id_operation);
+            $('#hidden_empresa_id_edit').val(operacionAEditar.id_company_operation);
+            $('#hidden_cliente_id_edit').val(operacionAEditar.id_client_operation);
+
+            // Información de la operación
+            $('#tipo_operacion_edit').val(operacionAEditar.tipo_operacion);
+            $('#fecha_operacion_edit').val(operacionAEditar.fecha_operacion);
+            $('#monto_operacion_edit').val(operacionAEditar.monto_operacion);
+            $('#moneda_edit').val(operacionAEditar.moneda);
+            $('#moneda_otra_edit').val(operacionAEditar.moneda_otra);
+            $('#forma_pago_edit').val(operacionAEditar.forma_pago);
+            $('#monto_efectivo_edit').val(operacionAEditar.monto_efectivo);
+
+            // Información del inmueble
+            $('#tipo_propiedad_edit').val(operacionAEditar.tipo_propiedad);
+            $('#uso_inmueble_edit').val(operacionAEditar.uso_inmueble);
+            $('#direccion_inmueble_edit').val(operacionAEditar.direccion_inmueble);
+            $('#codigo_postal_edit').val(operacionAEditar.codigo_postal);
+            $('#folio_escritura_edit').val(operacionAEditar.folio_escritura);
+            $('#propietario_anterior_edit').val(operacionAEditar.propietario_anterior);
+
+            // Checkboxes
+            $('#requiere_aviso_sat_edit').prop('checked', operacionAEditar.requiere_aviso_sat == 1);
+            $('#umbral_superado_edit').prop('checked', operacionAEditar.umbral_superado == 1);
+
+            // Observaciones
+            $('#observaciones_edit').val(operacionAEditar.observaciones);
+
+            // Mostrar/ocultar campos condicionales
+            if (operacionAEditar.moneda === 'Otra') {
+                $('#div_moneda_otra_edit').show();
+            }
+
+            if (operacionAEditar.forma_pago === 'Efectivo' || operacionAEditar.forma_pago === 'Mixto') {
+                $('#div_monto_efectivo_edit').show();
+            }
+
+            // Llenar datos específicos del cliente según el tipo
+            llenarDatosClienteEdicion();
+        }
+
+        /**
+         * Llenar los datos específicos del cliente en el formulario de edición
+         */
+        function llenarDatosClienteEdicion() {
+            if (operacionAEditar.cliente_data) {
+                const clienteData = operacionAEditar.cliente_data;
+
+                switch (operacionAEditar.tipo_cliente) {
+                    case 'persona_fisica':
+                        $('#pf_nombre_edit').val(clienteData.nombre);
+                        $('#pf_apellido_paterno_edit').val(clienteData.apellido_paterno);
+                        $('#pf_apellido_materno_edit').val(clienteData.apellido_materno);
+                        $('#pf_rfc_edit').val(clienteData.rfc);
+                        $('#pf_curp_edit').val(clienteData.curp);
+                        break;
+
+                    case 'persona_moral':
+                        $('#pm_razon_social_edit').val(clienteData.razon_social);
+                        $('#pm_rfc_edit').val(clienteData.rfc);
+                        // Cargar beneficiarios controladores si existen
+                        if (operacionAEditar.beneficiarios_controladores) {
+                            cargarBeneficiariosControladores('pm_edit', operacionAEditar.beneficiarios_controladores);
+                        }
+                        break;
+
+                    case 'fideicomiso':
+                        $('#fid_razon_social_edit').val(clienteData.razon_social);
+                        $('#fid_rfc_edit').val(clienteData.rfc);
+                        // Cargar beneficiarios de fideicomiso si existen
+                        if (operacionAEditar.beneficiarios_fideicomiso) {
+                            cargarBeneficiariosFideicomiso(operacionAEditar.beneficiarios_fideicomiso);
+                        }
+                        break;
+                }
+            }
+        }
+
+        /**
+         * Cargar beneficiarios controladores existentes para persona moral
+         */
+        function cargarBeneficiariosControladores(tipo, beneficiarios) {
+            beneficiarios.forEach(function (beneficiario, index) {
+                agregarBeneficiarioControlador(tipo);
+                // Llenar los datos del beneficiario
+                $(`#beneficiario_${tipo}_${contadorBeneficiariosEdit[tipo.replace('_edit', '')]}_nombre`).val(beneficiario.nombre);
+                $(`#beneficiario_${tipo}_${contadorBeneficiariosEdit[tipo.replace('_edit', '')]}_apellido_paterno`).val(beneficiario.apellido_paterno);
+                $(`#beneficiario_${tipo}_${contadorBeneficiariosEdit[tipo.replace('_edit', '')]}_apellido_materno`).val(beneficiario.apellido_materno);
+                $(`#beneficiario_${tipo}_${contadorBeneficiariosEdit[tipo.replace('_edit', '')]}_rfc`).val(beneficiario.rfc);
+                $(`#beneficiario_${tipo}_${contadorBeneficiariosEdit[tipo.replace('_edit', '')]}_porcentaje`).val(beneficiario.porcentaje);
+            });
+        }
+
+        /**
+         * Cargar beneficiarios de fideicomiso existentes
+         */
+        function cargarBeneficiariosFideicomiso(beneficiarios) {
+            // Cargar fideicomitentes
+            if (beneficiarios.fideicomitente) {
+                beneficiarios.fideicomitente.forEach(function (beneficiario) {
+                    agregarBeneficiarioControlador('fid_fideicomitente_edit');
+                    // Llenar datos...
+                });
+            }
+
+            // Cargar fiduciarios
+            if (beneficiarios.fiduciario) {
+                beneficiarios.fiduciario.forEach(function (beneficiario) {
+                    agregarBeneficiarioControlador('fid_fiduciario_edit');
+                    // Llenar datos...
+                });
+            }
+
+            // Cargar fideicomisarios
+            if (beneficiarios.fideicomisario) {
+                beneficiarios.fideicomisario.forEach(function (beneficiario) {
+                    agregarBeneficiarioControlador('fid_fideicomisario_edit');
+                    // Llenar datos...
+                });
+            }
+
+            // Cargar control efectivo
+            if (beneficiarios.control_efectivo) {
+                beneficiarios.control_efectivo.forEach(function (beneficiario) {
+                    agregarBeneficiarioControlador('fid_control_efectivo_edit');
+                    // Llenar datos...
+                });
+            }
+        }
+
+        // Event listeners para el modal de edición
+        $(document).ready(function () {
+            // Mostrar/ocultar moneda otra en edición
+            $('#moneda_edit').change(function () {
+                if ($(this).val() === 'Otra') {
+                    $('#div_moneda_otra_edit').show();
+                    $('#moneda_otra_edit').attr('required', true);
+                } else {
+                    $('#div_moneda_otra_edit').hide();
+                    $('#moneda_otra_edit').attr('required', false);
+                }
+            });
+
+            // Mostrar/ocultar monto efectivo en edición
+            $('#forma_pago_edit').change(function () {
+                if ($(this).val() === 'Efectivo' || $(this).val() === 'Mixto') {
+                    $('#div_monto_efectivo_edit').show();
+                    $('#monto_efectivo_edit').attr('required', true);
+                } else {
+                    $('#div_monto_efectivo_edit').hide();
+                    $('#monto_efectivo_edit').attr('required', false);
+                }
+            });
+
+            // Cambio de empresa en edición
+            $('#select_empresa_general_edit').change(function () {
+                const empresaId = $(this).val();
+                $('#hidden_empresa_id_edit').val(empresaId);
+
+                if (empresaId) {
+                    const empresaData = JSON.parse($(this).find('option:selected').attr('data-company') || '{}');
+                    mostrarInfoEmpresaSeleccionadaEdit(empresaData);
+                    cargarClientesPorEmpresaEdit(empresaId);
+                } else {
+                    $('#info-empresa-seleccionada-edit').hide();
+                    cargarTodosLosClientesEdit();
+                }
+            });
+
+            // Cambio de cliente en edición
+            $('#select_cliente_general_edit').change(function () {
+                const clienteId = $(this).val();
+                $('#hidden_cliente_id_edit').val(clienteId);
+
+                if (clienteId) {
+                    const clienteData = JSON.parse($(this).find('option:selected').attr('data-client') || '{}');
+                    mostrarInfoClienteSeleccionadoEdit(clienteData);
+                    cambiarModalSegunTipoClienteMejoradoEdit(clienteData.tipo_persona, clienteData);
+                } else {
+                    $('#info-cliente-seleccionado-edit').hide();
+                    limpiarFormularioClienteEdit();
+                }
+            });
+        });
+
+        /**
+         * Mostrar información de la empresa seleccionada en edición
+         */
+        function mostrarInfoEmpresaSeleccionadaEdit(empresaData) {
+            if (empresaData && empresaData.name_company) {
+                const info = `
+            <strong>Nombre:</strong> ${empresaData.name_company}<br>
+            <strong>RFC:</strong> ${empresaData.rfc_company || 'No especificado'}<br>
+            <strong>Teléfono:</strong> ${empresaData.phone_company || 'No especificado'}<br>
+            <strong>Email:</strong> ${empresaData.email_company || 'No especificado'}
+        `;
+                $('#detalle-empresa-edit').html(info);
+                $('#info-empresa-seleccionada-edit').show();
+            } else {
+                $('#info-empresa-seleccionada-edit').hide();
+            }
+        }
+
+        /**
+         * Mostrar información del cliente seleccionado en edición
+         */
+        function mostrarInfoClienteSeleccionadoEdit(clienteData) {
+            if (clienteData) {
+                let info = '';
+                if (clienteData.tipo_persona === 'persona_fisica') {
+                    info = `
+                <strong>Nombre:</strong> ${clienteData.nombre || ''} ${clienteData.apellido_paterno || ''} ${clienteData.apellido_materno || ''}<br>
+                <strong>RFC:</strong> ${clienteData.rfc || 'No especificado'}<br>
+                <strong>CURP:</strong> ${clienteData.curp || 'No especificado'}
+            `;
+                } else {
+                    info = `
+                <strong>Razón Social:</strong> ${clienteData.razon_social || ''}<br>
+                <strong>RFC:</strong> ${clienteData.rfc || 'No especificado'}
+            `;
+                }
+                $('#detalle-cliente-edit').html(info);
+                $('#info-cliente-seleccionado-edit').show();
+            } else {
+                $('#info-cliente-seleccionado-edit').hide();
+            }
+        }
+
+        /**
+         * Cargar clientes por empresa en edición
+         */
+        function cargarClientesPorEmpresaEdit(empresaId) {
+            $.ajax({
+                type: "GET",
+                url: "../../app/webservice.php",
+                data: {
+                    action: "getClientsByCompany",
+                    companyId: empresaId
+                },
+                dataType: 'json'
+            }).done(function (response) {
+                let options = '<option value="">-- Seleccionar cliente existente --</option>';
+                if (response.success && response.data) {
+                    response.data.forEach(function (cliente) {
+                        let nombreCompleto = '';
+                        if (cliente.tipo_persona === 'persona_fisica') {
+                            nombreCompleto = `${cliente.nombre || ''} ${cliente.apellido_paterno || ''} ${cliente.apellido_materno || ''}`.trim();
+                        } else {
+                            nombreCompleto = cliente.razon_social || '';
+                        }
+                        options += `<option value="${cliente.id_client}" data-client='${JSON.stringify(cliente)}'>${nombreCompleto} (${cliente.rfc || 'Sin RFC'})</option>`;
+                    });
+                }
+                $('#select_cliente_general_edit').html(options);
+            });
+        }
+
+        /**
+         * Cambiar modal según tipo de cliente en edición (mejorado)
+         */
+        function cambiarModalSegunTipoClienteMejoradoEdit(tipoPersona, clientData) {
+            let tipoClienteActual = $('#hidden_tipo_cliente_edit').val();
+            let tipoRequerido = '';
+            let nombreTipo = '';
+
+            // Determinar qué tipo de modal necesitamos
+            switch (tipoPersona) {
+                case 'fisica':
+                    tipoRequerido = 'persona_fisica';
+                    nombreTipo = 'Persona Física';
+                    break;
+                case 'moral':
+                    tipoRequerido = 'persona_moral';
+                    nombreTipo = 'Persona Moral';
+                    break;
+                case 'fideicomiso':
+                    tipoRequerido = 'fideicomiso';
+                    nombreTipo = 'Fideicomiso';
+                    break;
+            }
+
+            // Si el modal actual no coincide con el tipo de cliente seleccionado
+            if (tipoClienteActual !== tipoRequerido) {
+                console.log(`Cambiando modal de edición de ${tipoClienteActual} a ${tipoRequerido}`);
+                configurarModalSegunTipoEdit(tipoRequerido);
+            }
+
+            // Llenar los datos del cliente
+            llenarFormularioConClienteSeleccionadoEdit(clientData);
+            $('#tipo_cliente_display_edit').val(nombreTipo);
+        }
+
+        /**
+         * Llenar formulario con cliente seleccionado en edición
+         */
+        function llenarFormularioConClienteSeleccionadoEdit(clientData) {
+            if (!clientData) return;
+
+            switch (clientData.tipo_persona) {
+                case 'persona_fisica':
+                case 'fisica':
+                    $('#pf_nombre_edit').val(clientData.nombre || '');
+                    $('#pf_apellido_paterno_edit').val(clientData.apellido_paterno || '');
+                    $('#pf_apellido_materno_edit').val(clientData.apellido_materno || '');
+                    $('#pf_rfc_edit').val(clientData.rfc || '');
+                    $('#pf_curp_edit').val(clientData.curp || '');
+                    break;
+
+                case 'persona_moral':
+                case 'moral':
+                    $('#pm_razon_social_edit').val(clientData.razon_social || '');
+                    $('#pm_rfc_edit').val(clientData.rfc || '');
+                    break;
+
+                case 'fideicomiso':
+                    $('#fid_razon_social_edit').val(clientData.razon_social || '');
+                    $('#fid_rfc_edit').val(clientData.rfc || '');
+                    break;
+            }
+        }
+
+        /**
+         * Limpiar formulario de cliente en edición
+         */
+        function limpiarFormularioClienteEdit() {
+            // Limpiar campos de persona física
+            $('#pf_nombre_edit, #pf_apellido_paterno_edit, #pf_apellido_materno_edit, #pf_rfc_edit, #pf_curp_edit').val('');
+
+            // Limpiar campos de persona moral
+            $('#pm_razon_social_edit, #pm_rfc_edit').val('');
+
+            // Limpiar campos de fideicomiso
+            $('#fid_razon_social_edit, #fid_rfc_edit').val('');
+
+            // Limpiar beneficiarios
+            $('#beneficiarios-pm-edit').empty();
+            $('#beneficiarios-fid-fideicomitente-edit').empty();
+            $('#beneficiarios-fid-fiduciario-edit').empty();
+            $('#beneficiarios-fid-fideicomisario-edit').empty();
+            $('#beneficiarios-fid-control-efectivo-edit').empty();
+
+            // Resetear contadores
+            contadorBeneficiariosEdit = {
+                pm: 0,
+                fid_fideicomitente: 0,
+                fid_fiduciario: 0,
+                fid_fideicomisario: 0,
+                fid_control_efectivo: 0
+            };
+        }
+
+        /**
+         * Agregar beneficiario controlador en modal de edición
+         */
+        function agregarBeneficiarioControlador(tipo) {
+            let contador, contenedor, titulo, prefijo;
+
+            // Adaptar para el contexto de edición
+            let tipoBase = tipo.replace('_edit', '');
+
+            switch (tipoBase) {
+                case 'pm':
+                    contador = ++contadorBeneficiariosEdit.pm;
+                    contenedor = '#beneficiarios-pm-edit';
+                    titulo = 'Beneficiario Controlador';
+                    prefijo = 'pm_edit';
+                    break;
+                case 'fid_fideicomitente':
+                    contador = ++contadorBeneficiariosEdit.fid_fideicomitente;
+                    contenedor = '#beneficiarios-fid-fideicomitente-edit';
+                    titulo = 'Fideicomitente';
+                    prefijo = 'fid_fideicomitente_edit';
+                    break;
+                case 'fid_fiduciario':
+                    contador = ++contadorBeneficiariosEdit.fid_fiduciario;
+                    contenedor = '#beneficiarios-fid-fiduciario-edit';
+                    titulo = 'Fiduciario';
+                    prefijo = 'fid_fiduciario_edit';
+                    break;
+                case 'fid_fideicomisario':
+                    contador = ++contadorBeneficiariosEdit.fid_fideicomisario;
+                    contenedor = '#beneficiarios-fid-fideicomisario-edit';
+                    titulo = 'Fideicomisario';
+                    prefijo = 'fid_fideicomisario_edit';
+                    break;
+                case 'fid_control_efectivo':
+                    contador = ++contadorBeneficiariosEdit.fid_control_efectivo;
+                    contenedor = '#beneficiarios-fid-control-efectivo-edit';
+                    titulo = 'Control Efectivo';
+                    prefijo = 'fid_control_efectivo_edit';
+                    break;
+                default:
+                    console.error('Tipo de beneficiario no válido:', tipo);
+                    return;
+            }
+
+            const beneficiarioHtml = `
+        <div class="card mb-2 beneficiario-card-edit" id="beneficiario_card_${prefijo}_${contador}">
+            <div class="card-header d-flex justify-content-between align-items-center py-2">
+                <small><strong>${titulo} #${contador}</strong></small>
+                <button type="button" class="btn btn-sm btn-danger" onclick="eliminarBeneficiarioEdit('${prefijo}', ${contador})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            <div class="card-body py-2">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="beneficiario_${prefijo}_${contador}_nombre">Nombre(s):</label>
+                            <input type="text" class="form-control form-control-sm" 
+                                   id="beneficiario_${prefijo}_${contador}_nombre" 
+                                   name="beneficiarios[${tipoBase}][${contador}][nombre]" required>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="beneficiario_${prefijo}_${contador}_apellido_paterno">Apellido Paterno:</label>
+                            <input type="text" class="form-control form-control-sm" 
+                                   id="beneficiario_${prefijo}_${contador}_apellido_paterno" 
+                                   name="beneficiarios[${tipoBase}][${contador}][apellido_paterno]" required>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="beneficiario_${prefijo}_${contador}_apellido_materno">Apellido Materno:</label>
+                            <input type="text" class="form-control form-control-sm" 
+                                   id="beneficiario_${prefijo}_${contador}_apellido_materno" 
+                                   name="beneficiarios[${tipoBase}][${contador}][apellido_materno]">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="beneficiario_${prefijo}_${contador}_rfc">RFC:</label>
+                            <input type="text" class="form-control form-control-sm" 
+                                   id="beneficiario_${prefijo}_${contador}_rfc" 
+                                   name="beneficiarios[${tipoBase}][${contador}][rfc]" maxlength="13">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="beneficiario_${prefijo}_${contador}_porcentaje">Porcentaje de participación:</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control form-control-sm" 
+                                       id="beneficiario_${prefijo}_${contador}_porcentaje" 
+                                       name="beneficiarios[${tipoBase}][${contador}][porcentaje]" 
+                                       min="0" max="100" step="0.01">
+                                <div class="input-group-append">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+            $(contenedor).append(beneficiarioHtml);
+        }
+
+        /**
+         * Eliminar beneficiario controlador en modal de edición
+         */
+        function eliminarBeneficiarioEdit(prefijo, contador) {
+            if (confirm('¿Está seguro de eliminar este beneficiario controlador?')) {
+                $(`#beneficiario_card_${prefijo}_${contador}`).remove();
+            }
+        }
+
+        /**
+         * Función para mostrar alertas
+         */
+        function mostrarAlerta(mensaje, tipo = 'info') {
+            // Implementar según el sistema de alertas del proyecto
+            if (tipo === 'error') {
+                alert('Error: ' + mensaje);
+            } else {
+                alert(mensaje);
+            }
+        }
+
+        // Función para llamar desde los botones de editar en la tabla
+        function abrirModalEdit(operationId) {
+            editarOperacion(operationId);
+        }
     </script>
