@@ -2411,14 +2411,7 @@ public function updateNameFolder($data)
 
   // Función para obtener empresas clientes para selects
 
-  public function getClientCompaniesForSelect($status)
-  {
-    // TODOS ven TODAS las empresas clientes en los selects
-    $query = "SELECT * FROM companies WHERE status_company = ? AND type_company = 'client' ORDER BY name_company ASC";
-    $params = array($status);
 
-    return $this->consult($query, $params);
-  }
 
   // Estadísticas de empresas clientes
 
@@ -2461,9 +2454,315 @@ public function updateNameFolder($data)
 
 
 
-// Función para obtener clientes por tipo de persona
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// =====================================================================
+// MÉTODOS CORREGIDOS PARA WebController.php
+// La estructura correcta es:
+// - Empresa principal: company_id = X, fk_folder = 0 
+// - Clientes de empresa: fk_folder = [id_folder de empresa principal]
+// =====================================================================
+
+/**
+ * Función para obtener clientes solo por empresa (todos los tipos)
+ * @param int $empresaId ID de la empresa (company_id de la tabla companies)
+ * @return array Array de clientes
+ */
+public function getClientsByCompany($empresaId) {
+    // Primero obtener el id_folder de la carpeta principal de la empresa
+    $empresa_folder_query = "SELECT id_folder FROM folders WHERE company_id = ? AND fk_folder = 0 AND status_folder = 1 LIMIT 1";
+    $empresa_folder = $this->consult($empresa_folder_query, array($empresaId), true);
+    
+    if (!$empresa_folder) {
+        return array(); // Si no existe la carpeta principal, retornar array vacío
+    }
+    
+    $empresa_folder_id = $empresa_folder['id_folder'];
+    
+    // Ahora buscar clientes donde fk_folder = id_folder de la empresa principal
+    $where_clause = "WHERE f.status_folder = 1 AND f.eliminated_at_folder IS NULL AND f.fk_folder = ?";
+    $params = array($empresa_folder_id);
+    
+    $query = "SELECT 
+        f.id_folder,
+        f.key_folder,
+        f.tipo_persona,
+        f.rfc_folder,
+        f.curp_folder,
+        f.name_folder,
+        CASE 
+            WHEN f.tipo_persona = 'fisica' THEN CONCAT(f.pf_nombre, ' ', f.pf_apellido_paterno, ' ', IFNULL(f.pf_apellido_materno, ''))
+            WHEN f.tipo_persona = 'moral' THEN f.pm_razon_social
+            WHEN f.tipo_persona = 'fideicomiso' THEN f.fid_razon_social
+            ELSE f.name_folder
+        END as nombre_completo,
+        f.pf_nombre,
+        f.pf_apellido_paterno,
+        f.pf_apellido_materno,
+        f.pf_fecha_nacimiento,
+        f.pf_estado,
+        f.pf_ciudad,
+        f.pf_colonia,
+        f.pf_calle,
+        f.pf_num_exterior,
+        f.pf_num_interior,
+        f.pf_codigo_postal,
+        f.pf_telefono,
+        f.pf_email,
+        f.pm_razon_social,
+        f.pm_fecha_constitucion,
+        f.pm_apoderado_nombre,
+        f.pm_apoderado_paterno,
+        f.pm_apoderado_materno,
+        f.pm_apoderado_rfc,
+        f.pm_apoderado_curp,
+        f.pm_estado,
+        f.pm_ciudad,
+        f.pm_colonia,
+        f.pm_calle,
+        f.pm_num_exterior,
+        f.pm_num_interior,
+        f.pm_codigo_postal,
+        f.pm_telefono,
+        f.pm_email,
+        f.fid_razon_social,
+        f.fid_numero_referencia,
+        f.fid_estado,
+        f.fid_ciudad,
+        f.fid_colonia,
+        f.fid_calle,
+        f.fid_num_exterior,
+        f.fid_num_interior,
+        f.fid_codigo_postal,
+        f.fid_telefono,
+        f.fid_email,
+        c.name_company,
+        c.id_company
+    FROM folders f 
+    LEFT JOIN companies c ON f.company_id = c.id_company
+    {$where_clause}
+    ORDER BY nombre_completo ASC";
+    
+    return $this->consult($query, $params);
+}
+
+/**
+ * Función para obtener clientes por empresa y tipo de persona
+ * @param int $empresaId ID de la empresa (company_id)
+ * @param string $tipoPersona Tipo de persona (fisica, moral, fideicomiso)
+ * @return array Array de clientes
+ */
+public function getClientsByCompanyAndType($empresaId, $tipoPersona = null) {
+    // Primero obtener el id_folder de la carpeta principal de la empresa
+    $empresa_folder_query = "SELECT id_folder FROM folders WHERE company_id = ? AND fk_folder = 0 AND status_folder = 1 LIMIT 1";
+    $empresa_folder = $this->consult($empresa_folder_query, array($empresaId), true);
+    
+    if (!$empresa_folder) {
+        return array(); // Si no existe la carpeta principal, retornar array vacío
+    }
+    
+    $empresa_folder_id = $empresa_folder['id_folder'];
+    
+    // Ahora buscar clientes donde fk_folder = id_folder de la empresa principal
+    $where_clause = "WHERE f.status_folder = 1 AND f.eliminated_at_folder IS NULL AND f.fk_folder = ?";
+    $params = array($empresa_folder_id);
+    
+    // Filtrar por tipo de persona si se especifica
+    if ($tipoPersona) {
+        $where_clause .= " AND f.tipo_persona = ?";
+        $params[] = $tipoPersona;
+    }
+    
+    $query = "SELECT 
+        f.id_folder,
+        f.key_folder,
+        f.tipo_persona,
+        f.rfc_folder,
+        f.curp_folder,
+        f.name_folder,
+        CASE 
+            WHEN f.tipo_persona = 'fisica' THEN CONCAT(f.pf_nombre, ' ', f.pf_apellido_paterno, ' ', IFNULL(f.pf_apellido_materno, ''))
+            WHEN f.tipo_persona = 'moral' THEN f.pm_razon_social
+            WHEN f.tipo_persona = 'fideicomiso' THEN f.fid_razon_social
+            ELSE f.name_folder
+        END as nombre_completo,
+        f.pf_nombre,
+        f.pf_apellido_paterno,
+        f.pf_apellido_materno,
+        f.pf_fecha_nacimiento,
+        f.pf_estado,
+        f.pf_ciudad,
+        f.pf_colonia,
+        f.pf_calle,
+        f.pf_num_exterior,
+        f.pf_num_interior,
+        f.pf_codigo_postal,
+        f.pf_telefono,
+        f.pf_email,
+        f.pm_razon_social,
+        f.pm_fecha_constitucion,
+        f.pm_apoderado_nombre,
+        f.pm_apoderado_paterno,
+        f.pm_apoderado_materno,
+        f.pm_apoderado_rfc,
+        f.pm_apoderado_curp,
+        f.pm_estado,
+        f.pm_ciudad,
+        f.pm_colonia,
+        f.pm_calle,
+        f.pm_num_exterior,
+        f.pm_num_interior,
+        f.pm_codigo_postal,
+        f.pm_telefono,
+        f.pm_email,
+        f.fid_razon_social,
+        f.fid_numero_referencia,
+        f.fid_estado,
+        f.fid_ciudad,
+        f.fid_colonia,
+        f.fid_calle,
+        f.fid_num_exterior,
+        f.fid_num_interior,
+        f.fid_codigo_postal,
+        f.fid_telefono,
+        f.fid_email,
+        c.name_company,
+        c.id_company
+    FROM folders f 
+    LEFT JOIN companies c ON f.company_id = c.id_company
+    {$where_clause}
+    ORDER BY nombre_completo ASC";
+    
+    return $this->consult($query, $params);
+}
+
+/**
+ * Función para obtener TODOS los clientes sin filtros de empresa
+ * @return array Array de todos los clientes
+ */
+public function getAllClients() {
+    // Buscar todos los registros que sean clientes (fk_folder != 0)
+    // Esto excluye las carpetas principales de empresas
+    $where_clause = "WHERE f.status_folder = 1 AND f.eliminated_at_folder IS NULL AND f.fk_folder != 0";
+    $params = array();
+    
+    $query = "SELECT 
+        f.id_folder,
+        f.key_folder,
+        f.tipo_persona,
+        f.rfc_folder,
+        f.curp_folder,
+        f.name_folder,
+        CASE 
+            WHEN f.tipo_persona = 'fisica' THEN CONCAT(f.pf_nombre, ' ', f.pf_apellido_paterno, ' ', IFNULL(f.pf_apellido_materno, ''))
+            WHEN f.tipo_persona = 'moral' THEN f.pm_razon_social
+            WHEN f.tipo_persona = 'fideicomiso' THEN f.fid_razon_social
+            ELSE f.name_folder
+        END as nombre_completo,
+        f.pf_nombre,
+        f.pf_apellido_paterno,
+        f.pf_apellido_materno,
+        f.pf_fecha_nacimiento,
+        f.pf_estado,
+        f.pf_ciudad,
+        f.pf_colonia,
+        f.pf_calle,
+        f.pf_num_exterior,
+        f.pf_num_interior,
+        f.pf_codigo_postal,
+        f.pf_telefono,
+        f.pf_email,
+        f.pm_razon_social,
+        f.pm_fecha_constitucion,
+        f.pm_apoderado_nombre,
+        f.pm_apoderado_paterno,
+        f.pm_apoderado_materno,
+        f.pm_apoderado_rfc,
+        f.pm_apoderado_curp,
+        f.pm_estado,
+        f.pm_ciudad,
+        f.pm_colonia,
+        f.pm_calle,
+        f.pm_num_exterior,
+        f.pm_num_interior,
+        f.pm_codigo_postal,
+        f.pm_telefono,
+        f.pm_email,
+        f.fid_razon_social,
+        f.fid_numero_referencia,
+        f.fid_estado,
+        f.fid_ciudad,
+        f.fid_colonia,
+        f.fid_calle,
+        f.fid_num_exterior,
+        f.fid_num_interior,
+        f.fid_codigo_postal,
+        f.fid_telefono,
+        f.fid_email,
+        c.name_company,
+        c.id_company
+    FROM folders f 
+    LEFT JOIN companies c ON f.company_id = c.id_company
+    {$where_clause}
+    ORDER BY nombre_completo ASC";
+    
+    return $this->consult($query, $params);
+}
+
+/**
+ * Función para obtener empresas clientes para selects
+ * Incluye el ID de la carpeta principal para optimizar consultas posteriores
+ * @param int $status Estado de la empresa (1 = activa)
+ * @return array Array de empresas clientes
+ */
+public function getClientCompaniesForSelect($status = 1) {
+    $query = "SELECT 
+        c.id_company,
+        c.name_company,
+        c.rfc_company,
+        c.tipo_persona,
+        f.id_folder as folder_principal_id
+    FROM companies c
+    LEFT JOIN folders f ON c.id_company = f.company_id AND f.fk_folder = 0 AND f.status_folder = 1
+    WHERE c.status_company = ? AND c.type_company = 'client' 
+    ORDER BY c.name_company ASC";
+    
+    $params = array($status);
+    return $this->consult($query, $params);
+}
+
+/**
+ * Función auxiliar para obtener el ID de la carpeta principal de una empresa
+ * @param int $companyId ID de la empresa
+ * @return int|null ID de la carpeta principal o null si no existe
+ */
+public function getCompanyMainFolderId($companyId) {
+    $query = "SELECT id_folder FROM folders WHERE company_id = ? AND fk_folder = 0 AND status_folder = 1 LIMIT 1";
+    $result = $this->consult($query, array($companyId), true);
+    return $result ? $result['id_folder'] : null;
+}
+
+// FUNCIÓN EXISTENTE ACTUALIZADA: getClientsByType
+// (Si ya existe, reemplazar con esta versión que respeta la nueva estructura)
 public function getClientsByType($tipoPersona = null, $companyId = null) {
-    $where_clause = "WHERE f.status_folder = 1 AND f.key_folder LIKE 'CLI-%' AND f.eliminated_at_folder IS NULL";
+    $where_clause = "WHERE f.status_folder = 1 AND f.eliminated_at_folder IS NULL AND f.fk_folder != 0";
     $params = array();
     
     // Filtrar por tipo de persona si se especifica
@@ -2473,9 +2772,16 @@ public function getClientsByType($tipoPersona = null, $companyId = null) {
     }
     
     // Filtrar por empresa si se especifica (para usuarios de empresa)
+    // Necesitamos obtener primero el folder principal de la empresa
     if ($companyId) {
-        $where_clause .= " AND f.company_id = ?";
-        $params[] = $companyId;
+        $empresa_folder_id = $this->getCompanyMainFolderId($companyId);
+        if ($empresa_folder_id) {
+            $where_clause .= " AND f.fk_folder = ?";
+            $params[] = $empresa_folder_id;
+        } else {
+            // Si no existe carpeta principal, no retornar nada
+            return array();
+        }
     }
     
     $query = "SELECT 
@@ -2540,7 +2846,8 @@ public function getClientsByType($tipoPersona = null, $companyId = null) {
     return $this->consult($query, $params);
 }
 
-// Función para obtener un cliente específico por ID
+// FUNCIÓN EXISTENTE: getClientById
+// (Si ya existe, verificar que tenga esta estructura, si no, agregar)
 public function getClientById($idFolder) {
     $query = "SELECT 
         f.*,
@@ -2556,5 +2863,9 @@ public function getClientById($idFolder) {
 
 
 
+
+
+
+  
 }
 ?>

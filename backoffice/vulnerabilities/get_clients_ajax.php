@@ -1,5 +1,7 @@
 <?php
-// Crear archivo: backoffice/vulnerabilities/get_clients_ajax.php
+// =====================================================================
+// ARCHIVO ACTUALIZADO: backoffice/vulnerabilities/get_clients_ajax.php
+// =====================================================================
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -35,7 +37,187 @@ if (!isset($_SESSION['user'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
     
-    if ($_GET['action'] === 'get_clients_by_type') {
+    // =====================================================================
+    // NUEVA FUNCIÓN: Obtener empresas clientes
+    // =====================================================================
+    if ($_GET['action'] === 'get_client_companies') {
+        try {
+            // Verificar si el método existe
+            if (!method_exists($controller, 'getClientCompaniesForSelect')) {
+                throw new Exception('Método getClientCompaniesForSelect no existe. Necesitas agregarlo al WebController.php');
+            }
+            
+            $companies = $controller->getClientCompaniesForSelect(1); // status = 1 (activas)
+            
+            echo json_encode([
+                'success' => true,
+                'companies' => $companies,
+                'debug_info' => [
+                    'total_companies' => count($companies)
+                ]
+            ]);
+            
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+    
+    // =====================================================================
+    // NUEVA FUNCIÓN: Obtener clientes solo por empresa (todos los tipos)
+    // =====================================================================
+    elseif ($_GET['action'] === 'get_clients_by_company') {
+        $empresaId = isset($_GET['empresa_id']) ? intval($_GET['empresa_id']) : null;
+        
+        try {
+            // Verificar si el método existe
+            if (!method_exists($controller, 'getClientsByCompany')) {
+                throw new Exception('Método getClientsByCompany no existe. Necesitas agregarlo al WebController.php');
+            }
+            
+            $clients = $controller->getClientsByCompany($empresaId);
+            
+            // Formatear respuesta para el select
+            $options = [];
+            foreach ($clients as $client) {
+                $nombre = $client['nombre_completo'] ?? 'Sin nombre';
+                $rfc = $client['rfc_folder'] ?? 'Sin RFC';
+                
+                $options[] = [
+                    'id' => $client['id_folder'],
+                    'text' => $nombre . ' - ' . $rfc,
+                    'data' => $client
+                ];
+            }
+            
+            echo json_encode([
+                'success' => true,
+                'clients' => $options,
+                'debug_info' => [
+                    'empresa_id' => $empresaId,
+                    'total_clients' => count($clients)
+                ]
+            ]);
+            
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+    
+    // =====================================================================
+    // NUEVA FUNCIÓN: Obtener clientes por empresa y tipo
+    // =====================================================================
+    elseif ($_GET['action'] === 'get_clients_by_company_and_type') {
+        $empresaId = isset($_GET['empresa_id']) ? intval($_GET['empresa_id']) : null;
+        $tipoPersona = isset($_GET['tipo_persona']) ? $_GET['tipo_persona'] : null;
+        
+        try {
+            // Verificar si el método existe
+            if (!method_exists($controller, 'getClientsByCompanyAndType')) {
+                throw new Exception('Método getClientsByCompanyAndType no existe. Necesitas agregarlo al WebController.php');
+            }
+            
+            $clients = $controller->getClientsByCompanyAndType($empresaId, $tipoPersona);
+            
+            // Formatear respuesta para el select
+            $options = [];
+            foreach ($clients as $client) {
+                $nombre = $client['nombre_completo'] ?? 'Sin nombre';
+                $rfc = $client['rfc_folder'] ?? 'Sin RFC';
+                
+                $options[] = [
+                    'id' => $client['id_folder'],
+                    'text' => $nombre . ' - ' . $rfc,
+                    'data' => $client
+                ];
+            }
+            
+            echo json_encode([
+                'success' => true,
+                'clients' => $options,
+                'debug_info' => [
+                    'empresa_id' => $empresaId,
+                    'tipo_persona' => $tipoPersona,
+                    'total_clients' => count($clients)
+                ]
+            ]);
+            
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+    
+    // =====================================================================
+    // NUEVA FUNCIÓN: Obtener TODOS los clientes sin filtros
+    // =====================================================================
+    elseif ($_GET['action'] === 'get_all_clients') {
+        try {
+            // Verificar si el método existe
+            if (!method_exists($controller, 'getAllClients')) {
+                throw new Exception('Método getAllClients no existe. Necesitas agregarlo al WebController.php');
+            }
+            
+            $clients = $controller->getAllClients();
+            
+            // Formatear respuesta para el select
+            $options = [];
+            foreach ($clients as $client) {
+                $nombre = $client['nombre_completo'] ?? 'Sin nombre';
+                $rfc = $client['rfc_folder'] ?? 'Sin RFC';
+                $tipoPersona = '';
+                
+                // Agregar indicador del tipo de persona
+                switch($client['tipo_persona']) {
+                    case 'fisica':
+                        $tipoPersona = ' [PF]';
+                        break;
+                    case 'moral':
+                        $tipoPersona = ' [PM]';
+                        break;
+                    case 'fideicomiso':
+                        $tipoPersona = ' [FID]';
+                        break;
+                }
+                
+                $options[] = [
+                    'id' => $client['id_folder'],
+                    'text' => $nombre . ' - ' . $rfc . $tipoPersona,
+                    'data' => $client
+                ];
+            }
+            
+            echo json_encode([
+                'success' => true,
+                'clients' => $options,
+                'debug_info' => [
+                    'total_clients' => count($clients)
+                ]
+            ]);
+            
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+    
+    // =====================================================================
+    // FUNCIÓN EXISTENTE: Obtener clientes por tipo (MANTENER PARA COMPATIBILIDAD)
+    // =====================================================================
+    elseif ($_GET['action'] === 'get_clients_by_type') {
         $tipoPersona = isset($_GET['tipo_persona']) ? $_GET['tipo_persona'] : null;
         $companyId = null;
         
@@ -83,8 +265,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action'])) {
                 'error' => $e->getMessage()
             ]);
         }
-        
-    } elseif ($_GET['action'] === 'get_client_details' && isset($_GET['id'])) {
+    }
+    
+    // =====================================================================
+    // FUNCIÓN EXISTENTE: Obtener detalles de cliente (MANTENER)
+    // =====================================================================
+    elseif ($_GET['action'] === 'get_client_details' && isset($_GET['id'])) {
         
         try {
             if (!method_exists($controller, 'getClientById')) {

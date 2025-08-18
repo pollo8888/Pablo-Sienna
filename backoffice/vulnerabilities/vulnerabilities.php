@@ -450,6 +450,111 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
             min-width: 1400px;
             /* súbelo a 1600px si aún se aprieta */
         }
+
+        /* Estilos para cards colapsables */
+        .collapsible-card .card-header {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            padding-right: 50px;
+        }
+
+        /* CORREGIDO: Hover que mantiene colores originales */
+        .collapsible-card .card-header:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Hover específico para cada color de header */
+        .collapsible-card .card-header.bg-primary:hover {
+            background-color: #0056b3 !important;
+        }
+
+        .collapsible-card .card-header.bg-secondary:hover {
+            background-color: #545b62 !important;
+        }
+
+        .collapsible-card .card-header.bg-info:hover {
+            background-color: #138496 !important;
+        }
+
+        .collapsible-card .card-header.bg-success:hover {
+            background-color: #1e7e34 !important;
+        }
+
+        .collapsible-card .card-header.bg-warning:hover {
+            background-color: #d39e00 !important;
+        }
+
+        .collapsible-card .card-header.bg-danger:hover {
+            background-color: #bd2130 !important;
+        }
+
+        /* Si usas colores personalizados como purple */
+        .collapsible-card .card-header.bg-purple:hover {
+            background-color: #5a4b81 !important;
+        }
+
+        .collapsible-card .card-header .collapse-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: transform 0.3s ease;
+            font-size: 16px;
+            color: inherit;
+            /* Mantiene el color del texto del header */
+        }
+
+        .collapsible-card .card-header[aria-expanded="false"] .collapse-icon {
+            transform: translateY(-50%) rotate(-90deg);
+        }
+
+        .collapsible-card .card-header[aria-expanded="true"] .collapse-icon {
+            transform: translateY(-50%) rotate(0deg);
+        }
+
+        /* Animación suave para el colapso */
+        .collapsing {
+            transition: height 0.35s ease;
+        }
+
+        /* Indicador visual para cards requeridas */
+        .card-required .card-header::before {
+            content: "*";
+            color: #ffc107;
+            font-weight: bold;
+            margin-right: 5px;
+            font-size: 18px;
+        }
+
+        /* Efecto visual cuando la card está colapsada */
+        .collapsible-card .card-header[aria-expanded="false"] {
+            border-bottom: none;
+        }
+
+        /* Estilo especial para la card activa */
+        .card-active .card-header {
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        /* Efecto sutil en el icono al hacer hover */
+        .collapsible-card .card-header:hover .collapse-icon {
+            transform: translateY(-50%) scale(1.1) rotate(0deg);
+        }
+
+        .collapsible-card .card-header[aria-expanded="false"]:hover .collapse-icon {
+            transform: translateY(-50%) scale(1.1) rotate(-90deg);
+        }
+
+        /* Mantener texto blanco en todos los estados */
+        .collapsible-card .card-header,
+        .collapsible-card .card-header:hover,
+        .collapsible-card .card-header h6,
+        .collapsible-card .card-header:hover h6 {
+            color: white !important;
+        }
     </style>
 </head>
 
@@ -798,196 +903,284 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
 
                     <div class="modal-body">
                         <form id="formAgregarOperacion" action="vulnerabilities.php" method="POST">
+                            <div id="accordion-formulario"></div>
                             <input name="operation[key_operation]" type="hidden" value="<?php echo $clave; ?>">
                             <input name="operation[tipo_cliente]" type="hidden" id="hidden_tipo_cliente">
 
                             <!-- Sección 1: Tipo de Cliente -->
-                            <div class="card mb-3">
-                                <div class="card-header bg-primary text-white">
-                                    <h6 class="mb-0"><i class="fas fa-info-circle"></i> Tipo de Cliente</h6>
+                            <div class="card mb-3 collapsible-card">
+                                <div class="card-header bg-primary text-white" data-toggle="collapse"
+                                    data-target="#collapse-info-general" aria-expanded="true"
+                                    aria-controls="collapse-info-general">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-info-circle"></i> Información General del Cliente
+                                        <i class="fas fa-chevron-down collapse-icon"></i>
+                                    </h6>
                                 </div>
-                                <div class="card-body">
+                                <div id="collapse-info-general" class="collapse show"
+                                    data-parent="#accordion-formulario">
+                                    <div class="card-body">
+                                        <!-- Tipo de Cliente (readonly) -->
+                                        <div class="row mb-3">
+                                            <div class="col-12">
+                                                <div class="form-group">
+                                                    <label>Tipo de Cliente:</label>
+                                                    <input type="text" class="form-control" id="tipo_cliente_display"
+                                                        readonly="">
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                    <div class="form-group">
-                                        <label>Tipo de Cliente:</label>
-                                        <input type="text" class="form-control" id="tipo_cliente_display" readonly>
+                                        <!-- Select de Empresa -->
+                                        <div class="row mb-3">
+                                            <div class="col-12">
+                                                <div class="form-group">
+                                                    <label for="select_empresa_general">
+                                                        <i class="fas fa-building"></i> Seleccionar Empresa:
+                                                    </label>
+                                                    <select class="form-control" id="select_empresa_general"
+                                                        name="empresa_id_general">
+                                                        <option value="">-- Seleccionar empresa --</option>
+                                                    </select>
+                                                    <small class="form-text text-muted">
+                                                        Selecciona primero la empresa para filtrar los clientes
+                                                        disponibles
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Select de Cliente Existente -->
+                                        <div class="row mb-3">
+                                            <div class="col-12">
+                                                <div class="form-group">
+                                                    <label for="select_cliente_general">
+                                                        <i class="fas fa-user"></i> Seleccionar Cliente Existente
+                                                        (Opcional):
+                                                    </label>
+                                                    <select class="form-control" id="select_cliente_general"
+                                                        name="id_cliente_existente_general">
+                                                        <option value="">-- Seleccionar cliente existente --</option>
+                                                    </select>
+                                                    <small class="form-text text-muted">
+                                                        Puedes seleccionar un cliente existente para autocompletar los
+                                                        datos, o crear uno nuevo llenando el formulario
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Información adicional -->
+                                        <div class="alert alert-info" role="alert">
+                                            <i class="fas fa-info-circle"></i>
+                                            <strong>Instrucciones:</strong>
+                                            <ul class="mb-0 mt-2">
+                                                <li>Si seleccionas una empresa, se mostrarán solo los clientes de esa
+                                                    empresa</li>
+                                                <li>Si no seleccionas empresa, se mostrarán todos los clientes
+                                                    disponibles
+                                                </li>
+                                                <li>Al seleccionar un cliente existente, sus datos se cargarán
+                                                    automáticamente</li>
+                                                <li>Si no seleccionas un cliente, puedes crear uno nuevo llenando el
+                                                    formulario</li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Sección 2: Información de la Operación -->
-                            <div class="card mb-3">
-                                <div class="card-header bg-warning text-dark">
-                                    <h6 class="mb-0"><i class="fas fa-file-contract"></i> Información de la Operación
+                            <div class="card mb-3 collapsible-card card-required">
+                                <div class="card-header bg-secondary text-white" data-toggle="collapse"
+                                    data-target="#collapse-operacion" aria-expanded="true"
+                                    aria-controls="collapse-operacion">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-handshake"></i> Información de la Operación
+                                        <i class="fas fa-chevron-down collapse-icon"></i>
                                     </h6>
                                 </div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="fecha_operacion">Fecha de Operación: <span
-                                                        class="text-danger">*</span></label>
-                                                <input name="operation[fecha_operacion]" type="date"
-                                                    class="form-control" id="fecha_operacion" required>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="tipo_operacion">Tipo de Operación: <span
-                                                        class="text-danger">*</span></label>
-                                                <select name="operation[tipo_operacion]" class="form-control"
-                                                    id="tipo_operacion" required onchange="updateThresholdInfo()">
-                                                    <option value="">Seleccione...</option>
-                                                    <option value="intermediacion">Intermediación (Fracción I)</option>
-                                                    <option value="compra_directa">Compra directa</option>
-                                                    <option value="preventa">Preventa (Fracción XX)</option>
-                                                    <option value="construccion">Construcción (Fracción XX)</option>
-                                                    <option value="arrendamiento">Arrendamiento (Fracción XX)</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
+                                <div id="collapse-operacion" class="collapse show" data-parent="#accordion-formulario">
 
-                                    <div class="row">
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="monto_operacion">Monto de la Operación: <span
-                                                        class="text-danger">*</span></label>
-                                                <div class="input-group">
-                                                    <div class="input-group-prepend">
-                                                        <span class="input-group-text">$</span>
-                                                    </div>
-                                                    <input name="operation[monto_operacion]" type="number"
-                                                        class="form-control" id="monto_operacion" step="0.01" required
-                                                        onchange="validateOperationAmount()">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label for="fecha_operacion">Fecha de Operación: <span
+                                                            class="text-danger">*</span></label>
+                                                    <input name="operation[fecha_operacion]" type="date"
+                                                        class="form-control" id="fecha_operacion" required>
                                                 </div>
-                                                <small id="threshold-info" class="form-text text-muted">Seleccione el
-                                                    tipo de operación para ver el umbral</small>
                                             </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="moneda">Moneda:</label>
-                                                <select name="operation[moneda]" class="form-control" id="moneda"
-                                                    onchange="toggleOtraMoneda()">
-                                                    <option value="MXN">MXN - Peso Mexicano</option>
-                                                    <option value="USD">USD - Dólar Americano</option>
-                                                    <option value="EUR">EUR - Euro</option>
-                                                    <option value="otra">Otra</option>
-                                                </select>
-                                                <input name="operation[moneda_otra]" type="text"
-                                                    class="form-control mt-2" id="moneda_otra"
-                                                    placeholder="Especifique la moneda" style="display: none;">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="forma_pago">Forma de Pago:</label>
-                                                <select name="operation[forma_pago]" class="form-control"
-                                                    id="forma_pago" onchange="toggleCashAmount()">
-                                                    <option value="transferencia">Transferencia bancaria</option>
-                                                    <option value="cheque">Cheque</option>
-                                                    <option value="efectivo">Efectivo</option>
-                                                    <option value="credito">Crédito</option>
-                                                    <option value="otro">Otro</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div id="cash-amount-section" class="row" style="display: none;">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="monto_efectivo">Monto en Efectivo:</label>
-                                                <div class="input-group">
-                                                    <div class="input-group-prepend">
-                                                        <span class="input-group-text">$</span>
-                                                    </div>
-                                                    <input name="operation[monto_efectivo]" type="number"
-                                                        class="form-control" id="monto_efectivo" step="0.01"
-                                                        onchange="validateCashLimit()">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label for="tipo_operacion">Tipo de Operación: <span
+                                                            class="text-danger">*</span></label>
+                                                    <select name="operation[tipo_operacion]" class="form-control"
+                                                        id="tipo_operacion" required onchange="updateThresholdInfo()">
+                                                        <option value="">Seleccione...</option>
+                                                        <option value="intermediacion">Intermediación (Fracción I)
+                                                        </option>
+                                                        <option value="compra_directa">Compra directa</option>
+                                                        <option value="preventa">Preventa (Fracción XX)</option>
+                                                        <option value="construccion">Construcción (Fracción XX)</option>
+                                                        <option value="arrendamiento">Arrendamiento (Fracción XX)
+                                                        </option>
+                                                    </select>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <!-- Alertas PLD -->
-                                    <div id="pld-alerts-container" class="mt-3"></div>
+                                        <div class="row">
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label for="monto_operacion">Monto de la Operación: <span
+                                                            class="text-danger">*</span></label>
+                                                    <div class="input-group">
+                                                        <div class="input-group-prepend">
+                                                            <span class="input-group-text">$</span>
+                                                        </div>
+                                                        <input name="operation[monto_operacion]" type="number"
+                                                            class="form-control" id="monto_operacion" step="0.01"
+                                                            required onchange="validateOperationAmount()">
+                                                    </div>
+                                                    <small id="threshold-info" class="form-text text-muted">Seleccione
+                                                        el
+                                                        tipo de operación para ver el umbral</small>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label for="moneda">Moneda:</label>
+                                                    <select name="operation[moneda]" class="form-control" id="moneda"
+                                                        onchange="toggleOtraMoneda()">
+                                                        <option value="MXN">MXN - Peso Mexicano</option>
+                                                        <option value="USD">USD - Dólar Americano</option>
+                                                        <option value="EUR">EUR - Euro</option>
+                                                        <option value="otra">Otra</option>
+                                                    </select>
+                                                    <input name="operation[moneda_otra]" type="text"
+                                                        class="form-control mt-2" id="moneda_otra"
+                                                        placeholder="Especifique la moneda" style="display: none;">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label for="forma_pago">Forma de Pago:</label>
+                                                    <select name="operation[forma_pago]" class="form-control"
+                                                        id="forma_pago" onchange="toggleCashAmount()">
+                                                        <option value="transferencia">Transferencia bancaria</option>
+                                                        <option value="cheque">Cheque</option>
+                                                        <option value="efectivo">Efectivo</option>
+                                                        <option value="credito">Crédito</option>
+                                                        <option value="otro">Otro</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div id="cash-amount-section" class="row" style="display: none;">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label for="monto_efectivo">Monto en Efectivo:</label>
+                                                    <div class="input-group">
+                                                        <div class="input-group-prepend">
+                                                            <span class="input-group-text">$</span>
+                                                        </div>
+                                                        <input name="operation[monto_efectivo]" type="number"
+                                                            class="form-control" id="monto_efectivo" step="0.01"
+                                                            onchange="validateCashLimit()">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Alertas PLD -->
+                                        <div id="pld-alerts-container" class="mt-3"></div>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Sección 3: Información del Inmueble -->
-                            <div class="card mb-3">
-                                <div class="card-header bg-info text-white">
-                                    <h6 class="mb-0"><i class="fas fa-building"></i> Información del Inmueble</h6>
+                            <div class="card mb-3 collapsible-card">
+                                <div class="card-header bg-info text-white" data-toggle="collapse"
+                                    data-target="#collapse-inmueble" aria-expanded="false"
+                                    aria-controls="collapse-inmueble">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-building"></i> Información del Inmueble
+                                        <i class="fas fa-chevron-down collapse-icon"></i>
+                                    </h6>
                                 </div>
-                                <div class="card-body">
-                                    <div class="row">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="tipo_propiedad">Tipo de Propiedad: <span
-                                                        class="text-danger">*</span></label>
-                                                <select name="operation[tipo_propiedad]" class="form-control"
-                                                    id="tipo_propiedad" required>
-                                                    <option value="">Seleccionar tipo...</option>
-                                                    <option value="habitacional">Habitacional</option>
-                                                    <option value="comercial">Comercial</option>
-                                                    <option value="industrial">Industrial</option>
-                                                    <option value="mixto">Mixto</option>
-                                                </select>
+                                <div id="collapse-inmueble" class="collapse" data-parent="#accordion-formulario">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label for="tipo_propiedad">Tipo de Propiedad: <span
+                                                            class="text-danger">*</span></label>
+                                                    <select name="operation[tipo_propiedad]" class="form-control"
+                                                        id="tipo_propiedad" required>
+                                                        <option value="">Seleccionar tipo...</option>
+                                                        <option value="habitacional">Habitacional</option>
+                                                        <option value="comercial">Comercial</option>
+                                                        <option value="industrial">Industrial</option>
+                                                        <option value="mixto">Mixto</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label for="uso_inmueble">Uso Específico del Inmueble:</label>
+                                                    <select name="operation[uso_inmueble]" class="form-control"
+                                                        id="uso_inmueble">
+                                                        <option value="">Seleccionar uso...</option>
+                                                        <option value="casa_residencial">Casa Residencial</option>
+                                                        <option value="departamento">Departamento</option>
+                                                        <option value="terreno">Terreno</option>
+                                                        <option value="local_comercial">Local Comercial</option>
+                                                        <option value="oficina">Oficina</option>
+                                                        <option value="bodega">Bodega</option>
+                                                    </select>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="uso_inmueble">Uso Específico del Inmueble:</label>
-                                                <select name="operation[uso_inmueble]" class="form-control"
-                                                    id="uso_inmueble">
-                                                    <option value="">Seleccionar uso...</option>
-                                                    <option value="casa_residencial">Casa Residencial</option>
-                                                    <option value="departamento">Departamento</option>
-                                                    <option value="terreno">Terreno</option>
-                                                    <option value="local_comercial">Local Comercial</option>
-                                                    <option value="oficina">Oficina</option>
-                                                    <option value="bodega">Bodega</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
 
-                                    <div class="row">
-                                        <div class="col-lg-8">
-                                            <div class="form-group">
-                                                <label for="direccion_inmueble">Dirección del Inmueble:</label>
-                                                <textarea name="operation[direccion_inmueble]" class="form-control"
-                                                    id="direccion_inmueble" rows="2"
-                                                    placeholder="Calle, número, colonia, ciudad, estado"></textarea>
+                                        <div class="row">
+                                            <div class="col-lg-8">
+                                                <div class="form-group">
+                                                    <label for="direccion_inmueble">Dirección del Inmueble:</label>
+                                                    <textarea name="operation[direccion_inmueble]" class="form-control"
+                                                        id="direccion_inmueble" rows="2"
+                                                        placeholder="Calle, número, colonia, ciudad, estado"></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label for="codigo_postal">Código Postal: <span
+                                                            class="text-danger">*</span></label>
+                                                    <input name="operation[codigo_postal]" type="text"
+                                                        class="form-control" id="codigo_postal" maxlength="6"
+                                                        placeholder="123456" required>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="codigo_postal">Código Postal: <span
-                                                        class="text-danger">*</span></label>
-                                                <input name="operation[codigo_postal]" type="text" class="form-control"
-                                                    id="codigo_postal" maxlength="6" placeholder="123456" required>
-                                            </div>
-                                        </div>
-                                    </div>
 
-                                    <div class="row">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="folio_escritura">Folio de Escritura:</label>
-                                                <input name="operation[folio_escritura]" type="text"
-                                                    class="form-control" id="folio_escritura"
-                                                    placeholder="Folio de escritura">
+                                        <div class="row">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label for="folio_escritura">Folio de Escritura:</label>
+                                                    <input name="operation[folio_escritura]" type="text"
+                                                        class="form-control" id="folio_escritura"
+                                                        placeholder="Folio de escritura">
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="propietario_anterior">Propietario Anterior:</label>
-                                                <input name="operation[propietario_anterior]" type="text"
-                                                    class="form-control" id="propietario_anterior"
-                                                    placeholder="Nombre del propietario anterior">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label for="propietario_anterior">Propietario Anterior:</label>
+                                                    <input name="operation[propietario_anterior]" type="text"
+                                                        class="form-control" id="propietario_anterior"
+                                                        placeholder="Nombre del propietario anterior">
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -995,193 +1188,92 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                             </div>
 
                             <!-- Sección 4: Información del Cliente - PERSONA FÍSICA -->
-                            <div class="card mb-3" id="seccion-persona-fisica" style="display: none;">
-                                <div class="card-header bg-success text-white">
-                                    <h6 class="mb-0"><i class="fas fa-user"></i> Información de la Persona Física</h6>
+                            <div class="card mb-3 collapsible-card" id="seccion-persona-fisica" style="display: none;">
+                                <div class="card-header bg-success text-white" data-toggle="collapse"
+                                    data-target="#collapse-persona-fisica" aria-expanded="false"
+                                    aria-controls="collapse-persona-fisica">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-user"></i> Información de la Persona Física
+                                        <i class="fas fa-chevron-down collapse-icon"></i>
+                                    </h6>
                                 </div>
-                                <div class="card-body">
-                                    <div class="row mb-3">
-                                        <div class="col-12">
-                                            <div class="form-group">
-                                                <label for="select_cliente_pf">Seleccionar Cliente Existente
-                                                    (Opcional):</label>
-                                                <select class="form-control" id="select_cliente_pf"
-                                                    name="id_cliente_existente_pf">
-                                                    <option value="">-- Seleccionar cliente existente --</option>
-                                                </select>
-                                                <small class="form-text text-muted">
+                                <div id="collapse-persona-fisica" class="collapse" data-parent="#accordion-formulario">
 
-
-                                                </small>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <hr>
-                                    <div class="row">
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pf_nombre">Nombre: <span
-                                                        class="text-danger">*</span></label>
-                                                <input name="operation[pf_nombre]" type="text" class="form-control"
-                                                    id="pf_nombre" placeholder="Nombre completo">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pf_apellido_paterno">Apellido Paterno: <span
-                                                        class="text-danger">*</span></label>
-                                                <input name="operation[pf_apellido_paterno]" type="text"
-                                                    class="form-control" id="pf_apellido_paterno"
-                                                    placeholder="Apellido paterno">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pf_apellido_materno">Apellido Materno:</label>
-                                                <input name="operation[pf_apellido_materno]" type="text"
-                                                    class="form-control" id="pf_apellido_materno"
-                                                    placeholder="Apellido materno">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pf_rfc">RFC: <span class="text-danger">*</span></label>
-                                                <input name="operation[pf_rfc]" type="text" class="form-control"
-                                                    id="pf_rfc" maxlength="13" placeholder="ABCD123456ABC">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pf_curp">CURP:</label>
-                                                <input name="operation[pf_curp]" type="text" class="form-control"
-                                                    id="pf_curp" maxlength="18" placeholder="ABCD123456ABCDEFGH">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pf_fecha_nacimiento">Fecha de Nacimiento:</label>
-                                                <input name="operation[pf_fecha_nacimiento]" type="date"
-                                                    class="form-control" id="pf_fecha_nacimiento">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <h6 class="mt-4 mb-3">Domicilio Nacional</h6>
-                                    <div class="row">
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pf_estado">Estado:</label>
-                                                <input name="operation[pf_estado]" type="text" class="form-control"
-                                                    id="pf_estado" placeholder="Estado">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pf_ciudad">Ciudad o Población:</label>
-                                                <input name="operation[pf_ciudad]" type="text" class="form-control"
-                                                    id="pf_ciudad" placeholder="Ciudad">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pf_colonia">Colonia:</label>
-                                                <input name="operation[pf_colonia]" type="text" class="form-control"
-                                                    id="pf_colonia" placeholder="Colonia">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="pf_calle">Calle:</label>
-                                                <input name="operation[pf_calle]" type="text" class="form-control"
-                                                    id="pf_calle" placeholder="Calle">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-2">
-                                            <div class="form-group">
-                                                <label for="pf_num_exterior">Núm. Exterior:</label>
-                                                <input name="operation[pf_num_exterior]" type="text"
-                                                    class="form-control" id="pf_num_exterior" placeholder="123">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-2">
-                                            <div class="form-group">
-                                                <label for="pf_num_interior">Núm. Interior:</label>
-                                                <input name="operation[pf_num_interior]" type="text"
-                                                    class="form-control" id="pf_num_interior" placeholder="123">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-2">
-                                            <div class="form-group">
-                                                <label for="pf_codigo_postal">Código Postal:</label>
-                                                <input name="operation[pf_codigo_postal]" type="text"
-                                                    class="form-control" id="pf_codigo_postal" maxlength="6"
-                                                    placeholder="123456">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="pf_correo">Correo Electrónico:</label>
-                                                <input name="operation[pf_correo]" type="email" class="form-control"
-                                                    id="pf_correo" placeholder="correo@ejemplo.com">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="pf_telefono">Teléfono:</label>
-                                                <input name="operation[pf_telefono]" type="tel" class="form-control"
-                                                    id="pf_telefono" placeholder="Teléfono">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Domicilio Extranjero (Opcional) -->
-                                    <div class="row">
-                                        <div class="col-lg-12">
-                                            <div class="form-check">
-                                                <input type="checkbox" class="form-check-input"
-                                                    id="pf_tiene_domicilio_extranjero"
-                                                    onchange="toggleDomicilioExtranjero('pf')">
-                                                <label class="form-check-label" for="pf_tiene_domicilio_extranjero">
-                                                    <strong>¿Tiene domicilio extranjero?</strong>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div id="pf_domicilio_extranjero" class="mt-3" style="display: none;">
-                                        <h6 class="mb-3">Domicilio Extranjero (Opcional)</h6>
+                                    <div class="card-body">
+                                        <hr>
                                         <div class="row">
                                             <div class="col-lg-4">
                                                 <div class="form-group">
-                                                    <label for="pf_pais_origen">País de Origen:</label>
-                                                    <input name="operation[pf_pais_origen]" type="text"
-                                                        class="form-control" id="pf_pais_origen" placeholder="País">
+                                                    <label for="pf_nombre">Nombre: <span
+                                                            class="text-danger">*</span></label>
+                                                    <input name="operation[pf_nombre]" type="text" class="form-control"
+                                                        id="pf_nombre" placeholder="Nombre completo">
                                                 </div>
                                             </div>
                                             <div class="col-lg-4">
                                                 <div class="form-group">
-                                                    <label for="pf_estado_provincia_ext">Estado o Provincia:</label>
-                                                    <input name="operation[pf_estado_provincia_ext]" type="text"
-                                                        class="form-control" id="pf_estado_provincia_ext"
-                                                        placeholder="Estado">
+                                                    <label for="pf_apellido_paterno">Apellido Paterno: <span
+                                                            class="text-danger">*</span></label>
+                                                    <input name="operation[pf_apellido_paterno]" type="text"
+                                                        class="form-control" id="pf_apellido_paterno"
+                                                        placeholder="Apellido paterno">
                                                 </div>
                                             </div>
                                             <div class="col-lg-4">
                                                 <div class="form-group">
-                                                    <label for="pf_ciudad_poblacion_ext">Ciudad o Población:</label>
-                                                    <input name="operation[pf_ciudad_poblacion_ext]" type="text"
-                                                        class="form-control" id="pf_ciudad_poblacion_ext"
-                                                        placeholder="Ciudad">
+                                                    <label for="pf_apellido_materno">Apellido Materno:</label>
+                                                    <input name="operation[pf_apellido_materno]" type="text"
+                                                        class="form-control" id="pf_apellido_materno"
+                                                        placeholder="Apellido materno">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label for="pf_rfc">RFC: <span class="text-danger">*</span></label>
+                                                    <input name="operation[pf_rfc]" type="text" class="form-control"
+                                                        id="pf_rfc" maxlength="13" placeholder="ABCD123456ABC">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label for="pf_curp">CURP:</label>
+                                                    <input name="operation[pf_curp]" type="text" class="form-control"
+                                                        id="pf_curp" maxlength="18" placeholder="ABCD123456ABCDEFGH">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label for="pf_fecha_nacimiento">Fecha de Nacimiento:</label>
+                                                    <input name="operation[pf_fecha_nacimiento]" type="date"
+                                                        class="form-control" id="pf_fecha_nacimiento">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <h6 class="mt-4 mb-3">Domicilio Nacional</h6>
+                                        <div class="row">
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label for="pf_estado">Estado:</label>
+                                                    <input name="operation[pf_estado]" type="text" class="form-control"
+                                                        id="pf_estado" placeholder="Estado">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label for="pf_ciudad">Ciudad o Población:</label>
+                                                    <input name="operation[pf_ciudad]" type="text" class="form-control"
+                                                        id="pf_ciudad" placeholder="Ciudad">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label for="pf_colonia">Colonia:</label>
+                                                    <input name="operation[pf_colonia]" type="text" class="form-control"
+                                                        id="pf_colonia" placeholder="Colonia">
                                                 </div>
                                             </div>
                                         </div>
@@ -1189,41 +1281,137 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                                         <div class="row">
                                             <div class="col-lg-6">
                                                 <div class="form-group">
-                                                    <label for="pf_colonia_ext">Colonia del Extranjero:</label>
-                                                    <input name="operation[pf_colonia_ext]" type="text"
-                                                        class="form-control" id="pf_colonia_ext" placeholder="Colonia">
+                                                    <label for="pf_calle">Calle:</label>
+                                                    <input name="operation[pf_calle]" type="text" class="form-control"
+                                                        id="pf_calle" placeholder="Calle">
                                                 </div>
                                             </div>
-                                            <div class="col-lg-6">
+                                            <div class="col-lg-2">
                                                 <div class="form-group">
-                                                    <label for="pf_calle_ext">Calle del Extranjero:</label>
-                                                    <input name="operation[pf_calle_ext]" type="text"
-                                                        class="form-control" id="pf_calle_ext" placeholder="Calle">
+                                                    <label for="pf_num_exterior">Núm. Exterior:</label>
+                                                    <input name="operation[pf_num_exterior]" type="text"
+                                                        class="form-control" id="pf_num_exterior" placeholder="123">
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        <div class="row">
-                                            <div class="col-lg-4">
+                                            <div class="col-lg-2">
                                                 <div class="form-group">
-                                                    <label for="pf_num_exterior_ext">Núm. Exterior (Ext):</label>
-                                                    <input name="operation[pf_num_exterior_ext]" type="text"
-                                                        class="form-control" id="pf_num_exterior_ext" placeholder="123">
+                                                    <label for="pf_num_interior">Núm. Interior:</label>
+                                                    <input name="operation[pf_num_interior]" type="text"
+                                                        class="form-control" id="pf_num_interior" placeholder="123">
                                                 </div>
                                             </div>
-                                            <div class="col-lg-4">
+                                            <div class="col-lg-2">
                                                 <div class="form-group">
-                                                    <label for="pf_num_interior_ext">Núm. Interior (Ext):</label>
-                                                    <input name="operation[pf_num_interior_ext]" type="text"
-                                                        class="form-control" id="pf_num_interior_ext" placeholder="123">
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-4">
-                                                <div class="form-group">
-                                                    <label for="pf_codigo_postal_ext">Código Postal Extranjero:</label>
-                                                    <input name="operation[pf_codigo_postal_ext]" type="text"
-                                                        class="form-control" id="pf_codigo_postal_ext"
+                                                    <label for="pf_codigo_postal">Código Postal:</label>
+                                                    <input name="operation[pf_codigo_postal]" type="text"
+                                                        class="form-control" id="pf_codigo_postal" maxlength="6"
                                                         placeholder="123456">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label for="pf_correo">Correo Electrónico:</label>
+                                                    <input name="operation[pf_correo]" type="email" class="form-control"
+                                                        id="pf_correo" placeholder="correo@ejemplo.com">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label for="pf_telefono">Teléfono:</label>
+                                                    <input name="operation[pf_telefono]" type="tel" class="form-control"
+                                                        id="pf_telefono" placeholder="Teléfono">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Domicilio Extranjero (Opcional) -->
+                                        <div class="row">
+                                            <div class="col-lg-12">
+                                                <div class="form-check">
+                                                    <input type="checkbox" class="form-check-input"
+                                                        id="pf_tiene_domicilio_extranjero"
+                                                        onchange="toggleDomicilioExtranjero('pf')">
+                                                    <label class="form-check-label" for="pf_tiene_domicilio_extranjero">
+                                                        <strong>¿Tiene domicilio extranjero?</strong>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div id="pf_domicilio_extranjero" class="mt-3" style="display: none;">
+                                            <h6 class="mb-3">Domicilio Extranjero (Opcional)</h6>
+                                            <div class="row">
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="pf_pais_origen">País de Origen:</label>
+                                                        <input name="operation[pf_pais_origen]" type="text"
+                                                            class="form-control" id="pf_pais_origen" placeholder="País">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="pf_estado_provincia_ext">Estado o Provincia:</label>
+                                                        <input name="operation[pf_estado_provincia_ext]" type="text"
+                                                            class="form-control" id="pf_estado_provincia_ext"
+                                                            placeholder="Estado">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="pf_ciudad_poblacion_ext">Ciudad o Población:</label>
+                                                        <input name="operation[pf_ciudad_poblacion_ext]" type="text"
+                                                            class="form-control" id="pf_ciudad_poblacion_ext"
+                                                            placeholder="Ciudad">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label for="pf_colonia_ext">Colonia del Extranjero:</label>
+                                                        <input name="operation[pf_colonia_ext]" type="text"
+                                                            class="form-control" id="pf_colonia_ext"
+                                                            placeholder="Colonia">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label for="pf_calle_ext">Calle del Extranjero:</label>
+                                                        <input name="operation[pf_calle_ext]" type="text"
+                                                            class="form-control" id="pf_calle_ext" placeholder="Calle">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="pf_num_exterior_ext">Núm. Exterior (Ext):</label>
+                                                        <input name="operation[pf_num_exterior_ext]" type="text"
+                                                            class="form-control" id="pf_num_exterior_ext"
+                                                            placeholder="123">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="pf_num_interior_ext">Núm. Interior (Ext):</label>
+                                                        <input name="operation[pf_num_interior_ext]" type="text"
+                                                            class="form-control" id="pf_num_interior_ext"
+                                                            placeholder="123">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="pf_codigo_postal_ext">Código Postal
+                                                            Extranjero:</label>
+                                                        <input name="operation[pf_codigo_postal_ext]" type="text"
+                                                            class="form-control" id="pf_codigo_postal_ext"
+                                                            placeholder="123456">
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1232,226 +1420,37 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                             </div>
 
                             <!-- Sección 5: Información del Cliente - PERSONA MORAL -->
-                            <div class="card mb-3" id="seccion-persona-moral" style="display: none;">
-                                <div class="card-header bg-success text-white">
-                                    <h6 class="mb-0"><i class="fas fa-building"></i> Información de la Persona Moral
+                            <div class="card mb-3 collapsible-card" id="seccion-persona-moral" style="display: none;">
+                                <div class="card-header bg-warning text-white" data-toggle="collapse"
+                                    data-target="#collapse-persona-moral" aria-expanded="false"
+                                    aria-controls="collapse-persona-moral">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-building"></i> Información de la Persona Moral
+                                        <i class="fas fa-chevron-down collapse-icon"></i>
                                     </h6>
                                 </div>
-                                <div class="card-body">
-                                    <div class="row mb-3">
-                                        <div class="col-12">
-                                            <div class="form-group">
-                                                <label for="select_cliente_pm">Seleccionar Cliente Existente
-                                                    (Opcional):</label>
-                                                <select class="form-control" id="select_cliente_pm"
-                                                    name="id_cliente_existente_pm">
-                                                    <option value="">-- Seleccionar cliente existente --</option>
-                                                </select>
-                                                <small class="form-text text-muted">
+                                <div id="collapse-persona-moral" class="collapse" data-parent="#accordion-formulario">
+
+                                    <div class="card-body">
 
 
-                                                </small>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <hr>
-                                    <div class="row">
-                                        <div class="col-lg-8">
-                                            <div class="form-group">
-                                                <label for="pm_razon_social">Razón Social: <span
-                                                        class="text-danger">*</span></label>
-                                                <input name="operation[pm_razon_social]" type="text"
-                                                    class="form-control" id="pm_razon_social"
-                                                    placeholder="Razón social">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pm_rfc">RFC Persona Moral: <span
-                                                        class="text-danger">*</span></label>
-                                                <input name="operation[pm_rfc]" type="text" class="form-control"
-                                                    id="pm_rfc" maxlength="12" placeholder="ABCD123456ABC">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="pm_fecha_constitucion">Fecha de Constitución:</label>
-                                                <input name="operation[pm_fecha_constitucion]" type="date"
-                                                    class="form-control" id="pm_fecha_constitucion">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <h6 class="mt-4 mb-3">Apoderado Legal</h6>
-                                    <div class="row">
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pm_apoderado_nombre">Nombre:</label>
-                                                <input name="operation[pm_apoderado_nombre]" type="text"
-                                                    class="form-control" id="pm_apoderado_nombre" placeholder="Nombre">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pm_apoderado_paterno">Apellido Paterno:</label>
-                                                <input name="operation[pm_apoderado_paterno]" type="text"
-                                                    class="form-control" id="pm_apoderado_paterno"
-                                                    placeholder="Apellido Paterno">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pm_apoderado_materno">Apellido Materno:</label>
-                                                <input name="operation[pm_apoderado_materno]" type="text"
-                                                    class="form-control" id="pm_apoderado_materno"
-                                                    placeholder="Apellido Materno">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pm_apoderado_rfc">RFC Apoderado Legal:</label>
-                                                <input name="operation[pm_apoderado_rfc]" type="text"
-                                                    class="form-control" id="pm_apoderado_rfc" maxlength="13"
-                                                    placeholder="ABCD123456ABC">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pm_apoderado_curp">CURP Apoderado Legal:</label>
-                                                <input name="operation[pm_apoderado_curp]" type="text"
-                                                    class="form-control" id="pm_apoderado_curp" maxlength="18"
-                                                    placeholder="ABCD123456ABCDEFGH">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pm_fecha_nacimiento_rep">Fecha de nacimiento de
-                                                    representante legal:</label>
-                                                <input name="operation[pm_fecha_nacimiento_rep]" type="date"
-                                                    class="form-control" id="pm_fecha_nacimiento_rep">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <h6 class="mt-4 mb-3">Domicilio Nacional</h6>
-                                    <div class="row">
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pm_estado">Estado:</label>
-                                                <input name="operation[pm_estado]" type="text" class="form-control"
-                                                    id="pm_estado" placeholder="Estado">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pm_ciudad">Ciudad o Población:</label>
-                                                <input name="operation[pm_ciudad]" type="text" class="form-control"
-                                                    id="pm_ciudad" placeholder="Ciudad">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="pm_colonia">Colonia:</label>
-                                                <input name="operation[pm_colonia]" type="text" class="form-control"
-                                                    id="pm_colonia" placeholder="Colonia">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="pm_calle">Calle:</label>
-                                                <input name="operation[pm_calle]" type="text" class="form-control"
-                                                    id="pm_calle" placeholder="Calle">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-2">
-                                            <div class="form-group">
-                                                <label for="pm_num_exterior">Núm. Exterior:</label>
-                                                <input name="operation[pm_num_exterior]" type="text"
-                                                    class="form-control" id="pm_num_exterior" placeholder="123">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-2">
-                                            <div class="form-group">
-                                                <label for="pm_num_interior">Núm. Interior:</label>
-                                                <input name="operation[pm_num_interior]" type="text"
-                                                    class="form-control" id="pm_num_interior" placeholder="123">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-2">
-                                            <div class="form-group">
-                                                <label for="pm_codigo_postal">Código Postal:</label>
-                                                <input name="operation[pm_codigo_postal]" type="text"
-                                                    class="form-control" id="pm_codigo_postal" maxlength="6"
-                                                    placeholder="123456">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="pm_correo">Correo Electrónico:</label>
-                                                <input name="operation[pm_correo]" type="email" class="form-control"
-                                                    id="pm_correo" placeholder="correo@ejemplo.com">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="pm_telefono">Teléfono:</label>
-                                                <input name="operation[pm_telefono]" type="tel" class="form-control"
-                                                    id="pm_telefono" placeholder="Teléfono">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Domicilio Extranjero (Opcional) -->
-                                    <div class="row">
-                                        <div class="col-lg-12">
-                                            <div class="form-check">
-                                                <input type="checkbox" class="form-check-input"
-                                                    id="pm_tiene_domicilio_extranjero"
-                                                    onchange="toggleDomicilioExtranjero('pm')">
-                                                <label class="form-check-label" for="pm_tiene_domicilio_extranjero">
-                                                    <strong>¿Tiene domicilio extranjero?</strong>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div id="pm_domicilio_extranjero" class="mt-3" style="display: none;">
-                                        <h6 class="mb-3">Domicilio Extranjero (Opcional)</h6>
+                                        <hr>
                                         <div class="row">
-                                            <div class="col-lg-4">
+                                            <div class="col-lg-8">
                                                 <div class="form-group">
-                                                    <label for="pm_pais_origen">País de Origen:</label>
-                                                    <input name="operation[pm_pais_origen]" type="text"
-                                                        class="form-control" id="pm_pais_origen" placeholder="País">
+                                                    <label for="pm_razon_social">Razón Social: <span
+                                                            class="text-danger">*</span></label>
+                                                    <input name="operation[pm_razon_social]" type="text"
+                                                        class="form-control" id="pm_razon_social"
+                                                        placeholder="Razón social">
                                                 </div>
                                             </div>
                                             <div class="col-lg-4">
                                                 <div class="form-group">
-                                                    <label for="pm_estado_provincia_ext">Estado o Provincia:</label>
-                                                    <input name="operation[pm_estado_provincia_ext]" type="text"
-                                                        class="form-control" id="pm_estado_provincia_ext"
-                                                        placeholder="Estado">
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-4">
-                                                <div class="form-group">
-                                                    <label for="pm_ciudad_poblacion_ext">Ciudad o Población:</label>
-                                                    <input name="operation[pm_ciudad_poblacion_ext]" type="text"
-                                                        class="form-control" id="pm_ciudad_poblacion_ext"
-                                                        placeholder="Ciudad">
+                                                    <label for="pm_rfc">RFC Persona Moral: <span
+                                                            class="text-danger">*</span></label>
+                                                    <input name="operation[pm_rfc]" type="text" class="form-control"
+                                                        id="pm_rfc" maxlength="12" placeholder="ABCD123456ABC">
                                                 </div>
                                             </div>
                                         </div>
@@ -1459,16 +1458,37 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                                         <div class="row">
                                             <div class="col-lg-6">
                                                 <div class="form-group">
-                                                    <label for="pm_colonia_ext">Colonia del Extranjero:</label>
-                                                    <input name="operation[pm_colonia_ext]" type="text"
-                                                        class="form-control" id="pm_colonia_ext" placeholder="Colonia">
+                                                    <label for="pm_fecha_constitucion">Fecha de Constitución:</label>
+                                                    <input name="operation[pm_fecha_constitucion]" type="date"
+                                                        class="form-control" id="pm_fecha_constitucion">
                                                 </div>
                                             </div>
-                                            <div class="col-lg-6">
+                                        </div>
+
+                                        <h6 class="mt-4 mb-3">Apoderado Legal</h6>
+                                        <div class="row">
+                                            <div class="col-lg-4">
                                                 <div class="form-group">
-                                                    <label for="pm_calle_ext">Calle del Extranjero:</label>
-                                                    <input name="operation[pm_calle_ext]" type="text"
-                                                        class="form-control" id="pm_calle_ext" placeholder="Calle">
+                                                    <label for="pm_apoderado_nombre">Nombre:</label>
+                                                    <input name="operation[pm_apoderado_nombre]" type="text"
+                                                        class="form-control" id="pm_apoderado_nombre"
+                                                        placeholder="Nombre">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label for="pm_apoderado_paterno">Apellido Paterno:</label>
+                                                    <input name="operation[pm_apoderado_paterno]" type="text"
+                                                        class="form-control" id="pm_apoderado_paterno"
+                                                        placeholder="Apellido Paterno">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label for="pm_apoderado_materno">Apellido Materno:</label>
+                                                    <input name="operation[pm_apoderado_materno]" type="text"
+                                                        class="form-control" id="pm_apoderado_materno"
+                                                        placeholder="Apellido Materno">
                                                 </div>
                                             </div>
                                         </div>
@@ -1476,387 +1496,567 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                                         <div class="row">
                                             <div class="col-lg-4">
                                                 <div class="form-group">
-                                                    <label for="pm_num_exterior_ext">Núm. Exterior (Ext):</label>
-                                                    <input name="operation[pm_num_exterior_ext]" type="text"
-                                                        class="form-control" id="pm_num_exterior_ext" placeholder="123">
+                                                    <label for="pm_apoderado_rfc">RFC Apoderado Legal:</label>
+                                                    <input name="operation[pm_apoderado_rfc]" type="text"
+                                                        class="form-control" id="pm_apoderado_rfc" maxlength="13"
+                                                        placeholder="ABCD123456ABC">
                                                 </div>
                                             </div>
                                             <div class="col-lg-4">
                                                 <div class="form-group">
-                                                    <label for="pm_num_interior_ext">Núm. Interior (Ext):</label>
-                                                    <input name="operation[pm_num_interior_ext]" type="text"
-                                                        class="form-control" id="pm_num_interior_ext" placeholder="123">
+                                                    <label for="pm_apoderado_curp">CURP Apoderado Legal:</label>
+                                                    <input name="operation[pm_apoderado_curp]" type="text"
+                                                        class="form-control" id="pm_apoderado_curp" maxlength="18"
+                                                        placeholder="ABCD123456ABCDEFGH">
                                                 </div>
                                             </div>
                                             <div class="col-lg-4">
                                                 <div class="form-group">
-                                                    <label for="pm_codigo_postal_ext">Código Postal Extranjero:</label>
-                                                    <input name="operation[pm_codigo_postal_ext]" type="text"
-                                                        class="form-control" id="pm_codigo_postal_ext"
+                                                    <label for="pm_fecha_nacimiento_rep">Fecha de nacimiento de
+                                                        representante legal:</label>
+                                                    <input name="operation[pm_fecha_nacimiento_rep]" type="date"
+                                                        class="form-control" id="pm_fecha_nacimiento_rep">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <h6 class="mt-4 mb-3">Domicilio Nacional</h6>
+                                        <div class="row">
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label for="pm_estado">Estado:</label>
+                                                    <input name="operation[pm_estado]" type="text" class="form-control"
+                                                        id="pm_estado" placeholder="Estado">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label for="pm_ciudad">Ciudad o Población:</label>
+                                                    <input name="operation[pm_ciudad]" type="text" class="form-control"
+                                                        id="pm_ciudad" placeholder="Ciudad">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-4">
+                                                <div class="form-group">
+                                                    <label for="pm_colonia">Colonia:</label>
+                                                    <input name="operation[pm_colonia]" type="text" class="form-control"
+                                                        id="pm_colonia" placeholder="Colonia">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-lg-6">
+                                                <div class="form-group">
+                                                    <label for="pm_calle">Calle:</label>
+                                                    <input name="operation[pm_calle]" type="text" class="form-control"
+                                                        id="pm_calle" placeholder="Calle">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-2">
+                                                <div class="form-group">
+                                                    <label for="pm_num_exterior">Núm. Exterior:</label>
+                                                    <input name="operation[pm_num_exterior]" type="text"
+                                                        class="form-control" id="pm_num_exterior" placeholder="123">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-2">
+                                                <div class="form-group">
+                                                    <label for="pm_num_interior">Núm. Interior:</label>
+                                                    <input name="operation[pm_num_interior]" type="text"
+                                                        class="form-control" id="pm_num_interior" placeholder="123">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-2">
+                                                <div class="form-group">
+                                                    <label for="pm_codigo_postal">Código Postal:</label>
+                                                    <input name="operation[pm_codigo_postal]" type="text"
+                                                        class="form-control" id="pm_codigo_postal" maxlength="6"
                                                         placeholder="123456">
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <!-- Sección Beneficiarios Controladores -->
-                                    <div class="mt-4">
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <h6 class="mb-0">Beneficiarios Controladores</h6>
-                                            <button type="button" class="btn btn-sm btn-outline-primary"
-                                                onclick="agregarBeneficiarioControlador('pm')">
-                                                <i class="fas fa-plus"></i> Agregar Beneficiario
-                                            </button>
-                                        </div>
-                                        <div id="pm_beneficiarios_container">
-                                            <!-- Los beneficiarios se agregarán dinámicamente aquí -->
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Sección 6: Información del Cliente - FIDEICOMISO -->
-                            <div class="card mb-3" id="seccion-fideicomiso" style="display: none;">
-                                <div class="card-header bg-success text-white">
-                                    <h6 class="mb-0"><i class="fas fa-handshake"></i> Información del Fideicomiso</h6>
-                                </div>
-                                <div class="card-body">
-                                    <div class="row mb-3">
-                                        <div class="col-12">
-                                            <div class="form-group">
-                                                <label for="select_cliente_fid">Seleccionar Cliente Existente
-                                                    (Opcional):</label>
-                                                <select class="form-control" id="select_cliente_fid"
-                                                    name="id_cliente_existente_fid">
-                                                    <option value="">-- Seleccionar cliente existente --</option>
-                                                </select>
-                                                <small class="form-text text-muted">
-
-
-                                                </small>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <hr>
-                                    <div class="row">
-                                        <div class="col-lg-8">
-                                            <div class="form-group">
-                                                <label for="fid_razon_social">Razón Social del Fiduciario: <span
-                                                        class="text-danger">*</span></label>
-                                                <input name="operation[fid_razon_social]" type="text"
-                                                    class="form-control" id="fid_razon_social"
-                                                    placeholder="Razón social">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="fid_rfc">RFC del Fiduciario: <span
-                                                        class="text-danger">*</span></label>
-                                                <input name="operation[fid_rfc]" type="text" class="form-control"
-                                                    id="fid_rfc" maxlength="12" placeholder="ABCD123456ABC">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="fid_numero_referencia">Número / Referencia de
-                                                    Fideicomiso:</label>
-                                                <input name="operation[fid_numero_referencia]" type="text"
-                                                    class="form-control" id="fid_numero_referencia"
-                                                    placeholder="Referencia">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <h6 class="mt-4 mb-3">Apoderado Legal</h6>
-                                    <div class="row">
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="fid_apoderado_nombre">Nombre:</label>
-                                                <input name="operation[fid_apoderado_nombre]" type="text"
-                                                    class="form-control" id="fid_apoderado_nombre" placeholder="Nombre">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="fid_apoderado_paterno">Apellido Paterno:</label>
-                                                <input name="operation[fid_apoderado_paterno]" type="text"
-                                                    class="form-control" id="fid_apoderado_paterno"
-                                                    placeholder="Apellido Paterno">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="fid_apoderado_materno">Apellido Materno:</label>
-                                                <input name="operation[fid_apoderado_materno]" type="text"
-                                                    class="form-control" id="fid_apoderado_materno"
-                                                    placeholder="Apellido Materno">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="fid_apoderado_rfc">RFC Apoderado Legal:</label>
-                                                <input name="operation[fid_apoderado_rfc]" type="text"
-                                                    class="form-control" id="fid_apoderado_rfc" maxlength="13"
-                                                    placeholder="ABCD123456ABC">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="fid_apoderado_curp">CURP Apoderado Legal:</label>
-                                                <input name="operation[fid_apoderado_curp]" type="text"
-                                                    class="form-control" id="fid_apoderado_curp" maxlength="18"
-                                                    placeholder="ABCD123456ABCDEFGH">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="fid_fecha_nacimiento_rep">Fecha de nacimiento de
-                                                    representante legal:</label>
-                                                <input name="operation[fid_fecha_nacimiento_rep]" type="date"
-                                                    class="form-control" id="fid_fecha_nacimiento_rep">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <h6 class="mt-4 mb-3">Domicilio Nacional</h6>
-                                    <div class="row">
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="fid_estado">Estado:</label>
-                                                <input name="operation[fid_estado]" type="text" class="form-control"
-                                                    id="fid_estado" placeholder="Estado">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="fid_ciudad">Ciudad o Población:</label>
-                                                <input name="operation[fid_ciudad]" type="text" class="form-control"
-                                                    id="fid_ciudad" placeholder="Ciudad">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-4">
-                                            <div class="form-group">
-                                                <label for="fid_colonia">Colonia:</label>
-                                                <input name="operation[fid_colonia]" type="text" class="form-control"
-                                                    id="fid_colonia" placeholder="Colonia">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="fid_calle">Calle:</label>
-                                                <input name="operation[fid_calle]" type="text" class="form-control"
-                                                    id="fid_calle" placeholder="Calle">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-2">
-                                            <div class="form-group">
-                                                <label for="fid_num_exterior">Núm. Exterior:</label>
-                                                <input name="operation[fid_num_exterior]" type="text"
-                                                    class="form-control" id="fid_num_exterior" placeholder="123">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-2">
-                                            <div class="form-group">
-                                                <label for="fid_num_interior">Núm. Interior:</label>
-                                                <input name="operation[fid_num_interior]" type="text"
-                                                    class="form-control" id="fid_num_interior" placeholder="123">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-2">
-                                            <div class="form-group">
-                                                <label for="fid_codigo_postal">Código Postal:</label>
-                                                <input name="operation[fid_codigo_postal]" type="text"
-                                                    class="form-control" id="fid_codigo_postal" maxlength="6"
-                                                    placeholder="123456">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="fid_correo">Correo Electrónico:</label>
-                                                <input name="operation[fid_correo]" type="email" class="form-control"
-                                                    id="fid_correo" placeholder="correo@ejemplo.com">
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <div class="form-group">
-                                                <label for="fid_telefono">Teléfono:</label>
-                                                <input name="operation[fid_telefono]" type="tel" class="form-control"
-                                                    id="fid_telefono" placeholder="Teléfono">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Domicilio Extranjero (Opcional) -->
-                                    <div class="row">
-                                        <div class="col-lg-12">
-                                            <div class="form-check">
-                                                <input type="checkbox" class="form-check-input"
-                                                    id="fid_tiene_domicilio_extranjero"
-                                                    onchange="toggleDomicilioExtranjero('fid')">
-                                                <label class="form-check-label" for="fid_tiene_domicilio_extranjero">
-                                                    <strong>¿Tiene domicilio extranjero?</strong>
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div id="fid_domicilio_extranjero" class="mt-3" style="display: none;">
-                                        <h6 class="mb-3">Domicilio Extranjero (Opcional)</h6>
-                                        <div class="row">
-                                            <div class="col-lg-4">
-                                                <div class="form-group">
-                                                    <label for="fid_pais_origen">País de Origen:</label>
-                                                    <input name="operation[fid_pais_origen]" type="text"
-                                                        class="form-control" id="fid_pais_origen" placeholder="País">
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-4">
-                                                <div class="form-group">
-                                                    <label for="fid_estado_provincia_ext">Estado o Provincia:</label>
-                                                    <input name="operation[fid_estado_provincia_ext]" type="text"
-                                                        class="form-control" id="fid_estado_provincia_ext"
-                                                        placeholder="Estado">
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-4">
-                                                <div class="form-group">
-                                                    <label for="fid_ciudad_poblacion_ext">Ciudad o Población:</label>
-                                                    <input name="operation[fid_ciudad_poblacion_ext]" type="text"
-                                                        class="form-control" id="fid_ciudad_poblacion_ext"
-                                                        placeholder="Ciudad">
-                                                </div>
-                                            </div>
-                                        </div>
 
                                         <div class="row">
                                             <div class="col-lg-6">
                                                 <div class="form-group">
-                                                    <label for="fid_colonia_ext">Colonia del Extranjero:</label>
-                                                    <input name="operation[fid_colonia_ext]" type="text"
-                                                        class="form-control" id="fid_colonia_ext" placeholder="Colonia">
+                                                    <label for="pm_correo">Correo Electrónico:</label>
+                                                    <input name="operation[pm_correo]" type="email" class="form-control"
+                                                        id="pm_correo" placeholder="correo@ejemplo.com">
                                                 </div>
                                             </div>
                                             <div class="col-lg-6">
                                                 <div class="form-group">
-                                                    <label for="fid_calle_ext">Calle del Extranjero:</label>
-                                                    <input name="operation[fid_calle_ext]" type="text"
-                                                        class="form-control" id="fid_calle_ext" placeholder="Calle">
+                                                    <label for="pm_telefono">Teléfono:</label>
+                                                    <input name="operation[pm_telefono]" type="tel" class="form-control"
+                                                        id="pm_telefono" placeholder="Teléfono">
                                                 </div>
                                             </div>
                                         </div>
 
+                                        <!-- Domicilio Extranjero (Opcional) -->
                                         <div class="row">
-                                            <div class="col-lg-4">
-                                                <div class="form-group">
-                                                    <label for="fid_num_exterior_ext">Núm. Exterior (Ext):</label>
-                                                    <input name="operation[fid_num_exterior_ext]" type="text"
-                                                        class="form-control" id="fid_num_exterior_ext"
-                                                        placeholder="123">
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-4">
-                                                <div class="form-group">
-                                                    <label for="fid_num_interior_ext">Núm. Interior (Ext):</label>
-                                                    <input name="operation[fid_num_interior_ext]" type="text"
-                                                        class="form-control" id="fid_num_interior_ext"
-                                                        placeholder="123">
-                                                </div>
-                                            </div>
-                                            <div class="col-lg-4">
-                                                <div class="form-group">
-                                                    <label for="fid_codigo_postal_ext">Código Postal Extranjero:</label>
-                                                    <input name="operation[fid_codigo_postal_ext]" type="text"
-                                                        class="form-control" id="fid_codigo_postal_ext"
-                                                        placeholder="123456">
+                                            <div class="col-lg-12">
+                                                <div class="form-check">
+                                                    <input type="checkbox" class="form-check-input"
+                                                        id="pm_tiene_domicilio_extranjero"
+                                                        onchange="toggleDomicilioExtranjero('pm')">
+                                                    <label class="form-check-label" for="pm_tiene_domicilio_extranjero">
+                                                        <strong>¿Tiene domicilio extranjero?</strong>
+                                                    </label>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <!-- Sección Beneficiarios Controladores para Fideicomiso -->
-                                    <div class="mt-4">
-                                        <h6 class="mb-3">Beneficiarios Controladores del Fideicomiso</h6>
-
-                                        <!-- Pestañas para diferentes roles -->
-                                        <ul class="nav nav-tabs" id="fid_beneficiarios_tabs" role="tablist">
-                                            <li class="nav-item" role="presentation">
-                                                <a class="nav-link active" id="fideicomitente-tab" data-toggle="tab"
-                                                    href="#fideicomitente" role="tab">Fideicomitente(s)</a>
-                                            </li>
-                                            <li class="nav-item" role="presentation">
-                                                <a class="nav-link" id="fiduciario-tab" data-toggle="tab"
-                                                    href="#fiduciario" role="tab">Fiduciario(s)</a>
-                                            </li>
-                                            <li class="nav-item" role="presentation">
-                                                <a class="nav-link" id="fideicomisario-tab" data-toggle="tab"
-                                                    href="#fideicomisario" role="tab">Fideicomisario(s)</a>
-                                            </li>
-                                            <li class="nav-item" role="presentation">
-                                                <a class="nav-link" id="control-efectivo-tab" data-toggle="tab"
-                                                    href="#control-efectivo" role="tab">Control Efectivo</a>
-                                            </li>
-                                        </ul>
-
-                                        <div class="tab-content mt-3" id="fid_beneficiarios_content">
-                                            <div class="tab-pane fade show active" id="fideicomitente" role="tabpanel">
-                                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                                    <span>Fideicomitente(s)</span>
-                                                    <button type="button" class="btn btn-sm btn-outline-primary"
-                                                        onclick="agregarBeneficiarioControlador('fid', 'fideicomitente')">
-                                                        <i class="fas fa-plus"></i> Agregar Fideicomitente
-                                                    </button>
+                                        <div id="pm_domicilio_extranjero" class="mt-3" style="display: none;">
+                                            <h6 class="mb-3">Domicilio Extranjero (Opcional)</h6>
+                                            <div class="row">
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="pm_pais_origen">País de Origen:</label>
+                                                        <input name="operation[pm_pais_origen]" type="text"
+                                                            class="form-control" id="pm_pais_origen" placeholder="País">
+                                                    </div>
                                                 </div>
-                                                <div id="fid_fideicomitente_container"></div>
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="pm_estado_provincia_ext">Estado o Provincia:</label>
+                                                        <input name="operation[pm_estado_provincia_ext]" type="text"
+                                                            class="form-control" id="pm_estado_provincia_ext"
+                                                            placeholder="Estado">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="pm_ciudad_poblacion_ext">Ciudad o Población:</label>
+                                                        <input name="operation[pm_ciudad_poblacion_ext]" type="text"
+                                                            class="form-control" id="pm_ciudad_poblacion_ext"
+                                                            placeholder="Ciudad">
+                                                    </div>
+                                                </div>
                                             </div>
 
-                                            <div class="tab-pane fade" id="fiduciario" role="tabpanel">
-                                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                                    <span>Fiduciario(s)</span>
-                                                    <button type="button" class="btn btn-sm btn-outline-primary"
-                                                        onclick="agregarBeneficiarioControlador('fid', 'fiduciario')">
-                                                        <i class="fas fa-plus"></i> Agregar Fiduciario
-                                                    </button>
+                                            <div class="row">
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label for="pm_colonia_ext">Colonia del Extranjero:</label>
+                                                        <input name="operation[pm_colonia_ext]" type="text"
+                                                            class="form-control" id="pm_colonia_ext"
+                                                            placeholder="Colonia">
+                                                    </div>
                                                 </div>
-                                                <div id="fid_fiduciario_container"></div>
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label for="pm_calle_ext">Calle del Extranjero:</label>
+                                                        <input name="operation[pm_calle_ext]" type="text"
+                                                            class="form-control" id="pm_calle_ext" placeholder="Calle">
+                                                    </div>
+                                                </div>
                                             </div>
 
-                                            <div class="tab-pane fade" id="fideicomisario" role="tabpanel">
-                                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                                    <span>Fideicomisario(s)</span>
-                                                    <button type="button" class="btn btn-sm btn-outline-primary"
-                                                        onclick="agregarBeneficiarioControlador('fid', 'fideicomisario')">
-                                                        <i class="fas fa-plus"></i> Agregar Fideicomisario
-                                                    </button>
+                                            <div class="row">
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="pm_num_exterior_ext">Núm. Exterior (Ext):</label>
+                                                        <input name="operation[pm_num_exterior_ext]" type="text"
+                                                            class="form-control" id="pm_num_exterior_ext"
+                                                            placeholder="123">
+                                                    </div>
                                                 </div>
-                                                <div id="fid_fideicomisario_container"></div>
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="pm_num_interior_ext">Núm. Interior (Ext):</label>
+                                                        <input name="operation[pm_num_interior_ext]" type="text"
+                                                            class="form-control" id="pm_num_interior_ext"
+                                                            placeholder="123">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="pm_codigo_postal_ext">Código Postal
+                                                            Extranjero:</label>
+                                                        <input name="operation[pm_codigo_postal_ext]" type="text"
+                                                            class="form-control" id="pm_codigo_postal_ext"
+                                                            placeholder="123456">
+                                                    </div>
+                                                </div>
                                             </div>
+                                        </div>
 
-                                            <div class="tab-pane fade" id="control-efectivo" role="tabpanel">
-                                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                                    <span>Personas con Control Efectivo</span>
-                                                    <button type="button" class="btn btn-sm btn-outline-primary"
-                                                        onclick="agregarBeneficiarioControlador('fid', 'control_efectivo')">
-                                                        <i class="fas fa-plus"></i> Agregar Persona con Control
-                                                    </button>
-                                                </div>
-                                                <div id="fid_control_efectivo_container"></div>
+                                        <!-- Sección Beneficiarios Controladores -->
+                                        <div class="mt-4">
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <h6 class="mb-0">Beneficiarios Controladores</h6>
+                                                <button type="button" class="btn btn-sm btn-outline-primary"
+                                                    onclick="agregarBeneficiarioControlador('pm')">
+                                                    <i class="fas fa-plus"></i> Agregar Beneficiario
+                                                </button>
+                                            </div>
+                                            <div id="pm_beneficiarios_container">
+                                                <!-- Los beneficiarios se agregarán dinámicamente aquí -->
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Sección 6: Información del Cliente - FIDEICOMISO -->
+                                <div class="card mb-3 collapsible-card" id="seccion-fideicomiso" style="display: none;">
+                                    <div class="card-header bg-purple text-white" data-toggle="collapse"
+                                        data-target="#collapse-fideicomiso" aria-expanded="false"
+                                        aria-controls="collapse-fideicomiso">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-handshake"></i> Información del Fideicomiso
+                                            <i class="fas fa-chevron-down collapse-icon"></i>
+                                        </h6>
+                                    </div>
+                                    <div id="collapse-fideicomiso" class="collapse" data-parent="#accordion-formulario">
+                                        <div class="card-body">
+
+
+                                            <hr>
+                                            <div class="row">
+                                                <div class="col-lg-8">
+                                                    <div class="form-group">
+                                                        <label for="fid_razon_social">Razón Social del Fiduciario: <span
+                                                                class="text-danger">*</span></label>
+                                                        <input name="operation[fid_razon_social]" type="text"
+                                                            class="form-control" id="fid_razon_social"
+                                                            placeholder="Razón social">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="fid_rfc">RFC del Fiduciario: <span
+                                                                class="text-danger">*</span></label>
+                                                        <input name="operation[fid_rfc]" type="text"
+                                                            class="form-control" id="fid_rfc" maxlength="12"
+                                                            placeholder="ABCD123456ABC">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label for="fid_numero_referencia">Número / Referencia de
+                                                            Fideicomiso:</label>
+                                                        <input name="operation[fid_numero_referencia]" type="text"
+                                                            class="form-control" id="fid_numero_referencia"
+                                                            placeholder="Referencia">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <h6 class="mt-4 mb-3">Apoderado Legal</h6>
+                                            <div class="row">
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="fid_apoderado_nombre">Nombre:</label>
+                                                        <input name="operation[fid_apoderado_nombre]" type="text"
+                                                            class="form-control" id="fid_apoderado_nombre"
+                                                            placeholder="Nombre">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="fid_apoderado_paterno">Apellido Paterno:</label>
+                                                        <input name="operation[fid_apoderado_paterno]" type="text"
+                                                            class="form-control" id="fid_apoderado_paterno"
+                                                            placeholder="Apellido Paterno">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="fid_apoderado_materno">Apellido Materno:</label>
+                                                        <input name="operation[fid_apoderado_materno]" type="text"
+                                                            class="form-control" id="fid_apoderado_materno"
+                                                            placeholder="Apellido Materno">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="fid_apoderado_rfc">RFC Apoderado Legal:</label>
+                                                        <input name="operation[fid_apoderado_rfc]" type="text"
+                                                            class="form-control" id="fid_apoderado_rfc" maxlength="13"
+                                                            placeholder="ABCD123456ABC">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="fid_apoderado_curp">CURP Apoderado Legal:</label>
+                                                        <input name="operation[fid_apoderado_curp]" type="text"
+                                                            class="form-control" id="fid_apoderado_curp" maxlength="18"
+                                                            placeholder="ABCD123456ABCDEFGH">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="fid_fecha_nacimiento_rep">Fecha de nacimiento de
+                                                            representante legal:</label>
+                                                        <input name="operation[fid_fecha_nacimiento_rep]" type="date"
+                                                            class="form-control" id="fid_fecha_nacimiento_rep">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <h6 class="mt-4 mb-3">Domicilio Nacional</h6>
+                                            <div class="row">
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="fid_estado">Estado:</label>
+                                                        <input name="operation[fid_estado]" type="text"
+                                                            class="form-control" id="fid_estado" placeholder="Estado">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="fid_ciudad">Ciudad o Población:</label>
+                                                        <input name="operation[fid_ciudad]" type="text"
+                                                            class="form-control" id="fid_ciudad" placeholder="Ciudad">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <div class="form-group">
+                                                        <label for="fid_colonia">Colonia:</label>
+                                                        <input name="operation[fid_colonia]" type="text"
+                                                            class="form-control" id="fid_colonia" placeholder="Colonia">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label for="fid_calle">Calle:</label>
+                                                        <input name="operation[fid_calle]" type="text"
+                                                            class="form-control" id="fid_calle" placeholder="Calle">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-2">
+                                                    <div class="form-group">
+                                                        <label for="fid_num_exterior">Núm. Exterior:</label>
+                                                        <input name="operation[fid_num_exterior]" type="text"
+                                                            class="form-control" id="fid_num_exterior"
+                                                            placeholder="123">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-2">
+                                                    <div class="form-group">
+                                                        <label for="fid_num_interior">Núm. Interior:</label>
+                                                        <input name="operation[fid_num_interior]" type="text"
+                                                            class="form-control" id="fid_num_interior"
+                                                            placeholder="123">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-2">
+                                                    <div class="form-group">
+                                                        <label for="fid_codigo_postal">Código Postal:</label>
+                                                        <input name="operation[fid_codigo_postal]" type="text"
+                                                            class="form-control" id="fid_codigo_postal" maxlength="6"
+                                                            placeholder="123456">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label for="fid_correo">Correo Electrónico:</label>
+                                                        <input name="operation[fid_correo]" type="email"
+                                                            class="form-control" id="fid_correo"
+                                                            placeholder="correo@ejemplo.com">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-6">
+                                                    <div class="form-group">
+                                                        <label for="fid_telefono">Teléfono:</label>
+                                                        <input name="operation[fid_telefono]" type="tel"
+                                                            class="form-control" id="fid_telefono"
+                                                            placeholder="Teléfono">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Domicilio Extranjero (Opcional) -->
+                                            <div class="row">
+                                                <div class="col-lg-12">
+                                                    <div class="form-check">
+                                                        <input type="checkbox" class="form-check-input"
+                                                            id="fid_tiene_domicilio_extranjero"
+                                                            onchange="toggleDomicilioExtranjero('fid')">
+                                                        <label class="form-check-label"
+                                                            for="fid_tiene_domicilio_extranjero">
+                                                            <strong>¿Tiene domicilio extranjero?</strong>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div id="fid_domicilio_extranjero" class="mt-3" style="display: none;">
+                                                <h6 class="mb-3">Domicilio Extranjero (Opcional)</h6>
+                                                <div class="row">
+                                                    <div class="col-lg-4">
+                                                        <div class="form-group">
+                                                            <label for="fid_pais_origen">País de Origen:</label>
+                                                            <input name="operation[fid_pais_origen]" type="text"
+                                                                class="form-control" id="fid_pais_origen"
+                                                                placeholder="País">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4">
+                                                        <div class="form-group">
+                                                            <label for="fid_estado_provincia_ext">Estado o
+                                                                Provincia:</label>
+                                                            <input name="operation[fid_estado_provincia_ext]"
+                                                                type="text" class="form-control"
+                                                                id="fid_estado_provincia_ext" placeholder="Estado">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4">
+                                                        <div class="form-group">
+                                                            <label for="fid_ciudad_poblacion_ext">Ciudad o
+                                                                Población:</label>
+                                                            <input name="operation[fid_ciudad_poblacion_ext]"
+                                                                type="text" class="form-control"
+                                                                id="fid_ciudad_poblacion_ext" placeholder="Ciudad">
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label for="fid_colonia_ext">Colonia del Extranjero:</label>
+                                                            <input name="operation[fid_colonia_ext]" type="text"
+                                                                class="form-control" id="fid_colonia_ext"
+                                                                placeholder="Colonia">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="form-group">
+                                                            <label for="fid_calle_ext">Calle del Extranjero:</label>
+                                                            <input name="operation[fid_calle_ext]" type="text"
+                                                                class="form-control" id="fid_calle_ext"
+                                                                placeholder="Calle">
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col-lg-4">
+                                                        <div class="form-group">
+                                                            <label for="fid_num_exterior_ext">Núm. Exterior
+                                                                (Ext):</label>
+                                                            <input name="operation[fid_num_exterior_ext]" type="text"
+                                                                class="form-control" id="fid_num_exterior_ext"
+                                                                placeholder="123">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4">
+                                                        <div class="form-group">
+                                                            <label for="fid_num_interior_ext">Núm. Interior
+                                                                (Ext):</label>
+                                                            <input name="operation[fid_num_interior_ext]" type="text"
+                                                                class="form-control" id="fid_num_interior_ext"
+                                                                placeholder="123">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-4">
+                                                        <div class="form-group">
+                                                            <label for="fid_codigo_postal_ext">Código Postal
+                                                                Extranjero:</label>
+                                                            <input name="operation[fid_codigo_postal_ext]" type="text"
+                                                                class="form-control" id="fid_codigo_postal_ext"
+                                                                placeholder="123456">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Sección Beneficiarios Controladores para Fideicomiso -->
+                                            <div class="mt-4">
+                                                <h6 class="mb-3">Beneficiarios Controladores del Fideicomiso</h6>
+
+                                                <!-- Pestañas para diferentes roles -->
+                                                <ul class="nav nav-tabs" id="fid_beneficiarios_tabs" role="tablist">
+                                                    <li class="nav-item" role="presentation">
+                                                        <a class="nav-link active" id="fideicomitente-tab"
+                                                            data-toggle="tab" href="#fideicomitente"
+                                                            role="tab">Fideicomitente(s)</a>
+                                                    </li>
+                                                    <li class="nav-item" role="presentation">
+                                                        <a class="nav-link" id="fiduciario-tab" data-toggle="tab"
+                                                            href="#fiduciario" role="tab">Fiduciario(s)</a>
+                                                    </li>
+                                                    <li class="nav-item" role="presentation">
+                                                        <a class="nav-link" id="fideicomisario-tab" data-toggle="tab"
+                                                            href="#fideicomisario" role="tab">Fideicomisario(s)</a>
+                                                    </li>
+                                                    <li class="nav-item" role="presentation">
+                                                        <a class="nav-link" id="control-efectivo-tab" data-toggle="tab"
+                                                            href="#control-efectivo" role="tab">Control Efectivo</a>
+                                                    </li>
+                                                </ul>
+
+                                                <div class="tab-content mt-3" id="fid_beneficiarios_content">
+                                                    <div class="tab-pane fade show active" id="fideicomitente"
+                                                        role="tabpanel">
+                                                        <div
+                                                            class="d-flex justify-content-between align-items-center mb-3">
+                                                            <span>Fideicomitente(s)</span>
+                                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                                onclick="agregarBeneficiarioControlador('fid', 'fideicomitente')">
+                                                                <i class="fas fa-plus"></i> Agregar Fideicomitente
+                                                            </button>
+                                                        </div>
+                                                        <div id="fid_fideicomitente_container"></div>
+                                                    </div>
+
+                                                    <div class="tab-pane fade" id="fiduciario" role="tabpanel">
+                                                        <div
+                                                            class="d-flex justify-content-between align-items-center mb-3">
+                                                            <span>Fiduciario(s)</span>
+                                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                                onclick="agregarBeneficiarioControlador('fid', 'fiduciario')">
+                                                                <i class="fas fa-plus"></i> Agregar Fiduciario
+                                                            </button>
+                                                        </div>
+                                                        <div id="fid_fiduciario_container"></div>
+                                                    </div>
+
+                                                    <div class="tab-pane fade" id="fideicomisario" role="tabpanel">
+                                                        <div
+                                                            class="d-flex justify-content-between align-items-center mb-3">
+                                                            <span>Fideicomisario(s)</span>
+                                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                                onclick="agregarBeneficiarioControlador('fid', 'fideicomisario')">
+                                                                <i class="fas fa-plus"></i> Agregar Fideicomisario
+                                                            </button>
+                                                        </div>
+                                                        <div id="fid_fideicomisario_container"></div>
+                                                    </div>
+
+                                                    <div class="tab-pane fade" id="control-efectivo" role="tabpanel">
+                                                        <div
+                                                            class="d-flex justify-content-between align-items-center mb-3">
+                                                            <span>Personas con Control Efectivo</span>
+                                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                                onclick="agregarBeneficiarioControlador('fid', 'control_efectivo')">
+                                                                <i class="fas fa-plus"></i> Agregar Persona con Control
+                                                            </button>
+                                                        </div>
+                                                        <div id="fid_control_efectivo_container"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
                             </div>
 
                             <!-- Observaciones -->
@@ -1968,6 +2168,8 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                         break;
                 }
             }
+
+
 
             // Función para mostrar/ocultar campo de otra moneda
             function toggleOtraMoneda() {
@@ -2485,10 +2687,13 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
         // ✅ DATOS REALES DE LA BASE DE DATOS
         var operacionesData = <?php echo json_encode($operacionesData, JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
 
-
         // Variable para saber qué pestaña está activa
         var tabActiva = "personas-fisicas";
         var userType = <?php echo $_SESSION['user']['id_type_user']; ?>;
+
+        // =====================================================================
+        // SECCIÓN 1: FUNCIONES EXISTENTES (SIN CAMBIOS)
+        // =====================================================================
 
         $(document).ready(function () {
             // Cargar la primera tabla por defecto
@@ -2691,8 +2896,6 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
             $('#totalOperaciones').text(data ? data.length : 0);
         }
 
-
-
         // Función para cambiar entre pestañas
         function cambiarTab(tipoCliente) {
             // Actualizar botones
@@ -2764,13 +2967,591 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
             }
         }
 
+        // =====================================================================
+        // SECCIÓN 2: NUEVAS FUNCIONES PARA EMPRESAS Y CLIENTES CENTRALIZADOS
+        // =====================================================================
+
+        // FUNCIÓN PARA CARGAR EMPRESAS CLIENTES
+        function cargarEmpresasClientes() {
+            const $select = $('#select_empresa_general');
+
+            // Limpiar select
+            $select.html('<option value="">Cargando empresas...</option>');
+
+            // Hacer petición AJAX para obtener empresas
+            $.ajax({
+                url: 'get_clients_ajax.php',
+                type: 'GET',
+                data: {
+                    action: 'get_client_companies'
+                },
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success) {
+                        // Limpiar y agregar opción por defecto
+                        $select.html('<option value="">-- Seleccionar empresa --</option>');
+
+                        // Agregar opciones de empresas
+                        response.companies.forEach(function (company) {
+                            $select.append(
+                                `<option value="${company.id_company}">
+                                    ${company.name_company} - ${company.rfc_company || 'Sin RFC'}
+                                </option>`
+                            );
+                        });
+
+                        console.log('Empresas clientes cargadas:', response.companies.length);
+                    } else {
+                        $select.html('<option value="">Error al cargar empresas</option>');
+                        console.error('Error:', response.error);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    $select.html('<option value="">Error al cargar empresas</option>');
+                    console.error('Error AJAX:', error);
+                }
+            });
+        }
+
+        // FUNCIÓN PARA CARGAR CLIENTES POR EMPRESA
+        function cargarClientesPorEmpresa(empresaId) {
+            const $select = $('#select_cliente_general');
+
+            // Limpiar select
+            $select.html('<option value="">Cargando clientes...</option>');
+
+            // Si no hay empresa seleccionada, cargar TODOS los clientes
+            if (!empresaId) {
+                cargarTodosLosClientes();
+                return;
+            }
+
+            // Hacer petición AJAX para clientes de la empresa específica
+            $.ajax({
+                url: 'get_clients_ajax.php',
+                type: 'GET',
+                data: {
+                    action: 'get_clients_by_company',
+                    empresa_id: empresaId
+                },
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success) {
+                        // Limpiar y agregar opción por defecto
+                        $select.html('<option value="">-- Seleccionar cliente existente --</option>');
+
+                        // Agregar opciones de clientes
+                        response.clients.forEach(function (client) {
+                            // Agregar indicador del tipo de persona
+                            let tipoIndicador = '';
+                            switch (client.data.tipo_persona) {
+                                case 'fisica':
+                                    tipoIndicador = ' [Persona Física]';
+                                    break;
+                                case 'moral':
+                                    tipoIndicador = ' [Persona Moral]';
+                                    break;
+                                case 'fideicomiso':
+                                    tipoIndicador = ' [Fideicomiso]';
+                                    break;
+                            }
+
+                            $select.append(
+                                `<option value="${client.id}" data-client='${JSON.stringify(client.data)}'>
+                                    ${client.text}${tipoIndicador}
+                                </option>`
+                            );
+                        });
+
+                        console.log(`Clientes cargados para empresa ${empresaId}:`, response.clients.length);
+                    } else {
+                        $select.html('<option value="">Error al cargar clientes</option>');
+                        console.error('Error:', response.error);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    $select.html('<option value="">Error al cargar clientes</option>');
+                    console.error('Error AJAX:', error);
+                }
+            });
+        }
+
+        // FUNCIÓN PARA CARGAR TODOS LOS CLIENTES SIN FILTRO DE EMPRESA
+        function cargarTodosLosClientes() {
+            const $select = $('#select_cliente_general');
+
+            // Limpiar select
+            $select.html('<option value="">Cargando todos los clientes...</option>');
+
+            // Hacer petición AJAX para obtener TODOS los clientes
+            $.ajax({
+                url: 'get_clients_ajax.php',
+                type: 'GET',
+                data: {
+                    action: 'get_all_clients'
+                },
+                dataType: 'json',
+                success: function (response) {
+                    if (response.success) {
+                        // Limpiar y agregar opción por defecto
+                        $select.html('<option value="">-- Seleccionar cliente existente --</option>');
+
+                        // Agregar opciones de clientes con indicadores de tipo
+                        response.clients.forEach(function (client) {
+                            $select.append(
+                                `<option value="${client.id}" data-client='${JSON.stringify(client.data)}'>
+                                    ${client.text}
+                                </option>`
+                            );
+                        });
+
+                        console.log('Todos los clientes cargados:', response.clients.length);
+                    } else {
+                        $select.html('<option value="">Error al cargar clientes</option>');
+                        console.error('Error:', response.error);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    $select.html('<option value="">Error al cargar clientes</option>');
+                    console.error('Error AJAX:', error);
+                }
+            });
+        }
+
+        // FUNCIÓN PARA LLENAR FORMULARIO CON DATOS DEL CLIENTE SELECCIONADO
+        function llenarFormularioConClienteSeleccionado(clientData) {
+            console.log('Llenando formulario con cliente:', clientData);
+
+            // Determinar tipo de persona y llenar formulario correspondiente
+            switch (clientData.tipo_persona) {
+                case 'fisica':
+                    llenarFormularioPersonaFisica(clientData);
+                    break;
+                case 'moral':
+                    llenarFormularioPersonaMoral(clientData);
+                    break;
+                case 'fideicomiso':
+                    llenarFormularioFideicomiso(clientData);
+                    break;
+            }
+        }
+
+        // FUNCIÓN PARA LLENAR FORMULARIO PERSONA FÍSICA
+        function llenarFormularioPersonaFisica(data) {
+            $('#pf_nombre').val(data.pf_nombre || '');
+            $('#pf_apellido_paterno').val(data.pf_apellido_paterno || '');
+            $('#pf_apellido_materno').val(data.pf_apellido_materno || '');
+            $('#pf_rfc').val(data.rfc_folder || '');
+            $('#pf_curp').val(data.curp_folder || '');
+            $('#pf_fecha_nacimiento').val(data.pf_fecha_nacimiento || '');
+            $('#pf_estado').val(data.pf_estado || '');
+            $('#pf_ciudad').val(data.pf_ciudad || '');
+            $('#pf_colonia').val(data.pf_colonia || '');
+            $('#pf_calle').val(data.pf_calle || '');
+            $('#pf_num_exterior').val(data.pf_num_exterior || '');
+            $('#pf_num_interior').val(data.pf_num_interior || '');
+            $('#pf_codigo_postal').val(data.pf_codigo_postal || '');
+            $('#pf_telefono').val(data.pf_telefono || '');
+            $('#pf_correo').val(data.pf_email || '');
+        }
+
+        // FUNCIÓN PARA LLENAR FORMULARIO PERSONA MORAL
+        function llenarFormularioPersonaMoral(data) {
+            $('#pm_razon_social').val(data.pm_razon_social || '');
+            $('#pm_rfc').val(data.rfc_folder || '');
+            $('#pm_fecha_constitucion').val(data.pm_fecha_constitucion || '');
+            $('#pm_apoderado_nombre').val(data.pm_apoderado_nombre || '');
+            $('#pm_apoderado_paterno').val(data.pm_apoderado_paterno || '');
+            $('#pm_apoderado_materno').val(data.pm_apoderado_materno || '');
+            $('#pm_apoderado_rfc').val(data.pm_apoderado_rfc || '');
+            $('#pm_apoderado_curp').val(data.pm_apoderado_curp || '');
+            $('#pm_estado').val(data.pm_estado || '');
+            $('#pm_ciudad').val(data.pm_ciudad || '');
+            $('#pm_colonia').val(data.pm_colonia || '');
+            $('#pm_calle').val(data.pm_calle || '');
+            $('#pm_num_exterior').val(data.pm_num_exterior || '');
+            $('#pm_num_interior').val(data.pm_num_interior || '');
+            $('#pm_codigo_postal').val(data.pm_codigo_postal || '');
+            $('#pm_telefono').val(data.pm_telefono || '');
+            $('#pm_correo').val(data.pm_email || '');
+        }
+
+        // FUNCIÓN PARA LLENAR FORMULARIO FIDEICOMISO
+        function llenarFormularioFideicomiso(data) {
+            $('#fid_razon_social').val(data.fid_razon_social || '');
+            $('#fid_rfc').val(data.rfc_folder || '');
+            $('#fid_numero_referencia').val(data.fid_numero_referencia || '');
+            $('#fid_estado').val(data.fid_estado || '');
+            $('#fid_ciudad').val(data.fid_ciudad || '');
+            $('#fid_colonia').val(data.fid_colonia || '');
+            $('#fid_calle').val(data.fid_calle || '');
+            $('#fid_num_exterior').val(data.fid_num_exterior || '');
+            $('#fid_num_interior').val(data.fid_num_interior || '');
+            $('#fid_codigo_postal').val(data.fid_codigo_postal || '');
+            $('#fid_telefono').val(data.fid_telefono || '');
+            $('#fid_correo').val(data.fid_email || '');
+        }
+
+        // FUNCIÓN PARA LIMPIAR TODOS LOS FORMULARIOS
+        function limpiarTodosLosFormularios() {
+            // Persona Física
+            $('#pf_nombre, #pf_apellido_paterno, #pf_apellido_materno, #pf_rfc, #pf_curp, #pf_fecha_nacimiento, #pf_estado, #pf_ciudad, #pf_colonia, #pf_calle, #pf_num_exterior, #pf_num_interior, #pf_codigo_postal, #pf_telefono, #pf_correo').val('');
+
+            // Persona Moral
+            $('#pm_razon_social, #pm_rfc, #pm_fecha_constitucion, #pm_apoderado_nombre, #pm_apoderado_paterno, #pm_apoderado_materno, #pm_apoderado_rfc, #pm_apoderado_curp, #pm_estado, #pm_ciudad, #pm_colonia, #pm_calle, #pm_num_exterior, #pm_num_interior, #pm_codigo_postal, #pm_telefono, #pm_correo').val('');
+
+            // Fideicomiso
+            $('#fid_razon_social, #fid_rfc, #fid_numero_referencia, #fid_estado, #fid_ciudad, #fid_colonia, #fid_calle, #fid_num_exterior, #fid_num_interior, #fid_codigo_postal, #fid_telefono, #fid_correo').val('');
+        }
+
+        // =====================================================================
+        // SECCIÓN 3: FUNCIONES ACTUALIZADAS
+        // =====================================================================
+
+        function configurarModalSegunTipo(tipoCliente, manteneDatos = false) {
+            console.log('Configurando modal para:', tipoCliente, 'mantener datos:', manteneDatos);
+
+            // Ocultar todas las secciones
+            $('#seccion-persona-fisica').hide();
+            $('#seccion-persona-moral').hide();
+            $('#seccion-fideicomiso').hide();
+
+            // Solo limpiar selects si NO debemos mantener datos
+            if (!manteneDatos) {
+                // Limpiar selects centralizados
+                $('#select_empresa_general').val('').trigger('change');
+                $('#select_cliente_general').html('<option value="">-- Seleccionar cliente existente --</option>');
+
+                // Limpiar el campo tipo_cliente_display
+                $('#tipo_cliente_display').val('');
+
+                // Cargar empresas y todos los clientes por defecto
+                cargarEmpresasClientes();
+                cargarTodosLosClientes();
+            }
+
+            switch (tipoCliente) {
+                case 'personas-fisicas':
+                    $('#hidden_tipo_cliente').val('persona_fisica');
+                    $('#seccion-persona-fisica').show();
+                    $('#pf_nombre, #pf_apellido_paterno, #pf_rfc').attr('required', true);
+                    break;
+
+                case 'personas-morales':
+                    $('#hidden_tipo_cliente').val('persona_moral');
+                    $('#seccion-persona-moral').show();
+                    $('#pm_razon_social, #pm_rfc').attr('required', true);
+                    break;
+
+                case 'fideicomisos':
+                    $('#hidden_tipo_cliente').val('fideicomiso');
+                    $('#seccion-fideicomiso').show();
+                    $('#fid_razon_social, #fid_rfc').attr('required', true);
+                    break;
+
+                default:
+                    $('#hidden_tipo_cliente').val('persona_fisica');
+                    $('#seccion-persona-fisica').show();
+                    $('#pf_nombre, #pf_apellido_paterno, #pf_rfc').attr('required', true);
+                    break;
+            }
+        }
+        // PASO 2: NUEVA FUNCIÓN PARA DETECTAR Y CAMBIAR AUTOMÁTICAMENTE EL MODAL
+        function cambiarModalSegunTipoClienteMejorado(tipoPersona, clientData) {
+            let tipoClienteActual = $('#hidden_tipo_cliente').val();
+            let tipoRequerido = '';
+            let nombreTipo = '';
+
+            // Determinar qué tipo de modal necesitamos
+            switch (tipoPersona) {
+                case 'fisica':
+                    tipoRequerido = 'persona_fisica';
+                    nombreTipo = 'Persona Física';
+                    break;
+                case 'moral':
+                    tipoRequerido = 'persona_moral';
+                    nombreTipo = 'Persona Moral';
+                    break;
+                case 'fideicomiso':
+                    tipoRequerido = 'fideicomiso';
+                    nombreTipo = 'Fideicomiso';
+                    break;
+            }
+
+            // Si el modal actual no coincide con el tipo de cliente seleccionado
+            if (tipoClienteActual !== tipoRequerido) {
+                console.log(`Cambiando modal de ${tipoClienteActual} a ${tipoRequerido} (manteniendo empresa)`);
+
+                // Mostrar mensaje al usuario (opcional)
+                mostrarNotificacionCambioModal(nombreTipo);
+
+                // Cambiar al modal correcto manteniendo las selecciones
+                cambiarModalAlTipoCorrecto(tipoPersona, clientData);
+            } else {
+                // Si ya estamos en el modal correcto, solo llenar los datos
+                llenarFormularioConClienteSeleccionado(clientData);
+                $('#tipo_cliente_display').val(nombreTipo);
+            }
+        }
+
+        // PASO 3: FUNCIÓN MEJORADA PARA CAMBIAR AL MODAL CORRECTO
+        function cambiarModalAlTipoCorrecto(tipoPersona, clientData) {
+            let tipoCliente = '';
+            let nombreTipo = '';
+
+            // NUEVO: Guardar la empresa actualmente seleccionada ANTES de cambiar modal
+            const empresaSeleccionadaActual = $('#select_empresa_general').val();
+
+            switch (tipoPersona) {
+                case 'fisica':
+                    tipoCliente = 'personas-fisicas';
+                    nombreTipo = 'Persona Física';
+                    break;
+                case 'moral':
+                    tipoCliente = 'personas-morales';
+                    nombreTipo = 'Persona Moral';
+                    break;
+                case 'fideicomiso':
+                    tipoCliente = 'fideicomisos';
+                    nombreTipo = 'Fideicomiso';
+                    break;
+            }
+
+            // MEJORADO: Reconfigurar el modal SIN limpiar los selects
+            configurarModalSegunTipo(tipoCliente, true); // true = mantener datos
+
+            // Establecer el tipo de cliente en el campo display
+            $('#tipo_cliente_display').val(nombreTipo);
+
+            // CORREGIDO: Restaurar empresa seleccionada inmediatamente
+            if (empresaSeleccionadaActual) {
+                console.log('Manteniendo empresa seleccionada:', empresaSeleccionadaActual);
+                $('#select_empresa_general').val(empresaSeleccionadaActual);
+
+                // Cargar clientes de esa empresa si el select está vacío
+                if ($('#select_cliente_general option').length <= 1) {
+                    cargarClientesPorEmpresa(empresaSeleccionadaActual);
+                }
+
+                // Después de un momento, seleccionar el cliente y llenar formulario
+                setTimeout(function () {
+                    // Reseleccionar el cliente en el select
+                    $('#select_cliente_general').val(clientData.id_folder);
+
+                    // Llenar el formulario con los datos del cliente
+                    llenarFormularioConClienteSeleccionado(clientData);
+                }, 300);
+
+            } else {
+                // Si no había empresa seleccionada, cargar todos los clientes si es necesario
+                if ($('#select_cliente_general option').length <= 1) {
+                    cargarTodosLosClientes();
+                }
+
+                setTimeout(function () {
+                    // Reseleccionar el cliente en el select
+                    $('#select_cliente_general').val(clientData.id_folder);
+
+                    // Llenar el formulario con los datos del cliente
+                    llenarFormularioConClienteSeleccionado(clientData);
+                }, 300);
+            }
+        }
+        // PASO 4: FUNCIÓN PARA MOSTRAR NOTIFICACIÓN (OPCIONAL)
+        function mostrarNotificacionCambioModal(tipoCliente) {
+            // Crear notificación temporal
+            const notificacion = $(`
+        <div class="alert alert-info alert-dismissible fade show position-fixed" 
+             style="top: 20px; right: 20px; z-index: 9999; max-width: 400px;" 
+             role="alert">
+            <i class="fas fa-sync-alt"></i>
+            <strong>Modal cambiado automáticamente</strong><br>
+            Se ha cambiado al formulario de <strong>${tipoCliente}</strong> según el cliente seleccionado.
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    `);
+
+            // Agregar al body
+            $('body').append(notificacion);
+
+            // Remover automáticamente después de 4 segundos
+            setTimeout(function () {
+                notificacion.fadeOut(300, function () {
+                    $(this).remove();
+                });
+            }, 4000);
+        }
+
+
+        function limpiarSoloFormularios() {
+            // Persona Física
+            $('#pf_nombre, #pf_apellido_paterno, #pf_apellido_materno, #pf_rfc, #pf_curp, #pf_fecha_nacimiento, #pf_estado, #pf_ciudad, #pf_colonia, #pf_calle, #pf_num_exterior, #pf_num_interior, #pf_codigo_postal, #pf_telefono, #pf_correo').val('');
+
+            // Persona Moral
+            $('#pm_razon_social, #pm_rfc, #pm_fecha_constitucion, #pm_apoderado_nombre, #pm_apoderado_paterno, #pm_apoderado_materno, #pm_apoderado_rfc, #pm_apoderado_curp, #pm_estado, #pm_ciudad, #pm_colonia, #pm_calle, #pm_num_exterior, #pm_num_interior, #pm_codigo_postal, #pm_telefono, #pm_correo').val('');
+
+            // Fideicomiso
+            $('#fid_razon_social, #fid_rfc, #fid_numero_referencia, #fid_estado, #fid_ciudad, #fid_colonia, #fid_calle, #fid_num_exterior, #fid_num_interior, #fid_codigo_postal, #fid_telefono, #fid_correo').val('');
+        }
+
+
+        // PASO 6: ACTUALIZAR LA FUNCIÓN limpiarFormulario
+        function limpiarFormulario() {
+            // Guardar tipo de cliente antes de limpiar
+            var tipoClienteDisplay = $('#tipo_cliente_display').val();
+            var hiddenTipoCliente = $('#hidden_tipo_cliente').val();
+
+            // Limpiar formulario
+            $('#formAgregarOperacion')[0].reset();
+
+            // NO restaurar tipo de cliente - dejarlo en blanco
+            $('#tipo_cliente_display').val('');
+            // Mantener el tipo oculto para compatibilidad
+            $('#hidden_tipo_cliente').val(hiddenTipoCliente);
+
+            // Limpiar selects centralizados
+            $('#select_empresa_general').val('').trigger('change');
+            $('#select_cliente_general').html('<option value="">-- Seleccionar cliente existente --</option>');
+
+            // Recargar todos los clientes
+            cargarTodosLosClientes();
+
+            // Limpiar otras secciones...
+            $('#pld-alerts-container').html('');
+            $('#cash-amount-section').hide();
+            $('#moneda_otra').hide();
+
+            $('#pf_domicilio_extranjero, #pm_domicilio_extranjero, #fid_domicilio_extranjero').hide();
+            $('#pf_tiene_domicilio_extranjero, #pm_tiene_domicilio_extranjero, #fid_tiene_domicilio_extranjero').prop('checked', false);
+
+            $('#pm_beneficiarios_container').empty();
+            $('#fid_fideicomitente_container, #fid_fiduciario_container, #fid_fideicomisario_container, #fid_control_efectivo_container').empty();
+
+            // Limpiar contadores si existen
+            if (typeof contadorBeneficiarios !== 'undefined') {
+                contadorBeneficiarios = {
+                    pm: 0,
+                    fid_fideicomitente: 0,
+                    fid_fiduciario: 0,
+                    fid_fideicomisario: 0,
+                    fid_control_efectivo: 0
+                };
+            }
+
+            // Remover atributos required
+            $('#pf_nombre, #pf_apellido_paterno, #pf_rfc').removeAttr('required');
+            $('#pm_razon_social, #pm_rfc').removeAttr('required');
+            $('#fid_razon_social, #fid_rfc').removeAttr('required');
+        }
+
+        // =====================================================================
+        // SECCIÓN 4: FUNCIONES AUXILIARES (COMPATIBILIDAD CON CÓDIGO ANTERIOR)
+        // =====================================================================
 
 
 
+        // Función para limpiar formulario específico por tipo (mantener compatibilidad)
+        function limpiarFormularioCliente(tipoPersona) {
+            if (tipoPersona === 'personas-fisicas') {
+                $('#pf_nombre, #pf_apellido_paterno, #pf_apellido_materno, #pf_rfc, #pf_curp, #pf_fecha_nacimiento, #pf_estado, #pf_ciudad, #pf_colonia, #pf_calle, #pf_num_exterior, #pf_num_interior, #pf_codigo_postal, #pf_telefono, #pf_correo').val('');
+            } else if (tipoPersona === 'personas-morales') {
+                $('#pm_razon_social, #pm_rfc, #pm_fecha_constitucion, #pm_apoderado_nombre, #pm_apoderado_paterno, #pm_apoderado_materno, #pm_apoderado_rfc, #pm_apoderado_curp, #pm_estado, #pm_ciudad, #pm_colonia, #pm_calle, #pm_num_exterior, #pm_num_interior, #pm_codigo_postal, #pm_telefono, #pm_correo').val('');
+            } else if (tipoPersona === 'fideicomisos') {
+                $('#fid_razon_social, #fid_rfc, #fid_numero_referencia, #fid_estado, #fid_ciudad, #fid_colonia, #fid_calle, #fid_num_exterior, #fid_num_interior, #fid_codigo_postal, #fid_telefono, #fid_correo').val('');
+            }
+        }
+
+        // Función para llenar formulario cliente (mantener compatibilidad con código anterior)
+        function llenarFormularioCliente(clientData, tipoPersona) {
+            // Redirigir a la nueva función centralizada
+            llenarFormularioConClienteSeleccionado(clientData);
+        }
 
 
 
-        // Función para cargar clientes según el tipo
+        // =====================================================================
+        // SECCIÓN 5: EVENT LISTENERS NUEVOS Y ACTUALIZADOS
+        // =====================================================================
+
+        // EXTENDER EL $(document).ready EXISTENTE CON NUEVOS EVENT LISTENERS
+        $(document).ready(function () {
+
+            // =========================================
+            // NUEVOS Event listeners para selects centralizados
+            // =========================================
+
+            // Event listener para select de empresa
+            $(document).on('change', '#select_empresa_general', function () {
+                const empresaId = $(this).val();
+                cargarClientesPorEmpresa(empresaId);
+            });
+
+            // Event listener para select de cliente general
+            $(document).on('change', '#select_cliente_general', function () {
+                const selectedOption = $(this).find('option:selected');
+                if (selectedOption.val()) {
+                    const clientData = JSON.parse(selectedOption.attr('data-client'));
+
+                    // NUEVA LÓGICA MEJORADA: Detectar y cambiar modal automáticamente
+                    cambiarModalSegunTipoClienteMejorado(clientData.tipo_persona, clientData);
+
+                } else {
+                    // Si no hay cliente seleccionado, limpiar solo formularios, NO los selects
+                    limpiarSoloFormularios();
+                    $('#tipo_cliente_display').val('');
+                }
+            });
+
+
+            // =========================================
+            // MANTENER Event listeners existentes para compatibilidad
+            // (Estos pueden ser eliminados eventualmente)
+            // =========================================
+
+            // Persona Física (MANTENER PARA COMPATIBILIDAD)
+            $(document).on('change', '#select_cliente_pf', function () {
+                const selectedOption = $(this).find('option:selected');
+                if (selectedOption.val()) {
+                    const clientData = JSON.parse(selectedOption.attr('data-client'));
+                    llenarFormularioCliente(clientData, 'personas-fisicas');
+                } else {
+                    limpiarFormularioCliente('personas-fisicas');
+                }
+            });
+
+            // Persona Moral (MANTENER PARA COMPATIBILIDAD)
+            $(document).on('change', '#select_cliente_pm', function () {
+                const selectedOption = $(this).find('option:selected');
+                if (selectedOption.val()) {
+                    const clientData = JSON.parse(selectedOption.attr('data-client'));
+                    llenarFormularioCliente(clientData, 'personas-morales');
+                } else {
+                    limpiarFormularioCliente('personas-morales');
+                }
+            });
+
+            // Fideicomiso (MANTENER PARA COMPATIBILIDAD)
+            $(document).on('change', '#select_cliente_fid', function () {
+                const selectedOption = $(this).find('option:selected');
+                if (selectedOption.val()) {
+                    const clientData = JSON.parse(selectedOption.attr('data-client'));
+                    llenarFormularioCliente(clientData, 'fideicomisos');
+                } else {
+                    limpiarFormularioCliente('fideicomisos');
+                }
+            });
+
+        });
+
+        // =====================================================================
+        // SECCIÓN 6: FUNCIONES OBSOLETAS COMENTADAS (PARA REFERENCIA)
+        // =====================================================================
+
+        /*
+        // FUNCIÓN OBSOLETA: cargarClientesPorTipo (COMENTADA - NO ELIMINAR TODAVÍA)
+        // Esta función puede ser eliminada después de confirmar que todo funciona
         function cargarClientesPorTipo(tipoPersona, selectId) {
             const $select = $('#' + selectId);
 
@@ -2826,212 +3607,115 @@ echo "<!-- DEBUG: Archivo cargado completamente sin errores fatales -->\n";
                 }
             });
         }
+        */
 
-        // Función para llenar formulario con datos del cliente seleccionado
-        function llenarFormularioCliente(clientData, tipoPersona) {
-            console.log('Llenando formulario con:', clientData);
+        // =====================================================================
+        // SECCIÓN 7: FUNCIONES DE DEBUGGING (OPCIONAL)
+        // =====================================================================
 
-            if (tipoPersona === 'personas-fisicas') {
-                // Llenar campos de persona física
-                $('#pf_nombre').val(clientData.pf_nombre || '');
-                $('#pf_apellido_paterno').val(clientData.pf_apellido_paterno || '');
-                $('#pf_apellido_materno').val(clientData.pf_apellido_materno || '');
-                $('#pf_rfc').val(clientData.rfc_folder || '');
-                $('#pf_curp').val(clientData.curp_folder || '');
-                $('#pf_fecha_nacimiento').val(clientData.pf_fecha_nacimiento || '');
-                $('#pf_estado').val(clientData.pf_estado || '');
-                $('#pf_ciudad').val(clientData.pf_ciudad || '');
-                $('#pf_colonia').val(clientData.pf_colonia || '');
-                $('#pf_calle').val(clientData.pf_calle || '');
-                $('#pf_num_exterior').val(clientData.pf_num_exterior || '');
-                $('#pf_num_interior').val(clientData.pf_num_interior || '');
-                $('#pf_codigo_postal').val(clientData.pf_codigo_postal || '');
-                $('#pf_telefono').val(clientData.pf_telefono || '');
-                $('#pf_correo').val(clientData.pf_email || ''); // Nota: campo en form es pf_correo pero en BD es pf_email
+        // Función de debug para verificar que todo funciona
+        function debugClientSelection() {
+            console.log('=== DEBUG SELECCIÓN DE CLIENTES ===');
+            console.log('Empresa seleccionada:', $('#select_empresa_general').val());
+            console.log('Cliente seleccionado:', $('#select_cliente_general').val());
+            console.log('Tipo de cliente activo:', $('#hidden_tipo_cliente').val());
+            console.log('Sección visible:',
+                $('#seccion-persona-fisica').is(':visible') ? 'Persona Física' :
+                    $('#seccion-persona-moral').is(':visible') ? 'Persona Moral' :
+                        $('#seccion-fideicomiso').is(':visible') ? 'Fideicomiso' : 'Ninguna'
+            );
+        }
 
-            } else if (tipoPersona === 'personas-morales') {
-                // Llenar campos de persona moral
-                $('#pm_razon_social').val(clientData.pm_razon_social || '');
-                $('#pm_rfc').val(clientData.rfc_folder || '');
-                $('#pm_fecha_constitucion').val(clientData.pm_fecha_constitucion || '');
-                $('#pm_apoderado_nombre').val(clientData.pm_apoderado_nombre || '');
-                $('#pm_apoderado_paterno').val(clientData.pm_apoderado_paterno || '');
-                $('#pm_apoderado_materno').val(clientData.pm_apoderado_materno || '');
-                $('#pm_apoderado_rfc').val(clientData.pm_apoderado_rfc || '');
-                $('#pm_apoderado_curp').val(clientData.pm_apoderado_curp || '');
-                $('#pm_estado').val(clientData.pm_estado || '');
-                $('#pm_ciudad').val(clientData.pm_ciudad || '');
-                $('#pm_colonia').val(clientData.pm_colonia || '');
-                $('#pm_calle').val(clientData.pm_calle || '');
-                $('#pm_num_exterior').val(clientData.pm_num_exterior || '');
-                $('#pm_num_interior').val(clientData.pm_num_interior || '');
-                $('#pm_codigo_postal').val(clientData.pm_codigo_postal || '');
-                $('#pm_telefono').val(clientData.pm_telefono || '');
-                $('#pm_correo').val(clientData.pm_email || ''); // Nota: campo en form es pm_correo pero en BD es pm_email
-
-            } else if (tipoPersona === 'fideicomisos') {
-                // Llenar campos de fideicomiso
-                $('#fid_razon_social').val(clientData.fid_razon_social || '');
-                $('#fid_rfc').val(clientData.rfc_folder || '');
-                $('#fid_numero_referencia').val(clientData.fid_numero_referencia || '');
-                $('#fid_estado').val(clientData.fid_estado || '');
-                $('#fid_ciudad').val(clientData.fid_ciudad || '');
-                $('#fid_colonia').val(clientData.fid_colonia || '');
-                $('#fid_calle').val(clientData.fid_calle || '');
-                $('#fid_num_exterior').val(clientData.fid_num_exterior || '');
-                $('#fid_num_interior').val(clientData.fid_num_interior || '');
-                $('#fid_codigo_postal').val(clientData.fid_codigo_postal || '');
-                $('#fid_telefono').val(clientData.fid_telefono || '');
-                $('#fid_correo').val(clientData.fid_email || ''); // Nota: campo en form es fid_correo pero en BD es fid_email
+        // Función para mostrar información del cliente seleccionado
+        function mostrarInfoClienteSeleccionado() {
+            const selectedOption = $('#select_cliente_general').find('option:selected');
+            if (selectedOption.val()) {
+                const clientData = JSON.parse(selectedOption.attr('data-client'));
+                console.log('Datos del cliente seleccionado:', clientData);
+                return clientData;
+            } else {
+                console.log('No hay cliente seleccionado');
+                return null;
             }
         }
 
-        // Función para limpiar formulario cuando se deselecciona cliente
-        function limpiarFormularioCliente(tipoPersona) {
-            if (tipoPersona === 'personas-fisicas') {
-                $('#pf_nombre, #pf_apellido_paterno, #pf_apellido_materno, #pf_rfc, #pf_curp, #pf_fecha_nacimiento, #pf_estado, #pf_ciudad, #pf_colonia, #pf_calle, #pf_num_exterior, #pf_num_interior, #pf_codigo_postal, #pf_telefono, #pf_correo').val('');
-            } else if (tipoPersona === 'personas-morales') {
-                $('#pm_razon_social, #pm_rfc, #pm_fecha_constitucion, #pm_apoderado_nombre, #pm_apoderado_paterno, #pm_apoderado_materno, #pm_apoderado_rfc, #pm_apoderado_curp, #pm_estado, #pm_ciudad, #pm_colonia, #pm_calle, #pm_num_exterior, #pm_num_interior, #pm_codigo_postal, #pm_telefono, #pm_correo').val('');
-            } else if (tipoPersona === 'fideicomisos') {
-                $('#fid_razon_social, #fid_rfc, #fid_numero_referencia, #fid_estado, #fid_ciudad, #fid_colonia, #fid_calle, #fid_num_exterior, #fid_num_interior, #fid_codigo_postal, #fid_telefono, #fid_correo').val('');
+
+
+        // PASO 7: FUNCIÓN AUXILIAR PARA DEBUGGING
+        function debugModalActual() {
+            console.log('=== DEBUG MODAL ACTUAL ===');
+            console.log('Campo display:', $('#tipo_cliente_display').val());
+            console.log('Campo hidden:', $('#hidden_tipo_cliente').val());
+            console.log('Secciones visibles:');
+            console.log('- Persona Física:', $('#seccion-persona-fisica').is(':visible'));
+            console.log('- Persona Moral:', $('#seccion-persona-moral').is(':visible'));
+            console.log('- Fideicomiso:', $('#seccion-fideicomiso').is(':visible'));
+        }
+
+        // =====================================================================
+        // FUNCIONALIDADES ADICIONALES OPCIONALES
+        // =====================================================================
+
+        // OPCIONAL: Función para cambiar modal manualmente
+        function cambiarModalManualmente(tipoCliente) {
+            // Confirmar con el usuario si hay datos en el formulario
+            if (hayDatosEnFormulario()) {
+                if (!confirm('¿Estás seguro de cambiar el tipo de formulario? Se perderán los datos no guardados.')) {
+                    return false;
+                }
             }
+
+            // Limpiar y cambiar
+            limpiarFormulario();
+            configurarModalSegunTipo(tipoCliente);
+
+            return true;
         }
 
-        // MODIFICAR LA FUNCIÓN configurarModalSegunTipo EXISTENTE
-        function configurarModalSegunTipo(tipoCliente) {
-            console.log('Configurando modal para:', tipoCliente);
+        // OPCIONAL: Función para detectar si hay datos en el formulario
+        function hayDatosEnFormulario() {
+            let hayDatos = false;
 
-            // Ocultar todas las secciones
-            $('#seccion-persona-fisica').hide();
-            $('#seccion-persona-moral').hide();
-            $('#seccion-fideicomiso').hide();
+            // Verificar campos de persona física
+            $('#seccion-persona-fisica input').each(function () {
+                if ($(this).val() && $(this).attr('id') !== 'tipo_cliente_display') {
+                    hayDatos = true;
+                    return false;
+                }
+            });
 
-            // Limpiar todos los selects
-            $('#select_cliente_pf, #select_cliente_pm, #select_cliente_fid').html('<option value="">-- Seleccionar cliente existente --</option>');
-
-            switch (tipoCliente) {
-                case 'personas-fisicas':
-                    $('#tipo_cliente_display').val('Persona Física');
-                    $('#hidden_tipo_cliente').val('persona_fisica');
-                    $('#seccion-persona-fisica').show();
-                    $('#pf_nombre, #pf_apellido_paterno, #pf_rfc').attr('required', true);
-
-                    // Cargar clientes de persona física
-                    cargarClientesPorTipo('personas-fisicas', 'select_cliente_pf');
-                    break;
-
-                case 'personas-morales':
-                    $('#tipo_cliente_display').val('Persona Moral');
-                    $('#hidden_tipo_cliente').val('persona_moral');
-                    $('#seccion-persona-moral').show();
-                    $('#pm_razon_social, #pm_rfc').attr('required', true);
-
-                    // Cargar clientes de persona moral
-                    cargarClientesPorTipo('personas-morales', 'select_cliente_pm');
-                    break;
-
-                case 'fideicomisos':
-                    $('#tipo_cliente_display').val('Fideicomiso');
-                    $('#hidden_tipo_cliente').val('fideicomiso');
-                    $('#seccion-fideicomiso').show();
-                    $('#fid_razon_social, #fid_rfc').attr('required', true);
-
-                    // Cargar clientes de fideicomiso
-                    cargarClientesPorTipo('fideicomisos', 'select_cliente_fid');
-                    break;
-
-                default:
-                    $('#tipo_cliente_display').val('Persona Física');
-                    $('#hidden_tipo_cliente').val('persona_fisica');
-                    $('#seccion-persona-fisica').show();
-                    $('#pf_nombre, #pf_apellido_paterno, #pf_rfc').attr('required', true);
-
-                    // Cargar clientes de persona física
-                    cargarClientesPorTipo('personas-fisicas', 'select_cliente_pf');
-                    break;
+            // Verificar campos de persona moral
+            if (!hayDatos) {
+                $('#seccion-persona-moral input').each(function () {
+                    if ($(this).val()) {
+                        hayDatos = true;
+                        return false;
+                    }
+                });
             }
+
+            // Verificar campos de fideicomiso
+            if (!hayDatos) {
+                $('#seccion-fideicomiso input').each(function () {
+                    if ($(this).val()) {
+                        hayDatos = true;
+                        return false;
+                    }
+                });
+            }
+
+            return hayDatos;
         }
+        // =====================================================================
+        // CIERRE DEL SCRIPT
+        // =====================================================================
 
-        // MODIFICAR LA FUNCIÓN limpiarFormulario EXISTENTE
-        function limpiarFormulario() {
-            // Guardar tipo de cliente antes de limpiar
-            var tipoClienteDisplay = $('#tipo_cliente_display').val();
-            var hiddenTipoCliente = $('#hidden_tipo_cliente').val();
 
-            // Limpiar formulario
-            $('#formAgregarOperacion')[0].reset();
 
-            // Restaurar tipo de cliente
-            $('#tipo_cliente_display').val(tipoClienteDisplay);
-            $('#hidden_tipo_cliente').val(hiddenTipoCliente);
 
-            // Limpiar selects de clientes
-            $('#select_cliente_pf, #select_cliente_pm, #select_cliente_fid').val('').trigger('change');
 
-            // Limpiar otras secciones
-            $('#pld-alerts-container').html('');
-            $('#cash-amount-section').hide();
-            $('#moneda_otra').hide();
 
-            $('#pf_domicilio_extranjero, #pm_domicilio_extranjero, #fid_domicilio_extranjero').hide();
-            $('#pf_tiene_domicilio_extranjero, #pm_tiene_domicilio_extranjero, #fid_tiene_domicilio_extranjero').prop('checked', false);
 
-            $('#pm_beneficiarios_container').empty();
-            $('#fid_fideicomitente_container, #fid_fiduciario_container, #fid_fideicomisario_container, #fid_control_efectivo_container').empty();
 
-            contadorBeneficiarios = {
-                pm: 0,
-                fid_fideicomitente: 0,
-                fid_fiduciario: 0,
-                fid_fideicomisario: 0,
-                fid_control_efectivo: 0
-            };
-
-            $('#pf_nombre, #pf_apellido_paterno, #pf_rfc').removeAttr('required');
-            $('#pm_razon_social, #pm_rfc').removeAttr('required');
-            $('#fid_razon_social, #fid_rfc').removeAttr('required');
-        }
-
-        // Event listeners para los selects de clientes - AGREGAR AL $(document).ready EXISTENTE
-        $(document).ready(function () {
-
-            // Event listeners existentes...
-
-            // NUEVOS Event listeners para selects de clientes
-
-            // Persona Física
-            $(document).on('change', '#select_cliente_pf', function () {
-                const selectedOption = $(this).find('option:selected');
-                if (selectedOption.val()) {
-                    const clientData = JSON.parse(selectedOption.attr('data-client'));
-                    llenarFormularioCliente(clientData, 'personas-fisicas');
-                } else {
-                    limpiarFormularioCliente('personas-fisicas');
-                }
-            });
-
-            // Persona Moral
-            $(document).on('change', '#select_cliente_pm', function () {
-                const selectedOption = $(this).find('option:selected');
-                if (selectedOption.val()) {
-                    const clientData = JSON.parse(selectedOption.attr('data-client'));
-                    llenarFormularioCliente(clientData, 'personas-morales');
-                } else {
-                    limpiarFormularioCliente('personas-morales');
-                }
-            });
-
-            // Fideicomiso
-            $(document).on('change', '#select_cliente_fid', function () {
-                const selectedOption = $(this).find('option:selected');
-                if (selectedOption.val()) {
-                    const clientData = JSON.parse(selectedOption.attr('data-client'));
-                    llenarFormularioCliente(clientData, 'fideicomisos');
-                } else {
-                    limpiarFormularioCliente('fideicomisos');
-                }
-            });
-
-        });
 
     </script>
